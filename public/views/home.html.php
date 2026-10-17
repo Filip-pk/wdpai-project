@@ -2,15 +2,21 @@
 
 <section class="welcome" aria-labelledby="welcome-title">
     <header class="welcome-heading">
-        <p>Neo-Tokyo Stream Hub</p>
+        <p class="eyebrow">
+            <span aria-hidden="true">✦</span>
+            Neo-Tokyo Stream Hub
+        </p>
 
-        <h1 id="welcome-title">
-            <?= $escape($appName) ?>
+        <h1 id="welcome-title" class="welcome-title">
+            <span class="welcome-flower" aria-hidden="true">🌸</span>
+            <span class="gradient-text"><?= $escape($appName) ?></span>
         </h1>
 
-        <h2><?= $escape($tagline) ?></h2>
+        <h2 class="welcome-tagline">
+            <?= $escape($tagline) ?>
+        </h2>
 
-        <p>
+        <p class="welcome-description">
             Zanurz się w świecie anime wspieranym przez sztuczną
             inteligencję. Odkrywaj tytuły dopasowane do Twojego
             nastroju, rozmawiaj z wirtualnymi postaciami
@@ -18,56 +24,73 @@
         </p>
     </header>
 
-    <figure class="welcome-illustration">
-        <!-- Tutaj dodamy osobny eksport ilustracji z projektu. -->
-        <figcaption>
-            Neo-Tokyo AI — Twoja przewodniczka po świecie anime.
+    <figure class="welcome-visual">
+        <img
+            class="welcome-image"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwTAlUwptX9haUuyqwZqeefs8ohDyVw4xfhdc5FUsrkEM5OmZ_7RQqkeSjkzjVAq3yfL0IsJk6MUhjjRlrUtgvA0X9fMydWSCZMknzjqDgWZLr6EvBV_aPF6g-ECwZJFFnsoltLlTVD2O7cFi_FTtDpDgSHbWdqM-kT9hCybq0ZwdWx_f___4PUwUb8ZzT6O5h4iVSi4WYmCUEqyKjm-UYLVKg4OTH9-LARrcWViuVVOYW0TSpolD6GA"
+            alt=""
+            fetchpriority="high"
+            decoding="async"
+        >
+
+        <figcaption class="welcome-visual-caption">
+            <span class="visual-label">Neo-Tokyo AI</span>
+            <span>Twoja przewodniczka po świecie anime</span>
         </figcaption>
     </figure>
 
     <section class="welcome-features" aria-labelledby="features-title">
-        <h2 id="features-title">Co znajdziesz w AniVibe?</h2>
+        <h2 id="features-title" class="section-title">
+            Twój klimat. Twoje anime.
+        </h2>
 
-        <ul>
-            <li>
-                <h3>Inteligentne rekomendacje</h3>
-                <p>
-                    Znajdź anime dopasowane do swojego nastroju
-                    dzięki lokalnemu modelowi Ollama.
-                    Opisz, na co masz ochotę, i odkryj nowe tytuły.
-                </p>
+        <ul class="feature-list">
+            <li class="feature-card">
+                <span class="feature-icon" aria-hidden="true">✦</span>
+
+                <div>
+                    <h3>Inteligentne rekomendacje</h3>
+                    <p>
+                        Opisz swój nastrój i odkryj anime dopasowane
+                        do Ciebie dzięki lokalnemu modelowi Ollama.
+                    </p>
+                </div>
             </li>
 
-            <li>
-                <h3>Czat z postaciami</h3>
-                <p>
-                    Porozmawiaj z AI odgrywającą postaci
-                    z ulubionych anime — od Naruto
-                    po tajemniczego L Lawlieta.
-                </p>
+            <li class="feature-card">
+                <span class="feature-icon" aria-hidden="true">💬</span>
+
+                <div>
+                    <h3>Czat z postaciami</h3>
+                    <p>
+                        Porozmawiaj z AI odgrywającą postaci
+                        z ulubionych anime — od Naruto po L Lawlieta.
+                    </p>
+                </div>
             </li>
 
-            <li>
-                <h3>Twoja kolekcja</h3>
-                <p>
-                    Zapisuj interesujące tytuły na watchliście,
-                    śledź postępy oglądania i oceniaj
-                    obejrzane serie.
-                </p>
+            <li class="feature-card">
+                <span class="feature-icon" aria-hidden="true">♡</span>
+
+                <div>
+                    <h3>Twoja kolekcja</h3>
+                    <p>
+                        Zapisuj tytuły na watchliście, śledź postępy
+                        oglądania i oceniaj obejrzane serie.
+                    </p>
+                </div>
             </li>
         </ul>
     </section>
 
     <section class="welcome-start" aria-labelledby="start-title">
-        <h2 id="start-title">Rozpocznij przygodę</h2>
-
-        <p>
-            Odkryj katalog anime lub przejdź
-            do ekranu logowania.
-        </p>
+        <h2 id="start-title" class="section-title">
+            Rozpocznij przygodę
+        </h2>
 
         <nav class="welcome-actions" aria-label="Rozpocznij przygodę">
             <a href="/login" class="button button-primary">
+                <span aria-hidden="true">↗</span>
                 Zaloguj się
             </a>
 
@@ -82,41 +105,50 @@
 
             <a href="/anime" class="welcome-explore">
                 Odkryj bez logowania
+                <span aria-hidden="true">→</span>
             </a>
         </nav>
 
-        <p id="registration-info">
+        <p id="registration-info" class="helper-text">
             Rejestracja będzie dostępna w kolejnym etapie.
         </p>
     </section>
 
     <section class="welcome-social" aria-labelledby="social-title">
-        <h2 id="social-title">Lub kontynuuj przez</h2>
+        <h2 id="social-title" class="social-title">
+            Lub kontynuuj przez
+        </h2>
 
-        <p id="social-info">
-            Logowanie przez zewnętrzne konta
-            jest na razie elementem makiety.
+        <div class="social-actions">
+            <button
+                type="button"
+                class="button button-social"
+                disabled
+                aria-describedby="social-info"
+            >
+                Google
+            </button>
+
+            <button
+                type="button"
+                class="button button-social"
+                disabled
+                aria-describedby="social-info"
+            >
+                Discord
+            </button>
+        </div>
+
+        <p id="social-info" class="helper-text">
+            Logowanie zewnętrzne jest na razie elementem makiety.
         </p>
-
-        <button
-            type="button"
-            disabled
-            aria-describedby="social-info"
-        >
-            Google
-        </button>
-
-        <button
-            type="button"
-            disabled
-            aria-describedby="social-info"
-        >
-            Discord
-        </button>
     </section>
 
     <footer class="welcome-footer">
-        <p>Planowana integracja: lokalny model Ollama AI.</p>
+        <p class="technology-badge">
+            <span aria-hidden="true">✦</span>
+            Projekt z integracją Ollama AI
+        </p>
     </footer>
 </section>
 

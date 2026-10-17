@@ -12,13 +12,20 @@ $currentPath = parse_url(
     PHP_URL_PATH,
 );
 
-$navigation = [
-    '/dashboard' => 'Pulpit',
-    '/anime' => 'Odkrywaj',
-    '/chat' => 'Czat AI',
-    '/watchlist' => 'Ulubione',
-    '/profile' => 'Profil',
-];
+$isWelcome = $currentPath === '/';
+
+$navigation = $isWelcome
+    ? [
+        '/anime' => 'Odkryj anime',
+        '/login' => 'Zaloguj się',
+    ]
+    : [
+        '/dashboard' => 'Pulpit',
+        '/anime' => 'Odkrywaj',
+        '/chat' => 'Czat AI',
+        '/watchlist' => 'Ulubione',
+        '/profile' => 'Profil',
+    ];
 ?>
 
 <!doctype html>
@@ -28,17 +35,21 @@ $navigation = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title><?= $escape($pageTitle) ?></title>
+
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <a href="#main-content">Przejdź do treści</a>
+<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">
+    <a href="#main-content" class="skip-link">
+        Przejdź do treści
+    </a>
 
     <header class="site-header">
-        <a href="/" aria-label="AniVibe — strona główna">
-            <span aria-hidden="true">🌸</span>
-            AniVibe
+        <a href="/" class="site-brand" aria-label="AniVibe — strona główna">
+            <span class="site-brand-icon" aria-hidden="true">🌸</span>
+            <span>AniVibe</span>
         </a>
 
-        <nav aria-label="Nawigacja główna">
+        <nav class="site-navigation" aria-label="Nawigacja główna">
             <ul>
                 <?php foreach ($navigation as $url => $label): ?>
                     <li>
@@ -54,11 +65,11 @@ $navigation = [
         </nav>
     </header>
 
-    <aside aria-label="Informacja o wersji demonstracyjnej">
+    <aside class="prototype-notice" aria-label="Informacja o prototypie">
         <p>
-            Prototyp HTML — dane przykładowe.
+            <strong>Wersja demonstracyjna.</strong>
             Logowanie, zapis zmian i AI nie są jeszcze podłączone.
         </p>
     </aside>
 
-    <main id="main-content" tabindex="-1">
+    <main id="main-content" class="page-content" tabindex="-1">

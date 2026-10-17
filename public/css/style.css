@@ -1,0 +1,956 @@
+/* ========================================
+   1. Zmienne projektu
+   ======================================== */
+
+:root {
+    color-scheme: dark;
+
+    --color-background: #0f1020;
+    --color-surface: #191a2e;
+    --color-surface-raised: #23243b;
+
+    --color-text: #f7f4ff;
+    --color-muted: #c0bdd1;
+    --color-brand: #7deaf2;
+    --color-accent: #ff85b4;
+
+    --color-border: #42435c;
+    --color-focus: #ffe392;
+
+    --color-button-text: #1b1028;
+    --color-button-start: #ff85b4;
+    --color-button-end: #c3a1ff;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --space-8: 4rem;
+
+    --radius-small: 0.75rem;
+    --radius-medium: 1.25rem;
+    --radius-large: 2rem;
+    --radius-pill: 999px;
+
+    --page-width: 76rem;
+
+    --shadow-card: 0 1.5rem 4rem rgb(0 0 0 / 25%);
+    --shadow-accent: 0 0.75rem 2rem rgb(255 72 151 / 18%);
+}
+
+
+/* ========================================
+   2. Reset i podstawy
+   ======================================== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 0;
+
+    color: var(--color-text);
+    background-color: var(--color-background);
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 1rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+body.page-welcome {
+    background-image:
+        radial-gradient(
+            ellipse at 85% 15%,
+            rgb(139 92 246 / 12%),
+            transparent 45%
+        ),
+        radial-gradient(
+            ellipse at 10% 65%,
+            rgb(0 242 254 / 6%),
+            transparent 40%
+        );
+}
+
+h1,
+h2,
+h3,
+p,
+figure {
+    margin: 0;
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.2;
+    text-wrap: balance;
+}
+
+h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+h2 {
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+}
+
+h3 {
+    font-size: 1.1rem;
+}
+
+p {
+    max-width: 70ch;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+a {
+    color: var(--color-brand);
+    text-decoration-thickness: 0.1em;
+    text-underline-offset: 0.2em;
+}
+
+a:hover {
+    color: var(--color-text);
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button,
+.button,
+input,
+select,
+textarea {
+    max-width: 100%;
+}
+
+button,
+.button {
+    min-height: 2.75rem;
+}
+
+button {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+
+    color: var(--color-text);
+    background-color: var(--color-surface-raised);
+
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    border-style: dashed;
+    color: var(--color-muted);
+    background-color: var(--color-surface);
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+}
+
+::selection {
+    color: var(--color-button-text);
+    background-color: var(--color-brand);
+}
+
+
+/* ========================================
+   3. Wspólny szkielet strony
+   ======================================== */
+
+.site-header,
+.prototype-notice,
+.page-content,
+.site-footer {
+    width: min(
+        calc(100% - var(--space-6)),
+        var(--page-width)
+    );
+    margin-inline: auto;
+}
+
+.site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+
+    border-bottom: 1px solid var(--color-border);
+}
+
+.site-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    min-height: 2.75rem;
+
+    color: var(--color-text);
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.site-brand-icon {
+    display: grid;
+    place-items: center;
+
+    width: 2.5rem;
+    height: 2.5rem;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+
+    background-color: var(--color-surface);
+}
+
+.site-navigation {
+    min-width: 0;
+}
+
+.site-navigation ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.site-navigation a {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+
+    border-radius: var(--radius-small);
+
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.site-navigation a:hover,
+.site-navigation a[aria-current="page"] {
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.prototype-notice {
+    margin-block: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+
+    color: var(--color-muted);
+    background-color: var(--color-surface);
+
+    font-size: 0.875rem;
+}
+
+.prototype-notice p {
+    max-width: none;
+}
+
+.page-content {
+    padding-block: var(--space-6) var(--space-7);
+}
+
+.site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+
+    border-top: 1px solid var(--color-border);
+
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
+.site-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.site-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+}
+
+.skip-link {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    z-index: 10;
+
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-small);
+
+    color: var(--color-button-text);
+    background-color: var(--color-focus);
+
+    font-weight: 700;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+
+/* ========================================
+   4. Strona powitalna — mobile first
+   ======================================== */
+
+.welcome {
+    display: grid;
+
+    grid-template-areas:
+        "heading"
+        "visual"
+        "features"
+        "start"
+        "social"
+        "technology";
+
+    gap: var(--space-6);
+
+    max-width: 38rem;
+    margin-inline: auto;
+}
+
+.welcome > * {
+    min-width: 0;
+}
+
+.welcome-heading {
+    grid-area: heading;
+    text-align: center;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+
+    color: var(--color-brand);
+    background-color: var(--color-surface);
+
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.welcome-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+
+    margin-top: var(--space-5);
+
+    font-size: clamp(2.75rem, 10vw, 5.5rem);
+    font-weight: 850;
+    letter-spacing: -0.05em;
+}
+
+.welcome-flower {
+    font-size: 0.65em;
+    letter-spacing: normal;
+}
+
+.gradient-text {
+    color: var(--color-accent);
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .gradient-text {
+        background-image: linear-gradient(
+            110deg,
+            #ffd6e6 5%,
+            var(--color-accent) 45%,
+            #b5a1ff 75%,
+            var(--color-brand)
+        );
+
+        -webkit-background-clip: text;
+        background-clip: text;
+
+        color: transparent;
+    }
+}
+
+.welcome-tagline {
+    margin-top: var(--space-4);
+
+    font-size: clamp(1.25rem, 3vw, 2rem);
+    line-height: 1.35;
+}
+
+.welcome-description {
+    margin-top: var(--space-4);
+    margin-inline: auto;
+
+    color: var(--color-muted);
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+
+/* ========================================
+   5. Ilustracja
+   ======================================== */
+
+.welcome-visual {
+    grid-area: visual;
+
+    overflow: hidden;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-large);
+
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.welcome-image {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+
+    object-fit: cover;
+    object-position: center;
+}
+
+.welcome-visual-caption {
+    display: grid;
+    gap: var(--space-1);
+
+    padding: var(--space-4) var(--space-5);
+
+    border-top: 1px solid var(--color-border);
+
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
+.visual-label {
+    color: var(--color-brand);
+
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+
+/* ========================================
+   6. Opis funkcjonalności
+   ======================================== */
+
+.welcome-features {
+    grid-area: features;
+}
+
+.section-title {
+    margin-bottom: var(--space-4);
+    font-size: 1.25rem;
+}
+
+.feature-list {
+    display: grid;
+    gap: var(--space-3);
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.feature-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+
+    padding: var(--space-4);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+
+    background-color: var(--color-surface);
+}
+
+.feature-card > div {
+    min-width: 0;
+}
+
+.feature-icon {
+    display: grid;
+    flex: 0 0 2.5rem;
+    place-items: center;
+
+    width: 2.5rem;
+    height: 2.5rem;
+
+    border-radius: var(--radius-small);
+
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+
+    font-size: 1.25rem;
+}
+
+.feature-card h3 {
+    font-size: 1rem;
+}
+
+.feature-card p {
+    margin-top: var(--space-2);
+
+    color: var(--color-muted);
+    font-size: 0.925rem;
+}
+
+
+/* ========================================
+   7. Przyciski i rozpoczęcie przygody
+   ======================================== */
+
+.welcome-start {
+    grid-area: start;
+}
+
+.welcome-actions {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+
+    min-height: 3.5rem;
+    padding: var(--space-3) var(--space-5);
+
+    border: 1px solid transparent;
+    border-radius: var(--radius-medium);
+
+    font-weight: 800;
+    line-height: 1.4;
+    text-align: center;
+    text-decoration: none;
+
+    transition:
+        transform 160ms ease,
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.button-primary {
+    color: var(--color-button-text);
+
+    background-color: var(--color-button-start);
+    background-image: linear-gradient(
+        110deg,
+        var(--color-button-start),
+        var(--color-button-end)
+    );
+
+    box-shadow: var(--shadow-accent);
+}
+
+.button-primary:hover {
+    color: var(--color-button-text);
+    box-shadow: 0 1rem 2.5rem rgb(255 72 151 / 28%);
+    transform: translateY(-2px);
+}
+
+.button-secondary {
+    border-color: var(--color-border);
+    color: var(--color-text);
+    background-color: var(--color-surface-raised);
+}
+
+.button-secondary:disabled {
+    color: var(--color-muted);
+    border-color: var(--color-border);
+    background-color: var(--color-surface-raised);
+}
+
+.welcome-explore {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+
+    min-height: 3rem;
+    padding: var(--space-2);
+
+    border-radius: var(--radius-small);
+
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+}
+
+.welcome-explore:hover {
+    background-color: var(--color-surface);
+}
+
+.helper-text {
+    margin-top: var(--space-3);
+
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+
+/* ========================================
+   8. Logowanie zewnętrzne i oznaczenie AI
+   ======================================== */
+
+.welcome-social {
+    grid-area: social;
+
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+}
+
+.social-title {
+    margin-bottom: var(--space-3);
+
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.social-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.social-actions > * {
+    flex: 1 1 8rem;
+}
+
+.button-social {
+    min-height: 2.75rem;
+    border-color: var(--color-border);
+    border-radius: var(--radius-small);
+
+    font-size: 0.875rem;
+}
+
+.welcome-footer {
+    grid-area: technology;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.technology-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    padding: var(--space-2) var(--space-4);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+
+    color: var(--color-muted);
+    background-color: var(--color-surface);
+
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.technology-badge span {
+    color: var(--color-brand);
+}
+
+
+/* ========================================
+   9. Podstawowe style pozostałych widoków
+   ======================================== */
+
+.page-standard .page-content > * + * {
+    margin-top: var(--space-5);
+}
+
+.page-standard .page-content :where(section, article) > * + * {
+    margin-top: var(--space-4);
+}
+
+.page-standard .page-content p {
+    color: var(--color-muted);
+}
+
+.page-standard form {
+    margin-block: var(--space-4);
+}
+
+fieldset {
+    display: grid;
+    gap: var(--space-3);
+
+    min-width: 0;
+    margin: 0;
+    padding: var(--space-5);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+}
+
+fieldset + fieldset {
+    margin-top: var(--space-4);
+}
+
+legend {
+    padding-inline: var(--space-2);
+    font-weight: 700;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    min-width: 0;
+
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+
+    color: var(--color-text);
+    background-color: var(--color-surface);
+}
+
+textarea {
+    resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--color-muted);
+}
+
+.anime-grid,
+.persona-grid {
+    display: grid;
+    gap: var(--space-4);
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.anime-card,
+.persona-card {
+    padding: var(--space-5);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+
+    background-color: var(--color-surface);
+}
+
+dl {
+    margin-block: var(--space-4);
+}
+
+dt {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+}
+
+dd {
+    margin-inline-start: 0;
+    font-weight: 600;
+}
+
+progress {
+    display: block;
+    width: 100%;
+    max-width: 30rem;
+    accent-color: var(--color-brand);
+}
+
+
+/* ========================================
+   10. Tablet
+   ======================================== */
+
+@media (min-width: 48rem) {
+    .site-header,
+    .prototype-notice,
+    .page-content,
+    .site-footer {
+        width: min(
+            calc(100% - var(--space-8)),
+            var(--page-width)
+        );
+    }
+
+    .page-content {
+        padding-top: var(--space-7);
+    }
+
+    .welcome {
+        gap: var(--space-6);
+    }
+
+    .welcome-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .welcome-explore {
+        grid-column: 1 / -1;
+    }
+
+    .anime-grid,
+    .persona-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* ========================================
+   11. Desktop
+   ======================================== */
+
+@media (min-width: 64rem) {
+    .welcome {
+        max-width: none;
+
+        grid-template-columns:
+            minmax(0, 1.1fr)
+            minmax(0, 1fr);
+
+        grid-template-areas:
+            "heading visual"
+            "features visual"
+            "features start"
+            "technology social";
+
+        column-gap: var(--space-7);
+        row-gap: var(--space-5);
+
+        align-items: start;
+    }
+
+    .welcome-heading {
+        padding-top: var(--space-4);
+        text-align: left;
+    }
+
+    .welcome-title {
+        justify-content: flex-start;
+        font-size: clamp(3.5rem, 5.5vw, 5.5rem);
+    }
+
+    .welcome-description {
+        margin-inline: 0;
+        font-size: 1.05rem;
+    }
+
+    .welcome-image {
+        aspect-ratio: 6 / 5;
+        object-position: center 40%;
+    }
+
+    .welcome-start .section-title {
+        font-size: 1.1rem;
+    }
+
+    .welcome-footer {
+        justify-content: flex-start;
+        align-self: center;
+    }
+
+    .welcome-social {
+        padding-top: var(--space-4);
+    }
+
+    .feature-card {
+        padding: var(--space-4) var(--space-5);
+    }
+
+    .anime-grid,
+    .persona-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+
+/* ========================================
+   12. Ograniczenie ruchu
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .button {
+        transition: none;
+    }
+
+    .button-primary:hover {
+        transform: none;
+    }
+}
