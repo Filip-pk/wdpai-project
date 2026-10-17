@@ -37,6 +37,10 @@ $navigation = $isWelcome
     <title><?= $escape($pageTitle) ?></title>
 
     <link rel="stylesheet" href="/css/style.css">
+
+    <?php if ($currentPath === '/login'): ?>
+        <link rel="stylesheet" href="/css/login.css">
+    <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">
     <a href="#main-content" class="skip-link">

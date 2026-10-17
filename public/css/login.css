@@ -1,0 +1,586 @@
+/* ========================================
+   1. Zmienne widoku logowania
+   ======================================== */
+
+.auth-page {
+    --auth-background: #141526;
+    --auth-surface: #1d1e33;
+    --auth-input-background: #101120;
+    --auth-text: #f7f4ff;
+    --auth-muted: #c0bdd1;
+    --auth-brand: #7deaf2;
+    --auth-accent: #ff9ac3;
+    --auth-border: #494961;
+    --auth-focus: #ffe392;
+    --auth-radius: 1.5rem;
+    --auth-field-radius: 0.8rem;
+    --auth-gap: 1.25rem;
+    --auth-panel-padding: 1.25rem;
+    --auth-shadow: 0 1.5rem 4rem rgb(0 0 0 / 30%);
+
+    width: 100%;
+    max-width: 35rem;
+    margin-inline: auto;
+
+    color: var(--auth-text);
+}
+
+
+/* ========================================
+   2. Powrót i główna karta
+   ======================================== */
+
+.auth-page .auth-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+
+    min-height: 2.75rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.25rem;
+
+    border-radius: 0.5rem;
+
+    color: var(--auth-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition: color 160ms ease;
+}
+
+.auth-page .auth-back:hover {
+    color: var(--auth-brand);
+}
+
+.auth-page .auth-back span {
+    font-size: 1.4rem;
+}
+
+.auth-page .auth-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+
+    margin: 0;
+
+    border: 1px solid var(--auth-border);
+    border-radius: var(--auth-radius);
+
+    background-color: var(--auth-background);
+    box-shadow: var(--auth-shadow);
+}
+
+.auth-page .auth-card > * {
+    min-width: 0;
+    margin: 0;
+}
+
+
+/* ========================================
+   3. Ilustracja i jej podpis
+   ======================================== */
+
+.auth-page .auth-showcase {
+    position: relative;
+    isolation: isolate;
+
+    min-height: 15rem;
+    overflow: hidden;
+
+    border-bottom: 1px solid var(--auth-border);
+    border-radius:
+        var(--auth-radius)
+        var(--auth-radius)
+        0
+        0;
+
+    background-color: var(--auth-surface);
+}
+
+/* Obraz jest dekoracyjną warstwą wewnątrz panelu. */
+.auth-page .auth-image {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: center 35%;
+}
+
+.auth-page .auth-showcase::after {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+
+    content: "";
+
+    background: linear-gradient(
+        180deg,
+        rgb(15 16 32 / 10%) 0%,
+        rgb(15 16 32 / 65%) 45%,
+        rgb(15 16 32 / 98%) 100%
+    );
+}
+
+.auth-page .auth-showcase-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.75rem;
+
+    min-height: 15rem;
+    padding: var(--auth-panel-padding);
+}
+
+.auth-page .auth-kicker {
+    margin: 0;
+
+    color: var(--auth-brand);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.auth-page .auth-showcase h2 {
+    margin: 0;
+
+    color: var(--auth-text);
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    line-height: 1.2;
+}
+
+.auth-page .auth-showcase-description {
+    max-width: 30ch;
+    margin: 0;
+
+    color: var(--auth-muted);
+    font-size: 0.9rem;
+}
+
+
+/* ========================================
+   4. Panel formularza
+   ======================================== */
+
+.auth-page .auth-panel {
+    display: grid;
+    gap: var(--auth-gap);
+
+    padding: var(--auth-panel-padding);
+}
+
+.auth-page .auth-panel > * {
+    min-width: 0;
+    margin: 0;
+}
+
+.auth-page .auth-heading {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.auth-page .auth-heading > * {
+    margin: 0;
+}
+
+.auth-page .auth-heading h1 {
+    font-size: clamp(1.65rem, 4vw, 2.35rem);
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+}
+
+.auth-page .auth-heading > p:last-child {
+    color: var(--auth-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.auth-page .auth-notice {
+    padding: 0.75rem 0.9rem;
+
+    border: 1px dashed var(--auth-border);
+    border-radius: var(--auth-field-radius);
+
+    color: var(--auth-muted);
+    background-color: var(--auth-surface);
+
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   5. Pola formularza
+   ======================================== */
+
+.auth-page .auth-form {
+    margin: 0;
+}
+
+.auth-page .auth-fields {
+    display: grid;
+    gap: var(--auth-gap);
+
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+}
+
+.auth-page .auth-field {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.auth-page .auth-field label {
+    color: var(--auth-text);
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.auth-page .auth-field input {
+    width: 100%;
+    min-width: 0;
+    min-height: 3.25rem;
+
+    padding: 0.85rem 1rem;
+
+    border: 1px solid var(--auth-border);
+    border-radius: var(--auth-field-radius);
+
+    color: var(--auth-text);
+    background-color: var(--auth-input-background);
+
+    font-size: 1rem;
+
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease;
+}
+
+.auth-page .auth-field input::placeholder {
+    color: var(--auth-muted);
+    opacity: 1;
+}
+
+.auth-page .auth-field input:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+    -webkit-text-fill-color: var(--auth-muted);
+}
+
+.auth-page .auth-field input:enabled:hover {
+    border-color: var(--auth-brand);
+}
+
+.auth-page .auth-password-help {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -0.5rem;
+}
+
+.auth-page .auth-text-button {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.25rem;
+
+    border: 0;
+    border-radius: 0.4rem;
+
+    color: var(--auth-accent);
+    background: none;
+
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.auth-page .auth-text-button:disabled {
+    color: var(--auth-muted);
+    cursor: not-allowed;
+}
+
+
+/* ========================================
+   6. Główny przycisk
+   ======================================== */
+
+.auth-page .auth-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+
+    width: 100%;
+    min-height: 3.5rem;
+    padding: 0.9rem 1rem;
+
+    border: 1px solid transparent;
+    border-radius: var(--auth-field-radius);
+
+    color: #211329;
+    background-color: #ff9ac3;
+    background-image: linear-gradient(
+        110deg,
+        #ff9ac3,
+        #c7a9ff
+    );
+
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.auth-page .auth-submit:disabled {
+    border: 1px dashed #211329;
+    cursor: not-allowed;
+}
+
+.auth-page .auth-submit span {
+    font-size: 1.3rem;
+}
+
+
+/* ========================================
+   7. Pozostałe sposoby logowania
+   ======================================== */
+
+.auth-page .auth-social {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.auth-page .auth-social > * {
+    margin: 0;
+}
+
+.auth-page .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    color: var(--auth-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.auth-page .auth-divider::before,
+.auth-page .auth-divider::after {
+    flex: 1 1 1rem;
+    height: 1px;
+
+    content: "";
+    background-color: var(--auth-border);
+}
+
+.auth-page .auth-social-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.auth-page .auth-provider {
+    display: inline-flex;
+    flex: 1 1 8rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+
+    min-height: 3rem;
+    padding: 0.75rem;
+
+    border: 1px dashed var(--auth-border);
+    border-radius: var(--auth-field-radius);
+
+    color: var(--auth-muted);
+    background-color: var(--auth-surface);
+
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.auth-page .auth-provider-icon {
+    color: var(--auth-brand);
+    font-size: 1.1rem;
+}
+
+.auth-page .auth-help {
+    color: var(--auth-muted);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+
+/* ========================================
+   8. Rejestracja i aktywny link do demo
+   ======================================== */
+
+.auth-page .auth-register {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem 0.5rem;
+}
+
+.auth-page .auth-register p {
+    margin: 0;
+    color: var(--auth-muted);
+    font-size: 0.85rem;
+}
+
+.auth-page .auth-demo-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+
+    border: 1px solid var(--auth-border);
+    border-radius: var(--auth-field-radius);
+
+    color: var(--auth-brand);
+    background-color: var(--auth-surface);
+
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+
+    transition:
+        color 160ms ease,
+        background-color 160ms ease,
+        border-color 160ms ease;
+}
+
+.auth-page .auth-demo-link:hover {
+    border-color: var(--auth-brand);
+
+    color: var(--auth-text);
+    background-color: #292b44;
+}
+
+
+/* ========================================
+   9. Fokus i tekst dla czytników ekranu
+   ======================================== */
+
+.auth-page :where(a, button, input):focus-visible {
+    outline: 3px solid var(--auth-focus);
+    outline-offset: 4px;
+}
+
+.auth-page .auth-visually-hidden {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+
+    border: 0;
+}
+
+
+/* ========================================
+   10. Większy telefon i tablet
+   ======================================== */
+
+@media (min-width: 40rem) {
+    .auth-page {
+        --auth-panel-padding: 2rem;
+        --auth-gap: 1.5rem;
+    }
+
+    .auth-page .auth-showcase,
+    .auth-page .auth-showcase-content {
+        min-height: 18rem;
+    }
+}
+
+
+/* ========================================
+   11. Desktop — dwie kolumny
+   ======================================== */
+
+@media (min-width: 64rem) {
+    .auth-page {
+        max-width: 66rem;
+        --auth-panel-padding: 2.5rem;
+    }
+
+    .auth-page .auth-card {
+        grid-template-columns:
+            minmax(0, 0.9fr)
+            minmax(0, 1.1fr);
+
+        align-items: stretch;
+    }
+
+    .auth-page .auth-showcase {
+        display: flex;
+        align-items: flex-end;
+
+        min-height: 100%;
+
+        border-right: 1px solid var(--auth-border);
+        border-bottom: 0;
+
+        border-radius:
+            var(--auth-radius)
+            0
+            0
+            var(--auth-radius);
+    }
+
+    .auth-page .auth-showcase-content {
+        width: 100%;
+        min-height: 100%;
+        padding-block: 3rem;
+    }
+
+    .auth-page .auth-image {
+        object-position: 60% center;
+    }
+
+    .auth-page .auth-showcase::after {
+        background: linear-gradient(
+            180deg,
+            rgb(15 16 32 / 5%) 0%,
+            rgb(15 16 32 / 30%) 40%,
+            rgb(15 16 32 / 98%) 100%
+        );
+    }
+
+    .auth-page .auth-showcase h2 {
+        font-size: 2.25rem;
+    }
+}
+
+
+/* ========================================
+   12. Ograniczenie ruchu
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-page .auth-back,
+    .auth-page .auth-field input,
+    .auth-page .auth-demo-link {
+        transition: none;
+    }
+}
