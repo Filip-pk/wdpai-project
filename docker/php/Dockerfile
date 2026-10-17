@@ -35,3 +35,8 @@ RUN { \
     } > /usr/local/etc/php/conf.d/mealplanner.ini
 
 COPY . .
+
+RUN composer install \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader
