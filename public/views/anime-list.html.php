@@ -1,28 +1,67 @@
-<!doctype html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
-</head>
-<body>
-    <header>
-        <a href="/">AniVibe — strona główna</a>
-    </header>
+<?php require __DIR__ . '/partials/header.html.php'; ?>
 
-    <main>
-        <h1>Katalog anime</h1>
-        <p>Na tym etapie prezentujemy przykładowe dane.</p>
+<h1>Odkrywaj anime</h1>
 
-        <ul>
-            <?php foreach ($animes as $id => $anime): ?>
+<form action="/anime" method="get" role="search">
+    <label for="anime-search">Szukaj po tytule</label>
+
+    <input
+        id="anime-search"
+        name="q"
+        type="search"
+        maxlength="100"
+        value="<?= $escape($query) ?>"
+    >
+
+    <button type="submit">Szukaj</button>
+    <a href="/anime">Wyczyść wyszukiwanie</a>
+</form>
+
+<div class="catalog-filters">
+    <label for="anime-genre">Gatunek</label>
+
+    <select
+        id="anime-genre"
+        name="genre"
+        disabled
+        aria-describedby="genre-info"
+    >
+        <option>Wszystkie</option>
+        <option>Cyberpunk</option>
+        <option>Mroczne fantasy</option>
+        <option>Sci-Fi</option>
+        <option>Psychologiczne</option>
+    </select>
+
+    <p id="genre-info">
+        Filtrowanie po gatunku dodamy w kolejnym etapie.
+    </p>
+</div>
+
+<section aria-labelledby="catalog-title">
+    <h2 id="catalog-title">Katalog i rekomendacje</h2>
+
+    <p>Liczba wyników: <?= count($animes) ?></p>
+
+    <?php if ($animes === []): ?>
+        <p>Nie znaleziono anime pasującego do podanej nazwy.</p>
+    <?php else: ?>
+        <ul class="anime-grid">
+            <?php foreach ($animes as $animeId => $anime): ?>
                 <li>
-                    <a href="/anime/<?= (int) $id ?>">
-                        <?= htmlspecialchars($anime['title'], ENT_QUOTES, 'UTF-8') ?>
-                    </a>
+                    <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
                 </li>
             <?php endforeach; ?>
         </ul>
-    </main>
-</body>
-</html>
+    <?php endif; ?>
+</section>
+
+<aside aria-labelledby="catalog-help-title">
+    <h2 id="catalog-help-title">Nie wiesz, co wybrać?</h2>
+
+    <p>Asystent AI pomoże znaleźć anime dopasowane do nastroju.</p>
+
+    <a href="/chat">Zobacz asystenta AI</a>
+</aside>
+
+<?php require __DIR__ . '/partials/footer.html.php'; ?>
