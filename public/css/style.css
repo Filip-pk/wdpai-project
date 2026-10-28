@@ -3,23 +3,44 @@
    ======================================== */
 
 :root {
-    color-scheme: dark;
+    color-scheme: light;
 
-    --color-background: #0f1020;
-    --color-surface: #191a2e;
-    --color-surface-raised: #23243b;
+    --color-background: #f7f5fc;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ece9f5;
 
-    --color-text: #f7f4ff;
-    --color-muted: #c0bdd1;
-    --color-brand: #7deaf2;
-    --color-accent: #ff85b4;
+    --color-text: #211a32;
+    --color-muted: #5e556e;
+    --color-brand: #096674;
+    --color-accent: #a52b64;
 
-    --color-border: #42435c;
-    --color-focus: #ffe392;
+    --color-border: #897f99;
+    --color-focus: #6b32b8;
+    --color-on-focus: #ffffff;
+    --color-selection-text: #ffffff;
 
-    --color-button-text: #1b1028;
-    --color-button-start: #ff85b4;
-    --color-button-end: #c3a1ff;
+    --color-button-text: #281334;
+    --color-button-start: #f8a2c7;
+    --color-button-end: #cfb6ff;
+    --color-title-start: #9e285d;
+    --color-title-violet: #6239a6;
+    --color-glow-violet: rgb(126 74 202 / 9%);
+    --color-glow-cyan: rgb(0 110 125 / 5%);
+
+    --color-auth-background: #ffffff;
+    --color-auth-surface: #f0edf7;
+    --color-input-background: #ffffff;
+    --color-auth-accent: #a52b64;
+    --color-auth-border: #897f99;
+    --color-auth-hover: #e4dfef;
+    --color-auth-button-text: #281334;
+    --color-auth-button-start: #f8a2c7;
+    --color-auth-button-end: #cfb6ff;
+
+    --shadow-card: 0 1.5rem 4rem rgb(55 35 85 / 12%);
+    --shadow-accent: 0 0.75rem 2rem rgb(145 43 105 / 16%);
+    --shadow-accent-hover: 0 1rem 2.5rem rgb(145 43 105 / 24%);
+    --shadow-auth: 0 1.5rem 4rem rgb(55 35 85 / 15%);
 
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -36,9 +57,47 @@
     --radius-pill: 999px;
 
     --page-width: 76rem;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-background: #0f1020;
+    --color-surface: #191a2e;
+    --color-surface-raised: #23243b;
+
+    --color-text: #f7f4ff;
+    --color-muted: #c0bdd1;
+    --color-brand: #7deaf2;
+    --color-accent: #ff85b4;
+
+    --color-border: #42435c;
+    --color-focus: #ffe392;
+    --color-on-focus: #1b1028;
+    --color-selection-text: #1b1028;
+
+    --color-button-text: #1b1028;
+    --color-button-start: #ff85b4;
+    --color-button-end: #c3a1ff;
+    --color-title-start: #ffd6e6;
+    --color-title-violet: #b5a1ff;
+    --color-glow-violet: rgb(139 92 246 / 12%);
+    --color-glow-cyan: rgb(0 242 254 / 6%);
+
+    --color-auth-background: #141526;
+    --color-auth-surface: #1d1e33;
+    --color-input-background: #101120;
+    --color-auth-accent: #ff9ac3;
+    --color-auth-border: #494961;
+    --color-auth-hover: #292b44;
+    --color-auth-button-text: #211329;
+    --color-auth-button-start: #ff9ac3;
+    --color-auth-button-end: #c7a9ff;
 
     --shadow-card: 0 1.5rem 4rem rgb(0 0 0 / 25%);
     --shadow-accent: 0 0.75rem 2rem rgb(255 72 151 / 18%);
+    --shadow-accent-hover: 0 1rem 2.5rem rgb(255 72 151 / 28%);
+    --shadow-auth: 0 1.5rem 4rem rgb(0 0 0 / 30%);
 }
 
 
@@ -52,9 +111,14 @@
     box-sizing: border-box;
 }
 
+html {
+    background-color: var(--color-background);
+}
+
 body {
     margin: 0;
     min-width: 0;
+    min-height: 100vh;
 
     color: var(--color-text);
     background-color: var(--color-background);
@@ -75,12 +139,12 @@ body.page-welcome {
     background-image:
         radial-gradient(
             ellipse at 85% 15%,
-            rgb(139 92 246 / 12%),
+            var(--color-glow-violet),
             transparent 45%
         ),
         radial-gradient(
             ellipse at 10% 65%,
-            rgb(0 242 254 / 6%),
+            var(--color-glow-cyan),
             transparent 40%
         );
 }
@@ -176,7 +240,7 @@ button:disabled {
 }
 
 ::selection {
-    color: var(--color-button-text);
+    color: var(--color-selection-text);
     background-color: var(--color-brand);
 }
 
@@ -235,7 +299,56 @@ button:disabled {
 }
 
 .site-navigation {
+    flex: 1 1 24rem;
     min-width: 0;
+}
+
+.theme-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    max-width: 100%;
+}
+
+.theme-toggle {
+    display: inline-grid;
+    flex: 0 0 2.75rem;
+    place-items: center;
+
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: var(--space-2);
+}
+
+.theme-toggle svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.theme-system {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.theme-toggle:hover,
+.theme-system:enabled:hover {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+    background-color: var(--color-surface);
+}
+
+.theme-icon-sun,
+html[data-theme="dark"] .theme-icon-moon {
+    display: none;
+}
+
+.theme-icon-moon,
+html[data-theme="dark"] .theme-icon-sun {
+    display: block;
 }
 
 .site-navigation ul {
@@ -327,7 +440,7 @@ button:disabled {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-small);
 
-    color: var(--color-button-text);
+    color: var(--color-on-focus);
     background-color: var(--color-focus);
 
     font-weight: 700;
@@ -336,6 +449,10 @@ button:disabled {
 
 .skip-link:focus {
     transform: translateY(0);
+}
+
+.skip-link:hover {
+    color: var(--color-on-focus);
 }
 
 
@@ -415,9 +532,9 @@ button:disabled {
     .gradient-text {
         background-image: linear-gradient(
             110deg,
-            #ffd6e6 5%,
+            var(--color-title-start) 5%,
             var(--color-accent) 45%,
-            #b5a1ff 75%,
+            var(--color-title-violet) 75%,
             var(--color-brand)
         );
 
@@ -610,7 +727,7 @@ button:disabled {
 
 .button-primary:hover {
     color: var(--color-button-text);
-    box-shadow: 0 1rem 2.5rem rgb(255 72 151 / 28%);
+    box-shadow: var(--shadow-accent-hover);
     transform: translateY(-2px);
 }
 
@@ -781,6 +898,8 @@ textarea {
 
     color: var(--color-text);
     background-color: var(--color-surface);
+    accent-color: var(--color-brand);
+    caret-color: var(--color-text);
 }
 
 textarea {
@@ -790,6 +909,18 @@ textarea {
 input::placeholder,
 textarea::placeholder {
     color: var(--color-muted);
+    opacity: 1;
+}
+
+input:autofill {
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 1000px var(--color-surface) inset;
+}
+
+input:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-text);
+    box-shadow: 0 0 0 1000px var(--color-surface) inset;
 }
 
 .anime-grid,

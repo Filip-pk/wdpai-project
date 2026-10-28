@@ -3,20 +3,29 @@
    ======================================== */
 
 .auth-page {
-    --auth-background: #141526;
-    --auth-surface: #1d1e33;
-    --auth-input-background: #101120;
-    --auth-text: #f7f4ff;
-    --auth-muted: #c0bdd1;
-    --auth-brand: #7deaf2;
-    --auth-accent: #ff9ac3;
-    --auth-border: #494961;
-    --auth-focus: #ffe392;
+    --auth-background: var(--color-auth-background);
+    --auth-surface: var(--color-auth-surface);
+    --auth-input-background: var(--color-input-background);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-brand: var(--color-brand);
+    --auth-accent: var(--color-auth-accent);
+    --auth-border: var(--color-auth-border);
+    --auth-focus: var(--color-focus);
+    --auth-hover: var(--color-auth-hover);
+    --auth-button-text: var(--color-auth-button-text);
+    --auth-button-start: var(--color-auth-button-start);
+    --auth-button-end: var(--color-auth-button-end);
+    /* Podpis ilustracji zawsze leży na ciemnej nakładce. */
+    --auth-showcase-text: #f7f4ff;
+    --auth-showcase-muted: #e5e1f0;
+    --auth-showcase-brand: #7deaf2;
+    --auth-showcase-background: #1d1e33;
     --auth-radius: 1.5rem;
     --auth-field-radius: 0.8rem;
     --auth-gap: 1.25rem;
     --auth-panel-padding: 1.25rem;
-    --auth-shadow: 0 1.5rem 4rem rgb(0 0 0 / 30%);
+    --auth-shadow: var(--shadow-auth);
 
     width: 100%;
     max-width: 35rem;
@@ -94,7 +103,7 @@
         0
         0;
 
-    background-color: var(--auth-surface);
+    background-color: var(--auth-showcase-background);
 }
 
 /* Obraz jest dekoracyjną warstwą wewnątrz panelu. */
@@ -135,7 +144,7 @@
     padding: var(--auth-panel-padding);
 }
 
-.auth-page .auth-kicker {
+.auth-page p.auth-kicker {
     margin: 0;
 
     color: var(--auth-brand);
@@ -148,17 +157,21 @@
 .auth-page .auth-showcase h2 {
     margin: 0;
 
-    color: var(--auth-text);
+    color: var(--auth-showcase-text);
     font-size: clamp(1.35rem, 3vw, 2rem);
     line-height: 1.2;
 }
 
-.auth-page .auth-showcase-description {
+.auth-page .auth-showcase .auth-showcase-description {
     max-width: 30ch;
     margin: 0;
 
-    color: var(--auth-muted);
+    color: var(--auth-showcase-muted);
     font-size: 0.9rem;
+}
+
+.auth-page .auth-showcase .auth-kicker {
+    color: var(--auth-showcase-brand);
 }
 
 
@@ -281,6 +294,17 @@
     border-color: var(--auth-brand);
 }
 
+.auth-page .auth-field input:autofill {
+    color: var(--auth-text);
+    background-color: var(--auth-input-background);
+    box-shadow: 0 0 0 1000px var(--auth-input-background) inset;
+}
+
+.auth-page .auth-field input:-webkit-autofill {
+    -webkit-text-fill-color: var(--auth-text);
+    box-shadow: 0 0 0 1000px var(--auth-input-background) inset;
+}
+
 .auth-page .auth-password-help {
     display: flex;
     justify-content: flex-end;
@@ -325,12 +349,12 @@
     border: 1px solid transparent;
     border-radius: var(--auth-field-radius);
 
-    color: #211329;
-    background-color: #ff9ac3;
+    color: var(--auth-button-text);
+    background-color: var(--auth-button-start);
     background-image: linear-gradient(
         110deg,
-        #ff9ac3,
-        #c7a9ff
+        var(--auth-button-start),
+        var(--auth-button-end)
     );
 
     font-size: 1rem;
@@ -339,7 +363,7 @@
 }
 
 .auth-page .auth-submit:disabled {
-    border: 1px dashed #211329;
+    border: 1px dashed var(--auth-button-text);
     cursor: not-allowed;
 }
 
@@ -468,7 +492,7 @@
     border-color: var(--auth-brand);
 
     color: var(--auth-text);
-    background-color: #292b44;
+    background-color: var(--auth-hover);
 }
 
 
