@@ -23,6 +23,8 @@ $currentPath = parse_url(
 );
 
 $isWelcome = $currentPath === '/';
+$isProjectsPage = $currentPath === '/projects'
+    || str_starts_with((string) $currentPath, '/projects/');
 ?>
 
 <!doctype html>
@@ -65,6 +67,10 @@ $isWelcome = $currentPath === '/';
 
     <?php if ($currentPath === '/login'): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
+    <?php endif; ?>
+
+    <?php if ($isProjectsPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/projects.css') ?>">
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
@@ -131,7 +137,7 @@ $isWelcome = $currentPath === '/';
     <aside class="prototype-notice" aria-label="Informacja o prototypie">
         <p>
             <strong>Wersja demonstracyjna.</strong>
-            Logowanie, zapis zmian i AI nie są jeszcze podłączone.
+            Logowanie, zapis watchlisty i AI nie są jeszcze podłączone.
         </p>
     </aside>
 

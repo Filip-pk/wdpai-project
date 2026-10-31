@@ -4,17 +4,28 @@ declare(strict_types=1);
 
 use App\Controller\AdminController;
 use App\Controller\AnimeController;
+use App\Controller\AppController;
 use App\Controller\AuthController;
 use App\Controller\ChatController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
+use App\Database;
+use App\Repository\ProjectRepository;
 use App\Routing;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-$routing = new Routing();
+$routing = new Routing(static function (string $controllerClass): AppController {
+    if ($controllerClass === ProjectController::class) {
+        return new ProjectController(
+            new ProjectRepository((new Database())->connect()),
+        );
+    }
+
+    return new $controllerClass();
+});
 
 $routing->get('/', DefaultController::class, 'index');
 $routing->get('/login', AuthController::class, 'login');
@@ -31,16 +42,22 @@ $routing->get('/watchlist', ProfileController::class, 'watchlist');
 
 $routing->get('/admin', AdminController::class, 'index');
 
-// Dotychczasowe trasy demonstracyjne z zadania 2.
+// Projekty zapisane w PostgreSQL.
 $routing->get('/projects', ProjectController::class, 'index');
 $routing->get('/projects/{id}', ProjectController::class, 'show');
 
-$routeFound = $routing->dispatch(
-    $_SERVER['REQUEST_METHOD'],
-    $_SERVER['REQUEST_URI'],
-);
+try {
+    $routeFound = $routing->dispatch(
+        $_SERVER['REQUEST_METHOD'],
+        $_SERVER['REQUEST_URI'],
+    );
 
-if (!$routeFound) {
-    http_response_code(404);
-    (new DefaultController())->notFound();
+    if (!$routeFound) {
+        http_response_code(404);
+        (new DefaultController())->notFound();
+    }
+} catch (Throwable $exception) {
+    error_log('Błąd obsługi żądania: ' . $exception::class);
+    http_response_code(500);
+    (new DefaultController())->serverError();
 }

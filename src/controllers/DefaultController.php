@@ -21,4 +21,11 @@ final class DefaultController extends AppController
             'pageTitle' => 'Nie znaleziono strony — AniVibe',
         ]);
     }
+
+    public function serverError(): void
+    {
+        $this->render('server-error', [
+            'pageTitle' => 'Błąd serwera — AniVibe',
+        ]);
+    }
 }

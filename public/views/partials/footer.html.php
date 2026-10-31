@@ -4,6 +4,7 @@
         <p>AniVibe — Twój przewodnik po anime.</p>
 
         <nav aria-label="Dodatkowa nawigacja">
+            <a href="/projects">Projekty</a>
             <a href="/login">Logowanie</a>
             <a href="/admin">Podgląd kreatora persony AI</a>
         </nav>

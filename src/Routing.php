@@ -5,10 +5,19 @@ declare(strict_types=1);
 namespace App;
 
 use App\Controller\AppController;
+use Closure;
 
 final class Routing
 {
     private array $routes = [];
+    private readonly ?Closure $controllerFactory;
+
+    public function __construct(?callable $controllerFactory = null)
+    {
+        $this->controllerFactory = $controllerFactory === null
+            ? null
+            : Closure::fromCallable($controllerFactory);
+    }
 
     public function get(string $path, string $controller, string $action): void
     {
@@ -83,7 +92,9 @@ final class Routing
             );
 
             $controllerClass = $route['controller'];
-            $controller = new $controllerClass();
+            $controller = $this->controllerFactory === null
+                ? new $controllerClass()
+                : ($this->controllerFactory)($controllerClass);
 
             if (!$controller instanceof AppController) {
                 throw new \RuntimeException('Invalid controller');

@@ -1,0 +1,162 @@
+.projects-heading,
+.project-heading,
+.project-card-heading {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.projects-grid > li {
+    min-width: 0;
+}
+
+.project-card,
+.project-details,
+.project-empty {
+    min-width: 0;
+    padding: var(--space-5);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    height: 100%;
+}
+
+.page-content .project-card > * {
+    margin: 0;
+}
+
+.project-card h2 {
+    font-size: 1.3rem;
+}
+
+.project-card h2 a {
+    display: block;
+    min-height: 2.75rem;
+    padding-block: var(--space-2);
+}
+
+.project-status {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+
+    max-width: 100%;
+    padding: var(--space-1) var(--space-3);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.project-description {
+    white-space: pre-wrap;
+}
+
+.project-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+
+    margin-block: var(--space-4) 0;
+}
+
+.project-meta > div {
+    min-width: 0;
+}
+
+.project-meta dt {
+    margin: 0 0 var(--space-1);
+    font-size: 0.85rem;
+}
+
+.project-meta dd {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.project-open,
+.project-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    min-height: 2.75rem;
+    padding-block: var(--space-2);
+
+    border-radius: var(--radius-small);
+    font-weight: 700;
+}
+
+.page-content .project-card > .project-open {
+    margin-top: auto;
+}
+
+.project-details {
+    display: grid;
+    gap: var(--space-6);
+
+    max-width: 58rem;
+}
+
+.page-content .project-details > * {
+    margin: 0;
+}
+
+.project-details h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.project-empty {
+    max-width: 42rem;
+}
+
+.project-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+    .projects-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .project-details .project-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 64rem) {
+    .projects-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .project-details {
+        padding: var(--space-6);
+    }
+}

@@ -11,6 +11,7 @@ $navigation = $isWelcome
         '/chat' => 'Czat AI',
         '/watchlist' => 'Ulubione',
         '/profile' => 'Profil',
+        '/projects' => 'Projekty',
     ];
 ?>
 
@@ -20,7 +21,7 @@ $navigation = $isWelcome
             <li>
                 <a
                     href="<?= $escape($url) ?>"
-                    <?= $currentPath === $url ? 'aria-current="page"' : '' ?>
+                    <?= $currentPath === $url || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/')) ? 'aria-current="page"' : '' ?>
                 >
                     <?= $escape($label) ?>
                 </a>
