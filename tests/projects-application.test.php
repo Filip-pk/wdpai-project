@@ -31,10 +31,16 @@ $escape = static fn (string $value): string =>
 $render = static function (string $uri, callable $action): array {
     $previousUri = $_SERVER['REQUEST_URI'] ?? null;
     $previousMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+    $previousSession = $_SESSION ?? null;
     $previousStatus = http_response_code();
     $previousBufferLevel = ob_get_level();
     $_SERVER['REQUEST_URI'] = $uri;
     $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SESSION = [
+        'user_id' => 1,
+        'user_name' => 'Tester projektów',
+        'user_email' => 'projects-test@example.test',
+    ];
     http_response_code(200);
     ob_start();
 
@@ -63,6 +69,12 @@ $render = static function (string $uri, callable $action): array {
             $_SERVER['REQUEST_METHOD'] = $previousMethod;
         }
 
+        if ($previousSession === null) {
+            unset($_SESSION);
+        } else {
+            $_SESSION = $previousSession;
+        }
+
         http_response_code(is_int($previousStatus) ? $previousStatus : 200);
     }
 };
@@ -76,6 +88,12 @@ putenv('POSTGRES_USER=anivibe-test-user');
 putenv('POSTGRES_PASSWORD=anivibe-test-secret');
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI'] = $argv[1];
+session_start();
+$_SESSION = [
+    'user_id' => 1,
+    'user_name' => 'Tester projektów',
+    'user_email' => 'projects-test@example.test',
+];
 ob_start();
 require $argv[2];
 $html = ob_get_clean();

@@ -29,7 +29,7 @@ function createButton() {
         },
         click() {
             if (!this.disabled) {
-                listeners.get('click')?.();
+                return listeners.get('click')?.();
             }
         },
     };
@@ -42,6 +42,14 @@ function createPage(options = {}) {
     const toggle = options.buttons === false ? null : createButton();
     const system = options.buttons === false ? null : createButton();
     const root = { dataset: { theme: options.initialTheme ?? 'light' } };
+    const saveStatus = { hidden: true, textContent: '' };
+    const csrfMeta = { content: 'test-csrf-token' };
+    const profileTheme = options.profileTheme === undefined ? null : { value: options.profileTheme };
+
+    if (options.accountTheme !== undefined) {
+        root.dataset.accountId = '123';
+        root.dataset.accountTheme = options.accountTheme;
+    }
 
     if (options.saved !== undefined) {
         storage.set('theme', options.saved);
@@ -77,6 +85,7 @@ function createPage(options = {}) {
         },
     };
     const window = {
+        fetch: options.fetch,
         get localStorage() {
             if (options.storageFails) {
                 throw new Error('Storage unavailable');
@@ -102,13 +111,20 @@ function createPage(options = {}) {
 
     const context = vm.createContext({
         window,
+        URLSearchParams,
         get localStorage() {
             return window.localStorage;
         },
         document: {
             documentElement: root,
             querySelector(selector) {
-                return selector === '.theme-toggle' ? toggle : system;
+                return {
+                    '.theme-toggle': toggle,
+                    '.theme-system': system,
+                    '.theme-save-status': saveStatus,
+                    'meta[name="csrf-token"]': csrfMeta,
+                    '#profile-theme': profileTheme,
+                }[selector] ?? null;
             },
         },
     });
@@ -129,6 +145,8 @@ function createPage(options = {}) {
         storage,
         localStorage,
         bootstrapTheme,
+        saveStatus,
+        profileTheme,
         changeSystem(dark) {
             query.matches = dark;
             queryListeners.get('change')?.({ matches: dark });
@@ -333,4 +351,95 @@ test('a failing matchMedia still allows manual selection and returning to the de
     page.system.click();
     assert.equal(page.root.dataset.theme, 'light');
     assert.equal(page.storage.has('theme'), false);
+});
+
+test('account themes override anonymous storage and ignore its cross-tab events', () => {
+    for (const [accountTheme, dark, expected] of [
+        ['dark', false, 'dark'], ['light', true, 'light'], ['system', true, 'dark'],
+    ]) {
+        const page = createPage({ accountTheme, dark, saved: expected === 'dark' ? 'light' : 'dark', bootstrap: true });
+        assert.equal(page.bootstrapTheme, expected);
+        assert.equal(page.root.dataset.theme, expected);
+        page.storageEvent('theme', expected === 'dark' ? 'light' : 'dark');
+        page.storageEvent(null, null);
+        assert.equal(page.root.dataset.theme, expected);
+    }
+});
+
+test('account changes send CSRF, prevent overlapping writes and preserve anonymous storage', async () => {
+    let finish;
+    const requests = [];
+    const page = createPage({
+        accountTheme: 'light', saved: 'light',
+        fetch: (url, options) => {
+            requests.push({ url, options });
+            return new Promise((resolve) => { finish = resolve; });
+        },
+    });
+    const pending = page.toggle.click();
+    assert.equal(page.root.dataset.theme, 'dark');
+    assert.equal(page.toggle.disabled, true);
+    assert.equal(page.system.disabled, true);
+    page.toggle.click();
+    page.system.click();
+    assert.equal(requests.length, 1);
+    const { url, options } = requests[0];
+    assert.equal(url, '/profile/theme');
+    assert.equal(options.method, 'POST');
+    assert.equal(options.credentials, 'same-origin');
+    assert.equal(options.redirect, 'error');
+    assert.match(options.headers['Content-Type'], /application\/x-www-form-urlencoded/);
+    assert.equal(options.body.get('csrfToken'), 'test-csrf-token');
+    assert.equal(options.body.get('theme'), 'dark');
+    finish({ ok: true, json: async () => ({ theme: 'dark' }) });
+    await pending;
+    assert.equal(page.root.dataset.accountTheme, 'dark');
+    assert.equal(page.toggle.disabled, false);
+    assert.equal(page.storage.get('theme'), 'light');
+    assert.equal(page.saveStatus.hidden, true);
+});
+
+test('account reset persists system preference and resumes following the system', async () => {
+    const page = createPage({
+        accountTheme: 'dark', dark: false, saved: 'dark',
+        fetch: async (url, options) => {
+            assert.equal(options.body.get('theme'), 'system');
+            return { ok: true, json: async () => ({ theme: 'system' }) };
+        },
+    });
+    await page.system.click();
+    assert.equal(page.root.dataset.accountTheme, 'system');
+    assert.equal(page.root.dataset.theme, 'light');
+    assert.equal(page.system.disabled, true);
+    page.changeSystem(true);
+    assert.equal(page.root.dataset.theme, 'dark');
+    assert.equal(page.storage.get('theme'), 'dark');
+});
+
+test('failed account saves roll back the theme and expose an accessible retry message', async () => {
+    for (const fetch of [
+        async () => { throw new Error('Network unavailable'); },
+        async () => ({ ok: false }),
+        async () => ({ ok: true, json: async () => ({ theme: 'system' }) }),
+    ]) {
+        const page = createPage({ accountTheme: 'dark', saved: 'light', fetch });
+        await page.toggle.click();
+        assert.equal(page.root.dataset.theme, 'dark');
+        assert.equal(page.root.dataset.accountTheme, 'dark');
+        assert.equal(page.toggle.disabled, false);
+        assert.equal(page.saveStatus.hidden, false);
+        assert.match(page.saveStatus.textContent, /Nie udało się zapisać motywu/);
+        assert.equal(page.storage.get('theme'), 'light');
+    }
+});
+
+test('a successful navbar change synchronizes the profile select while preserving an unsaved selection', async () => {
+    for (const [profileTheme, expected] of [['light', 'dark'], ['system', 'system']]) {
+        const page = createPage({
+            accountTheme: 'light', profileTheme,
+            fetch: async () => ({ ok: true, json: async () => ({ theme: 'dark' }) }),
+        });
+        await page.toggle.click();
+        assert.equal(page.profileTheme.value, expected);
+    }
 });

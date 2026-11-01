@@ -2,6 +2,9 @@
 
 <header class="projects-heading">
     <h1>Projekty</h1>
+    <?php if (($currentUserName ?? '') !== ''): ?>
+        <p>Witaj, <?= $escape($currentUserName) ?>!</p>
+    <?php endif; ?>
     <p>Sprawdź status, opis i szczegóły projektów.</p>
 </header>
 

@@ -48,6 +48,7 @@ final class AnimeController extends AppController
         $this->render('anime-details', [
             'pageTitle' => $animes[$id]['title'] . ' — AniVibe',
             'anime' => $animes[$id],
+            'animeId' => $id,
         ]);
     }
 }

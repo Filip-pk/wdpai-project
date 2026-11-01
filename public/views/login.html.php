@@ -47,9 +47,24 @@
             </header>
 
             <p id="login-info" class="auth-notice">
-                Podgląd formularza — logowanie dodamy
-                w kolejnym etapie.
+                Zaloguj się adresem e-mail i hasłem swojego konta.
             </p>
+
+            <?php if ($registered ?? false): ?>
+                <p class="auth-notice" role="status">
+                    Konto zostało utworzone. Możesz się zalogować.
+                </p>
+            <?php endif; ?>
+
+            <?php if (($errors ?? []) !== []): ?>
+                <div class="auth-notice" role="alert">
+                    <ul>
+                        <?php foreach ($errors as $error): ?>
+                            <li><?= $escape($error) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
             <form
                 action="/login"
@@ -57,23 +72,26 @@
                 class="auth-form"
                 aria-describedby="login-info"
             >
-                <fieldset class="auth-fields" disabled>
+                <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+
+                <fieldset class="auth-fields">
                     <legend class="auth-visually-hidden">
                         Dane logowania
                     </legend>
 
                     <div class="auth-field">
-                        <label for="login-identifier">
-                            E-mail lub nazwa użytkownika
+                        <label for="login-email">
+                            E-mail
                         </label>
 
                         <input
-                            id="login-identifier"
-                            name="identifier"
-                            type="text"
+                            id="login-email"
+                            name="email"
+                            type="email"
                             autocomplete="username"
-                            maxlength="254"
-                            placeholder="np. cyber_otaku"
+                            maxlength="255"
+                            value="<?= $escape($email ?? '') ?>"
+                            placeholder="np. otaku@example.com"
                             required
                         >
                     </div>
@@ -106,7 +124,6 @@
                     <button
                         type="submit"
                         class="auth-submit"
-                        disabled
                     >
                         <span aria-hidden="true">↗</span>
                         Zaloguj się
@@ -156,13 +173,12 @@
             <div class="auth-register">
                 <p>Nie masz jeszcze konta?</p>
 
-                <button
-                    type="button"
+                <a
+                    href="/register"
                     class="auth-text-button"
-                    disabled
                 >
                     Zarejestruj się
-                </button>
+                </a>
             </div>
 
             <a href="/dashboard" class="auth-demo-link">

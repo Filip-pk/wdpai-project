@@ -94,14 +94,13 @@
                 Zaloguj się
             </a>
 
-            <button
-                type="button"
+            <a
+                href="/register"
                 class="button button-secondary"
-                disabled
                 aria-describedby="registration-info"
             >
                 Zarejestruj się
-            </button>
+            </a>
 
             <a href="/anime" class="welcome-explore">
                 Odkryj bez logowania
@@ -110,7 +109,7 @@
         </nav>
 
         <p id="registration-info" class="helper-text">
-            Rejestracja będzie dostępna w kolejnym etapie.
+            Utwórz konto, aby uzyskać dostęp do projektów.
         </p>
     </section>
 

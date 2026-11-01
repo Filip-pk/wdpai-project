@@ -28,10 +28,11 @@ $isProjectsPage = $currentPath === '/projects'
 ?>
 
 <!doctype html>
-<html lang="pl">
+<html lang="pl"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>"<?php endif; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= $escape($csrfToken) ?>">
 
     <title><?= $escape($pageTitle) ?></title>
 
@@ -56,16 +57,19 @@ $isProjectsPage = $currentPath === '/projects'
             }
 
             const hasSavedTheme = savedTheme === 'light' || savedTheme === 'dark';
+            const accountTheme = document.documentElement.dataset.accountTheme;
+            const isAccount = Boolean(document.documentElement.dataset.accountId);
 
-            document.documentElement.dataset.theme = hasSavedTheme
-                ? savedTheme
-                : (systemPrefersDark ? 'dark' : 'light');
+            document.documentElement.dataset.theme = isAccount
+                ? (accountTheme === 'light' || accountTheme === 'dark'
+                    ? accountTheme : (systemPrefersDark ? 'dark' : 'light'))
+                : (hasSavedTheme ? savedTheme : (systemPrefersDark ? 'dark' : 'light'));
         })();
     </script>
 
     <link rel="stylesheet" href="<?= $assetUrl('/css/style.css') ?>">
 
-    <?php if ($currentPath === '/login'): ?>
+    <?php if (in_array($currentPath, ['/login', '/register'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
     <?php endif; ?>
 
@@ -74,6 +78,9 @@ $isProjectsPage = $currentPath === '/projects'
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
+    <?php if (in_array($currentPath, ['/profile', '/watchlist'], true)): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
+    <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">
     <a href="#main-content" class="skip-link">
@@ -131,13 +138,14 @@ $isProjectsPage = $currentPath === '/projects'
             <button class="theme-system" type="button" disabled>
                 Motyw systemowy
             </button>
+            <p class="theme-save-status" role="status" hidden></p>
         </div>
     </header>
 
     <aside class="prototype-notice" aria-label="Informacja o prototypie">
         <p>
             <strong>Wersja demonstracyjna.</strong>
-            Logowanie, zapis watchlisty i AI nie są jeszcze podłączone.
+            Konta, profile i watchlisty są zapisywane. Katalog anime i AI pozostają demonstracyjne.
         </p>
     </aside>
 

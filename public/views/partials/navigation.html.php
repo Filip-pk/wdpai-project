@@ -3,7 +3,6 @@
 $navigation = $isWelcome
     ? [
         '/anime' => 'Odkryj anime',
-        '/login' => 'Zaloguj się',
     ]
     : [
         '/dashboard' => 'Pulpit',
@@ -27,5 +26,28 @@ $navigation = $isWelcome
                 </a>
             </li>
         <?php endforeach; ?>
+        <?php if ($isLoggedIn ?? false): ?>
+            <li class="account-menu">
+                <a href="/profile" class="account-user" aria-label="<?= $escape('Profil: ' . $currentUserName) ?>">
+                    <span class="account-avatar" aria-hidden="true">✦</span>
+                    <span class="account-name"><?= $escape($currentUserName) ?></span>
+                </a>
+                <form method="post" action="/logout" class="account-logout">
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <button type="submit">Wyloguj</button>
+                </form>
+            </li>
+        <?php else: ?>
+            <li>
+                <a href="/login" <?= $currentPath === '/login' ? 'aria-current="page"' : '' ?>>
+                    Zaloguj się
+                </a>
+            </li>
+            <li>
+                <a href="/register" <?= $currentPath === '/register' ? 'aria-current="page"' : '' ?>>
+                    Zarejestruj się
+                </a>
+            </li>
+        <?php endif; ?>
     </ul>
 </nav>

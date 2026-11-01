@@ -17,7 +17,7 @@
         <dd><?= $escape($anime['episodes']) ?></dd>
     </dl>
 
-    <button type="button" disabled>
-        Dodaj do watchlisty
-    </button>
+    <a href="/anime/<?= $escape($animeId) ?>#anime-actions-title">
+        Szczegóły i watchlista
+    </a>
 </article>

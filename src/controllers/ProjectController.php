@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\ProjectRepository;
+use Closure;
 
 final class ProjectController extends AppController
 {
@@ -14,22 +15,24 @@ final class ProjectController extends AppController
         'completed' => 'Ukończony',
     ];
 
-    public function __construct(private readonly ProjectRepository $projectRepository)
+    public function __construct(private ProjectRepository|Closure $projectRepository)
     {
     }
 
     public function index(): void
     {
+        $this->requireLogin();
         $this->render('projects', [
             'pageTitle' => 'Projekty — AniVibe',
-            'projects' => $this->projectRepository->findAll(),
+            'projects' => $this->projects()->findAll(),
             'projectStatuses' => self::PROJECT_STATUSES,
         ]);
     }
 
     public function show(int $id): void
     {
-        $project = $id > 0 ? $this->projectRepository->find($id) : null;
+        $this->requireLogin();
+        $project = $id > 0 ? $this->projects()->find($id) : null;
 
         if ($project === null) {
             http_response_code(404);
@@ -45,5 +48,14 @@ final class ProjectController extends AppController
             'project' => $project,
             'projectStatuses' => self::PROJECT_STATUSES,
         ]);
+    }
+
+    private function projects(): ProjectRepository
+    {
+        if ($this->projectRepository instanceof Closure) {
+            $this->projectRepository = ($this->projectRepository)();
+        }
+
+        return $this->projectRepository;
     }
 }

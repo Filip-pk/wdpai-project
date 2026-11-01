@@ -40,9 +40,12 @@ W razie błędu zwraca kod `1` i ogólny komunikat, bez treści wyjątku sterown
 Żądania `GET` odczytują dane. Ponowne otwarcie strony lub odświeżenie nie
 uruchamia skryptu i nie dodaje kolejnych rekordów.
 
-Projekty służą do ćwiczenia trwałej warstwy danych. Katalog anime, logowanie
+Projekty służą do ćwiczenia trwałej warstwy danych. Katalog anime
 i AI pozostają w zakresie dotychczasowego prototypu AniVibe; statusy przykładów
 opisują rekordy ćwiczeniowe.
+
+Trasy `/projects` i `/projects/{id}` wymagają zalogowania zgodnie z
+[dokumentacją uwierzytelniania](authentication.md).
 
 ## Weryfikacja
 

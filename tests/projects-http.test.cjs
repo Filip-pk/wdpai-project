@@ -1,23 +1,53 @@
 const assert = require('node:assert/strict');
-const { createHash } = require('node:crypto');
+const { createHash, randomUUID } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 
 const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+let cookie = '';
 
-async function getPage(route, expectedStatus = 200) {
+async function request(route, fields) {
     const response = await fetch(new URL(route, baseUrl), {
+        method: fields === undefined ? 'GET' : 'POST',
+        headers: cookie ? { Cookie: cookie } : {},
+        body: fields === undefined ? undefined : new URLSearchParams(fields),
         cache: 'no-store',
+        redirect: 'manual',
         signal: AbortSignal.timeout(5000),
     });
+    for (const value of response.headers.getSetCookie()) {
+        if (value.startsWith('PHPSESSID=')) cookie = value.split(';', 1)[0];
+    }
     const html = await response.text();
-
-    assert.equal(response.status, expectedStatus, route);
     assert.doesNotMatch(html, /SQLSTATE|PDOException|Stack trace|Fatal error|Warning:/i, route);
 
-    return html;
+    return { status: response.status, headers: response.headers, html };
 }
+
+async function getPage(route, expectedStatus = 200) {
+    const page = await request(route);
+    assert.equal(page.status, expectedStatus, route);
+
+    return page.html;
+}
+
+test.before(async () => {
+    const html = await getPage('/register');
+    const token = html.match(/name="csrfToken"\s+value="([a-f0-9]{64})"/);
+    assert.ok(token, 'Registration has a CSRF token');
+    const email = `projects-${randomUUID()}@example.test`;
+    const password = 'Testowe-Projekty-2026!';
+    const registered = await request('/register', {
+        name: 'Tester projektów', email, password,
+        passwordConfirmation: password, csrfToken: token[1],
+    });
+    assert.equal(registered.status, 303);
+    assert.equal(registered.headers.get('location'), '/login?registered=1');
+    const loggedIn = await request('/login', { email, password, csrfToken: token[1] });
+    assert.equal(loggedIn.status, 303);
+    assert.equal(loggedIn.headers.get('location'), '/projects');
+});
 
 function projectsFrom(html) {
     return [...html.matchAll(/data-project-id="(\d+)"\s+data-project-status="([^"]+)"/g)]
@@ -72,12 +102,17 @@ test('invalid or missing project addresses return a safe 404', async () => {
 
 test('the existing AniVibe routes remain available', async () => {
     const routes = [
-        '/', '/login', '/dashboard', '/anime', '/anime/1', '/chat',
+        '/', '/dashboard', '/anime', '/anime/1', '/chat',
         '/chat/1', '/profile', '/watchlist', '/admin',
     ];
 
     for (const route of routes) {
         assert.ok((await getPage(route)).includes('AniVibe'));
+    }
+    for (const route of ['/login', '/register']) {
+        const page = await request(route);
+        assert.equal(page.status, 303);
+        assert.equal(page.headers.get('location'), '/');
     }
 });
 

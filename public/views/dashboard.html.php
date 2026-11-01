@@ -1,20 +1,12 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
 <header class="page-heading">
-    <h1>Hej, <?= $escape($user['name']) ?>!</h1>
-
-    <p>
-        Rola konta demonstracyjnego:
-        <?= $escape($user['role']) ?>
-    </p>
-
-    <p>
-        Przykładowe wykorzystanie AI:
-        <?= $escape($user['aiUsed']) ?>
-        /
-        <?= $escape($user['aiLimit']) ?>
-        zapytań.
-    </p>
+    <h1><?= $user === null ? 'Witaj w AniVibe!' : 'Hej, ' . $escape($user['name']) . '!' ?></h1>
+    <p>Odkrywaj anime i buduj własną kolekcję.</p>
+    <p>Rekomendacje i rozmowy AI są obecnie demonstracyjne; licznik zapytań nie jest jeszcze aktywny.</p>
+    <?php if ($user === null): ?>
+        <p><a href="/login">Zaloguj się</a>, aby zobaczyć swój profil i watchlistę.</p>
+    <?php endif; ?>
 </header>
 
 <section class="mood-panel" aria-labelledby="mood-title">

@@ -1,84 +1,84 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<h1><?= $watchlistOnly ? 'Ulubione anime' : 'Twój profil' ?></h1>
+<div class="profile-page">
+    <header class="profile-heading">
+        <p class="eyebrow">Twoje konto AniVibe</p>
+        <h1><?= $watchlistOnly ? 'Ulubione anime' : 'Twój profil' ?></h1>
+        <p><?= $watchlistOnly ? 'Twoje serie, statusy i postępy oglądania.' : 'Zarządzaj swoimi danymi i ustawieniami.' ?></p>
+    </header>
 
-<?php if (!$watchlistOnly): ?>
-    <section class="profile-summary" aria-labelledby="profile-title">
-        <h2 id="profile-title"><?= $escape($user['name']) ?></h2>
+    <?php if ($saved): ?>
+        <p class="profile-notice" data-kind="success" role="status">Profil i ustawienia zostały zapisane.</p>
+    <?php endif; ?>
+    <?php if ($errors !== []): ?>
+        <div class="profile-notice" data-kind="error" role="alert">
+            <ul><?php foreach ($errors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+        </div>
+    <?php endif; ?>
 
-        <p><?= $escape($user['email']) ?></p>
+    <?php if (!$watchlistOnly): ?>
+        <div class="profile-grid">
+            <section class="profile-summary" aria-labelledby="profile-title">
+                <div class="profile-avatar" aria-hidden="true">✦</div>
+                <div class="profile-identity">
+                    <h2 id="profile-title"><?= $escape($user['name']) ?></h2>
+                    <p class="profile-email"><?= $escape($user['email']) ?></p>
+                </div>
+                <p class="profile-interests"><?= $escape($user['interests'] === '' ? 'Dodaj zainteresowania, aby opowiedzieć o swoim anime klimacie.' : $user['interests']) ?></p>
+                <dl class="profile-stats">
+                    <div><dt>Tytuły na Twojej liście</dt><dd data-watchlist-count="<?= count($watchlist) ?>"><?= count($watchlist) ?></dd></div>
+                    <div><dt>Ukończone serie</dt><dd data-completed-count="<?= $escape($completedCount) ?>"><?= $escape($completedCount) ?></dd></div>
+                </dl>
+            </section>
 
-        <p>
-            Rola konta demonstracyjnego:
-            <?= $escape($user['role']) ?>
-        </p>
+            <section class="profile-editor" aria-labelledby="profile-edit-title">
+                <h2 id="profile-edit-title">Dane i ustawienia</h2>
+                <form action="/profile" method="post" class="profile-form">
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <div class="profile-field">
+                        <label for="profile-name">Nazwa użytkownika</label>
+                        <input id="profile-name" name="name" type="text" value="<?= $escape($form['name']) ?>" maxlength="120" autocomplete="nickname" required>
+                    </div>
+                    <div class="profile-field">
+                        <label for="profile-email">E-mail</label>
+                        <input id="profile-email" name="email" type="email" value="<?= $escape($form['email']) ?>" maxlength="255" autocomplete="email" required>
+                    </div>
+                    <div class="profile-field">
+                        <label for="profile-current-password">Aktualne hasło</label>
+                        <input id="profile-current-password" name="currentPassword" type="password" autocomplete="current-password" aria-describedby="profile-password-help">
+                        <p id="profile-password-help">Wymagane tylko przy zmianie adresu e-mail.</p>
+                    </div>
+                    <div class="profile-field">
+                        <label for="profile-interests">Zainteresowania</label>
+                        <textarea id="profile-interests" name="interests" rows="4" maxlength="1000" placeholder="Ulubione gatunki, serie i postacie…"><?= $escape($form['interests']) ?></textarea>
+                    </div>
+                    <div class="profile-field">
+                        <label for="profile-theme">Motyw aplikacji</label>
+                        <select id="profile-theme" name="theme">
+                            <?php foreach (['system' => 'Zgodny z systemem', 'light' => 'Jasny', 'dark' => 'Ciemny'] as $value => $label): ?>
+                                <option value="<?= $escape($value) ?>" <?= $form['theme'] === $value ? 'selected' : '' ?>><?= $escape($label) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p>Twój wybór zostanie zapisany na koncie.</p>
+                    </div>
+                    <div class="profile-actions"><button type="submit">Zapisz profil</button></div>
+                    <div class="profile-avatar-upload">
+                        <label for="profile-avatar">Awatar</label>
+                        <input id="profile-avatar" name="avatar" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="avatar-info" disabled>
+                        <p id="avatar-info">Przesyłanie własnego awatara nie jest jeszcze dostępne. Docelowo: PNG, JPEG lub WebP do 4 MB.</p>
+                    </div>
+                </form>
+            </section>
+        </div>
+    <?php endif; ?>
 
-        <p>Zainteresowania: cyberpunk, anime psychologiczne, mecha.</p>
+    <div class="profile-watchlist"><?php require __DIR__ . '/partials/watchlist.html.php'; ?></div>
 
-        <dl>
-            <dt>Tytuły na przykładowej liście</dt>
-            <dd><?= count($watchlist) ?></dd>
-
-            <dt>Ukończone serie na liście</dt>
-            <dd><?= $escape($completedCount) ?></dd>
-        </dl>
-    </section>
-
-    <section aria-labelledby="profile-edit-title">
-        <h2 id="profile-edit-title">Edytuj profil</h2>
-
-        <form
-            action="/profile"
-            method="post"
-            enctype="multipart/form-data"
-        >
-            <fieldset disabled>
-                <legend>Dane profilu</legend>
-
-                <label for="profile-name">Nazwa użytkownika</label>
-
-                <input
-                    id="profile-name"
-                    name="name"
-                    type="text"
-                    value="<?= $escape($user['name']) ?>"
-                    maxlength="50"
-                    autocomplete="nickname"
-                    required
-                >
-
-                <label for="profile-avatar">Awatar</label>
-
-                <input
-                    id="profile-avatar"
-                    name="avatar"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    aria-describedby="avatar-info"
-                >
-
-                <p id="avatar-info">
-                    Docelowo: PNG, JPEG lub WebP, maksymalnie 4 MB.
-                    Sprawdzanie pliku dodamy po stronie backendu.
-                </p>
-
-                <button type="submit">Zapisz profil</button>
-            </fieldset>
-        </form>
-    </section>
-<?php endif; ?>
-
-<?php require __DIR__ . '/partials/watchlist.html.php'; ?>
-
-<aside aria-labelledby="import-title">
-    <h2 id="import-title">Synchronizacja MyAnimeList</h2>
-
-    <p>
-        Opcjonalna funkcja z makiety.
-        Na tym etapie import nie jest dostępny.
-    </p>
-
-    <button type="button" disabled>Synchronizuj</button>
-</aside>
+    <aside class="profile-empty" aria-labelledby="import-title">
+        <h2 id="import-title">Synchronizacja MyAnimeList</h2>
+        <p>Opcjonalna funkcja z makiety. Na tym etapie import nie jest dostępny.</p>
+        <button type="button" disabled>Synchronizuj</button>
+    </aside>
+</div>
 
 <?php require __DIR__ . '/partials/footer.html.php'; ?>

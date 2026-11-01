@@ -40,9 +40,16 @@
     <section aria-labelledby="anime-actions-title">
         <h2 id="anime-actions-title">Twoja kolekcja i ocena</h2>
 
-        <button type="button" disabled>
-            Dodaj do watchlisty
-        </button>
+        <?php if ($isLoggedIn): ?>
+            <form action="/watchlist" method="post">
+                <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                <input type="hidden" name="animeId" value="<?= $escape($animeId) ?>">
+                <input type="hidden" name="mode" value="add">
+                <button type="submit">Dodaj do watchlisty</button>
+            </form>
+        <?php else: ?>
+            <p><a href="/login">Zaloguj się</a>, aby dodać anime do swojej watchlisty.</p>
+        <?php endif; ?>
 
         <form action="/anime/review" method="post">
             <fieldset disabled>

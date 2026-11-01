@@ -84,6 +84,19 @@
     margin: 0;
 }
 
+.auth-page[aria-labelledby="register-title"] {
+    max-width: 38rem;
+}
+
+.auth-page > .auth-panel {
+    border: 1px solid var(--auth-border);
+    border-top: 3px solid var(--auth-accent);
+    border-radius: var(--auth-radius);
+
+    background-color: var(--auth-background);
+    box-shadow: var(--auth-shadow);
+}
+
 
 /* ========================================
    3. Ilustracja i jej podpis
@@ -215,7 +228,7 @@
 .auth-page .auth-notice {
     padding: 0.75rem 0.9rem;
 
-    border: 1px dashed var(--auth-border);
+    border: 1px solid var(--auth-border);
     border-radius: var(--auth-field-radius);
 
     color: var(--auth-muted);
@@ -229,6 +242,23 @@
 /* ========================================
    5. Pola formularza
    ======================================== */
+
+.auth-page .auth-notice[role="alert"] {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.auth-page .auth-notice[role="status"] {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.auth-page .auth-notice ul {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding-inline-start: 1.1rem;
+}
 
 .auth-page .auth-form {
     margin: 0;
@@ -249,6 +279,14 @@
     display: grid;
     gap: 0.5rem;
     min-width: 0;
+}
+
+.auth-page .auth-fields > legend:not(.auth-visually-hidden) {
+    margin-bottom: var(--auth-gap);
+    padding: 0;
+    color: var(--auth-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
 }
 
 .auth-page .auth-field label {
@@ -312,6 +350,9 @@
 }
 
 .auth-page .auth-text-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 2.75rem;
     padding: 0.5rem 0.25rem;
 
@@ -324,6 +365,13 @@
     font-size: 0.85rem;
     font-weight: 700;
     line-height: 1.5;
+    text-decoration: none;
+}
+
+.auth-page a.auth-text-button:hover {
+    color: var(--auth-text);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
 }
 
 .auth-page .auth-text-button:disabled {
@@ -365,6 +413,16 @@
 .auth-page .auth-submit:disabled {
     border: 1px dashed var(--auth-button-text);
     cursor: not-allowed;
+}
+
+.auth-page .auth-submit:enabled {
+    box-shadow: var(--shadow-accent);
+    transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.auth-page .auth-submit:enabled:hover {
+    box-shadow: var(--shadow-accent-hover);
+    transform: translateY(-1px);
 }
 
 .auth-page .auth-submit span {
@@ -441,6 +499,24 @@
     color: var(--auth-muted);
     font-size: 0.75rem;
     text-align: center;
+}
+
+.auth-page .auth-field .auth-help {
+    text-align: left;
+}
+
+.auth-page > .auth-panel > p:last-child {
+    justify-self: center;
+    color: var(--auth-muted);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.auth-page > .auth-panel > p:last-child a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-weight: 700;
 }
 
 
@@ -604,7 +680,12 @@
 @media (prefers-reduced-motion: reduce) {
     .auth-page .auth-back,
     .auth-page .auth-field input,
+    .auth-page .auth-submit:enabled,
     .auth-page .auth-demo-link {
         transition: none;
+    }
+
+    .auth-page .auth-submit:enabled:hover {
+        transform: none;
     }
 }
