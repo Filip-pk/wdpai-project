@@ -12,6 +12,7 @@ use App\Controller\DefaultController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Database;
+use App\Repository\AnimeRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
@@ -37,6 +38,12 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Cache-Control: no-store');
 
 $routing = new Routing(static function (string $controllerClass): AppController {
+    if ($controllerClass === AnimeController::class) {
+        return new AnimeController(
+            static fn (): AnimeRepository => new AnimeRepository((new Database())->connect()),
+        );
+    }
+
     if ($controllerClass === ProfileController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -46,12 +53,14 @@ $routing = new Routing(static function (string $controllerClass): AppController 
         return new ProfileController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): WatchlistRepository => new WatchlistRepository($connect()),
+            static fn (): AnimeRepository => new AnimeRepository($connect()),
         );
     }
 
     if ($controllerClass === DashboardController::class) {
         return new DashboardController(
             static fn (): UserRepository => new UserRepository((new Database())->connect()),
+            static fn (): AnimeRepository => new AnimeRepository((new Database())->connect()),
         );
     }
 

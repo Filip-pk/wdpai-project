@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Data\DemoData;
+use App\Repository\AnimeRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Service\AvatarService;
@@ -22,6 +22,7 @@ final class ProfileController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private WatchlistRepository|Closure $watchlists,
+        private AnimeRepository|Closure $animes,
     ) {
     }
 
@@ -151,9 +152,9 @@ final class ProfileController extends AppController
             $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
         } else {
             $animeId = filter_var($this->postString('animeId'), FILTER_VALIDATE_INT);
-            $animes = DemoData::animes();
+            $anime = $animeId === false ? null : $this->animes()->findById($animeId);
 
-            if ($animeId === false || !isset($animes[$animeId])) {
+            if ($anime === null) {
                 $errors[] = 'Wybierz anime z katalogu.';
             } elseif ($remove) {
                 $this->watchlists()->removeForUser($user['id'], $animeId);
@@ -161,16 +162,19 @@ final class ProfileController extends AppController
                 $this->watchlists()->addForUser($user['id'], $animeId);
             } else {
                 $status = $this->postString('status');
-                $watched = filter_var($this->postString('watched'), FILTER_VALIDATE_INT);
+                $watched = filter_var($this->postString('watched'), FILTER_VALIDATE_INT, [
+                    'options' => ['min_range' => 0, 'max_range' => 2147483647],
+                ]);
+                $episodes = $anime['episodes'] !== null && $anime['episodes'] > 0 ? $anime['episodes'] : null;
 
                 if (!isset(self::STATUSES[$status])) {
                     $errors[] = 'Wybierz poprawny status oglądania.';
                 }
-                if ($watched === false || $watched < 0 || $watched > $animes[$animeId]['episodes']) {
+                if ($watched === false || $watched < 0 || ($episodes !== null && $watched > $episodes)) {
                     $errors[] = 'Liczba odcinków musi mieścić się w zakresie wybranej serii.';
                 }
                 if ($errors === []) {
-                    $watched = $status === 'completed' ? $animes[$animeId]['episodes'] : $watched;
+                    $watched = $status === 'completed' && $episodes !== null ? $episodes : $watched;
                     $watched = $status === 'planned' ? 0 : $watched;
                     $this->watchlists()->saveForUser($user['id'], $animeId, $status, $watched);
                 }
@@ -188,7 +192,7 @@ final class ProfileController extends AppController
     private function renderProfile(bool $watchlistOnly, array $user, array $errors = [], array $form = []): void
     {
         $watchlist = $this->watchlists()->findForUser($user['id']);
-        $animes = DemoData::animes();
+        $animes = $this->animes()->findByIds(array_column($watchlist, 'animeId'));
         $watchlist = array_values(array_filter(
             $watchlist, static fn (array $entry): bool => isset($animes[$entry['animeId']]),
         ));
@@ -223,6 +227,15 @@ final class ProfileController extends AppController
         }
 
         return $this->users;
+    }
+
+    private function animes(): AnimeRepository
+    {
+        if ($this->animes instanceof Closure) {
+            $this->animes = ($this->animes)();
+        }
+
+        return $this->animes;
     }
 
     private function watchlists(): WatchlistRepository

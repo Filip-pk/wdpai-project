@@ -4,5 +4,6 @@
 .DS_Store
 vendor/
 node_modules/
+storage/imports/
 docker/data/
 /vendor/

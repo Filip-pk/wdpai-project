@@ -1,43 +1,55 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<nav aria-label="Powrót do katalogu">
-    <a href="/anime">Wróć do katalogu</a>
+<nav class="catalog-back" aria-label="Powrót do katalogu">
+    <a href="/anime">← Wróć do katalogu</a>
 </nav>
 
 <article class="anime-details">
-    <header>
-        <h1><?= $escape($anime['title']) ?></h1>
-
-        <p>
-            <?= $escape(implode(' · ', $anime['genres'])) ?>
-        </p>
+    <header class="anime-details-heading">
+        <div class="anime-cover anime-detail-cover" aria-hidden="true">
+            <span class="anime-cover-placeholder"><span>✦</span><span>Brak okładki</span></span>
+            <?php if (!empty($anime['coverUrl'])): ?>
+                <img data-anime-cover src="<?= $escape($anime['coverUrl']) ?>" alt="" width="300" height="450" decoding="async" referrerpolicy="no-referrer">
+            <?php endif; ?>
+        </div>
+        <div class="anime-details-identity">
+            <p class="eyebrow"><?= $escape(($anime['type'] ?? '') === '' ? 'Poznaj serię' : $anime['type']) ?></p>
+            <h1><?= $escape($anime['title']) ?></h1>
+            <ul class="anime-genres" aria-label="Gatunki">
+                <?php foreach ($anime['genres'] as $genreName): ?>
+                    <li><?= $escape($genreName) ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <p>Znajdź informacje o serii i dodaj ją do swojej kolekcji.</p>
+        </div>
     </header>
 
-    <section aria-labelledby="synopsis-title">
-        <h2 id="synopsis-title">Opis fabuły</h2>
-
-        <p><?= $escape($anime['description']) ?></p>
+    <section class="anime-details-section" aria-labelledby="synopsis-title">
+        <div class="anime-section-heading">
+            <h2 id="synopsis-title">Opis fabuły</h2>
+            <?php if (($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== ''): ?>
+                <span class="anime-language">Opis w języku angielskim</span>
+            <?php endif; ?>
+        </div>
+        <p class="anime-synopsis"<?= ($anime['descriptionLanguage'] ?? '') === 'en' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
     </section>
 
-    <section aria-labelledby="anime-facts-title">
+    <section class="anime-details-section" aria-labelledby="anime-facts-title">
         <h2 id="anime-facts-title">Informacje o serii</h2>
 
-        <dl>
-            <dt>Studio</dt>
-            <dd><?= $escape($anime['studio']) ?></dd>
-
-            <dt>Rok premiery</dt>
-            <dd><?= $escape($anime['year']) ?></dd>
-
-            <dt>Liczba odcinków</dt>
-            <dd><?= $escape($anime['episodes']) ?></dd>
-
-            <dt>Ocena demonstracyjna</dt>
-            <dd><?= $escape($anime['score']) ?> / 10</dd>
+        <dl class="anime-detail-facts">
+            <div><dt>Studio</dt><dd><?= $escape($anime['studio'] === '' ? 'Nieznane' : $anime['studio']) ?></dd></div>
+            <div><dt>Rok premiery</dt><dd><?= isset($anime['year']) ? $escape($anime['year']) : 'Nieznany' ?></dd></div>
+            <div><dt>Liczba odcinków</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznana' ?></dd></div>
+            <div><dt>Ocena MAL</dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
         </dl>
+        <?php if (!empty($anime['sourceUrl']) && str_starts_with($anime['sourceUrl'], 'https://')): ?>
+            <p class="anime-source">Dane o anime: <a href="<?= $escape($anime['sourceUrl']) ?>" rel="external noreferrer">MyAnimeList</a>.
+                Próbka katalogu: <a href="https://huggingface.co/datasets/TheRealVigilante/Processed_Top_15k_Anime" rel="external noreferrer">Processed Top 15k Anime</a> — TheRealVigilante, na podstawie zbioru Quan Than.</p>
+        <?php endif; ?>
     </section>
 
-    <section aria-labelledby="anime-actions-title">
+    <section class="anime-details-section" aria-labelledby="anime-actions-title">
         <h2 id="anime-actions-title">Twoja kolekcja i ocena</h2>
 
         <?php if ($isLoggedIn): ?>
@@ -76,7 +88,7 @@
         <a href="/chat">Przejdź do asystenta AI</a>
     </section>
 
-    <section aria-labelledby="trailer-title">
+    <section class="anime-details-section" aria-labelledby="trailer-title">
         <h2 id="trailer-title">Podgląd serii</h2>
 
         <p>Zwiastun zostanie dodany w kolejnym etapie.</p>

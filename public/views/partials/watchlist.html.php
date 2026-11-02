@@ -38,10 +38,11 @@
                     Obejrzane:
                     <?= $escape($entry['watched']) ?>
                     /
-                    <?= $escape($anime['episodes']) ?>
+                    <?= $anime['episodes'] !== null && $anime['episodes'] > 0 ? $escape($anime['episodes']) : '?' ?>
                     odcinków
                 </label>
 
+                <?php if ($anime['episodes'] !== null && $anime['episodes'] > 0): ?>
                 <progress
                     id="progress-<?= $escape($animeId) ?>"
                     value="<?= $escape($entry['watched']) ?>"
@@ -49,6 +50,7 @@
                 >
                     <?= $escape($entry['watched']) ?> odcinków
                 </progress>
+                <?php endif; ?>
                 <form action="/watchlist" method="post" class="watchlist-edit">
                     <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                     <input type="hidden" name="animeId" value="<?= $escape($animeId) ?>">
@@ -59,7 +61,7 @@
                         <?php endforeach; ?>
                     </select>
                     <label for="entry-watched-<?= $escape($animeId) ?>">Obejrzane odcinki</label>
-                    <input id="entry-watched-<?= $escape($animeId) ?>" name="watched" type="number" min="0" max="<?= $escape($anime['episodes']) ?>" value="<?= $escape($entry['watched']) ?>" required>
+                    <input id="entry-watched-<?= $escape($animeId) ?>" name="watched" type="number" min="0" max="<?= $escape($anime['episodes'] !== null && $anime['episodes'] > 0 ? $anime['episodes'] : 2147483647) ?>" value="<?= $escape($entry['watched']) ?>" required>
                     <button type="submit">Zapisz postęp</button>
                 </form>
                 <form action="/watchlist/remove" method="post" class="watchlist-remove">
