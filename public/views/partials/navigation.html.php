@@ -20,7 +20,10 @@ $navigation = $isWelcome
             <li>
                 <a
                     href="<?= $escape($url) ?>"
-                    <?= $currentPath === $url || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/')) ? 'aria-current="page"' : '' ?>
+                    <?= $currentPath === $url
+                        || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
+                        || ($url === '/profile' && $currentPath === '/profile/avatar')
+                        ? 'aria-current="page"' : '' ?>
                 >
                     <?= $escape($label) ?>
                 </a>
@@ -29,7 +32,13 @@ $navigation = $isWelcome
         <?php if ($isLoggedIn ?? false): ?>
             <li class="account-menu">
                 <a href="/profile" class="account-user" aria-label="<?= $escape('Profil: ' . $currentUserName) ?>">
-                    <span class="account-avatar" aria-hidden="true">✦</span>
+                    <span class="account-avatar" aria-hidden="true">
+                        <?php if (!empty($currentUserAvatarUrl)): ?>
+                            <img src="<?= $escape($currentUserAvatarUrl) ?>" alt="" width="32" height="32" decoding="async">
+                        <?php else: ?>
+                            ✦
+                        <?php endif; ?>
+                    </span>
                     <span class="account-name"><?= $escape($currentUserName) ?></span>
                 </a>
                 <form method="post" action="/logout" class="account-logout">

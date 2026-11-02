@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TABLE public.users
+    ADD COLUMN IF NOT EXISTS avatar_data BYTEA NULL,
+    ADD COLUMN IF NOT EXISTS avatar_version VARCHAR(32) NULL;
+
+COMMIT;

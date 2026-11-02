@@ -12,6 +12,18 @@ do kodu ani do tej dokumentacji.
 Usługa `db` ma kontrolę gotowości przez `pg_isready`. PHP jest uruchamiane
 po uzyskaniu przez bazę stanu `healthy`.
 
+## Schemat aplikacji
+
+Przy pierwszym uruchomieniu pustego wolumenu PostgreSQL wykonuje skrypty
+z katalogu `database`, zamontowanego w `/docker-entrypoint-initdb.d` tylko
+do odczytu. Kolejność `01` → `02` → `03` tworzy projekty, konta i watchlisty.
+
+Istniejący wolumen nie jest ponownie inicjalizowany. Jeśli połączenie działa,
+ale brakuje tabel, zastosuj brakujące skrypty według
+[instrukcji przygotowania bazy](authentication.md#przygotowanie-bazy).
+`pg_isready` i `scripts/check-postgres.php` sprawdzają dostępność połączenia,
+nie kompletność schematu aplikacji.
+
 ## Sprawdzenie środowiska
 
 Polecenia uruchom z katalogu projektu w Windows CMD:

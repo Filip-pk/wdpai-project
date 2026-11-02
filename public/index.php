@@ -89,6 +89,8 @@ $routing->get('/chat/{id}', ChatController::class, 'show');
 
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->post('/profile', ProfileController::class, 'index');
+$routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');
+$routing->get('/avatars/{id}', ProfileController::class, 'avatar');
 $routing->post('/profile/theme', ProfileController::class, 'theme');
 $routing->get('/watchlist', ProfileController::class, 'watchlist');
 $routing->post('/watchlist', ProfileController::class, 'saveWatchlist');

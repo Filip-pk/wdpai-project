@@ -78,7 +78,7 @@ $isProjectsPage = $currentPath === '/projects'
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
-    <?php if (in_array($currentPath, ['/profile', '/watchlist'], true)): ?>
+    <?php if (in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
     <?php endif; ?>
 </head>

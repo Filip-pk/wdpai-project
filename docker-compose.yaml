@@ -30,7 +30,7 @@ services:
     networks:
       - pg-network
     volumes:
-      - ./docker/db:/docker-entrypoint-initdb.d
+      - ./database:/docker-entrypoint-initdb.d:ro
   
   php:
     build:

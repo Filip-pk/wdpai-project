@@ -50,6 +50,7 @@ final class AuthController extends AppController
                         'user_email' => (string) $user['email'],
                         'user_name' => (string) $user['name'],
                         'user_theme' => (string) $user['theme'],
+                        'user_avatar_url' => $user['avatar_url'],
                         'logged_in_at' => time(),
                     ];
                     $this->csrfToken();

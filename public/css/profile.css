@@ -55,6 +55,7 @@
     place-items: center;
     width: 4.5rem;
     height: 4.5rem;
+    overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-medium);
 
@@ -63,6 +64,13 @@
     font-size: 1.8rem;
     font-weight: 800;
     line-height: 1;
+}
+
+.profile-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .profile-identity h2 {
@@ -163,15 +171,41 @@
 .profile-avatar-upload {
     display: grid;
     gap: var(--space-3);
+    min-width: 0;
+    margin: 0;
     padding: var(--space-4);
     border: 1px dashed var(--color-border);
     border-radius: var(--radius-small);
     background-color: var(--color-surface-raised);
 }
 
-.profile-avatar-upload :disabled {
-    color: var(--color-muted);
-    cursor: not-allowed;
+.profile-avatar-upload label {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.profile-avatar-upload input[type="file"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    background-color: var(--color-input-background);
+    font-size: 0.8rem;
+}
+
+.profile-avatar-upload input[type="file"]::file-selector-button {
+    min-height: 2.5rem;
+    margin-inline-end: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    font: inherit;
+    cursor: pointer;
+}
+
+.profile-avatar-upload input[type="file"]::file-selector-button:hover {
+    border-color: var(--color-brand);
 }
 
 .profile-actions {

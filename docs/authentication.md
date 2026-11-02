@@ -6,15 +6,36 @@ aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 
 ## Przygotowanie bazy
 
-W działającym środowisku, z katalogu projektu w Windows CMD, wykonaj raz:
+Nowa, pusta baza otrzymuje schemat automatycznie przy pierwszym uruchomieniu
+PostgreSQL. Docker Compose montuje katalog `database` jako
+`/docker-entrypoint-initdb.d` tylko do odczytu; PostgreSQL wykonuje skrypty
+`01`, `02`, `03` i `04` w kolejności nazw.
+
+Jeśli baza była już uruchomiona, ale nie ma jeszcze tabel aplikacji,
+z katalogu projektu w Windows CMD wykonaj raz wszystkie cztery skrypty:
 
 ```cmd
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\01-create-projects.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\02-create-users.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\03-user-profiles.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\04-user-avatars.sql
 ```
 
-Skrypt tworzy `users` oraz unikalny indeks `LOWER(email)`. Nie uruchamiaj go
-ponownie na istniejącej tabeli. Projekty wymagają również wcześniejszego
-skryptu `database\01-create-projects.sql`, jeśli baza jest pusta.
+Skrypty tworzą projekty, konta, pola profilu, watchlisty i zdjęcia. Nie uruchamiaj
+ponownie skryptów już zastosowanych do istniejącej bazy. Jeśli są w niej
+tabele `users` i `projects`, ale brakuje pól profilu, wykonaj tylko skrypt
+`03`, a następnie migrację zdjęć `04`, zgodnie z
+[dokumentacją profili](user-profiles.md).
+
+Rejestracja i logowanie wymagają również kolumn `interests` i `theme`
+z trzeciego skryptu oraz `avatar_version` z czwartego. Samo działające
+połączenie z PostgreSQL lub status
+`healthy` nie oznaczają, że schemat aplikacji został utworzony. Brak tabeli
+`users` powoduje błąd `42P01` przy poprawnie wypełnionej rejestracji.
+
+Zmiana katalogu inicjalizacji ani restart nie wykonują skryptów na już
+zainicjalizowanej bazie. Brakujące migracje zastosuj powyższymi poleceniami,
+zachowując obecny wolumen danych.
 
 ## Przepływ
 

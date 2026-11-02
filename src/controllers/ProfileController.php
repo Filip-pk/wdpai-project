@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Data\DemoData;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
+use App\Service\AvatarService;
 use App\Service\ProfileService;
 use Closure;
 
@@ -80,6 +81,47 @@ final class ProfileController extends AppController
         $this->users()->updateTheme($user['id'], $theme);
         $_SESSION['user_theme'] = $theme;
         echo json_encode(['theme' => $theme]);
+    }
+
+    public function uploadAvatar(): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $errors = ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'];
+        } else {
+            $upload = is_array($_FILES['avatar'] ?? null) ? $_FILES['avatar'] : [];
+            $errors = (new AvatarService($this->users()))->upload($user['id'], $upload);
+
+            if ($errors === []) {
+                $this->currentUser($this->users());
+                $this->redirect('/profile?avatarSaved=1');
+            }
+
+            http_response_code(422);
+        }
+
+        $this->renderProfile(false, $user, $errors, $user);
+    }
+
+    public function avatar(int $id): void
+    {
+        $version = is_string($_GET['v'] ?? null) ? $_GET['v'] : '';
+        $contents = $id > 0 && preg_match('/\A[a-f0-9]{32}\z/', $version) === 1
+            ? $this->users()->findAvatar($id, $version)
+            : null;
+
+        if ($contents === null) {
+            http_response_code(404);
+            return;
+        }
+
+        header('Content-Type: image/png');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Length: ' . strlen($contents));
+        echo $contents;
     }
 
     public function watchlist(): void
@@ -160,6 +202,7 @@ final class ProfileController extends AppController
             'form' => $form,
             'errors' => $errors,
             'saved' => !$this->isPost() && ($_GET['saved'] ?? null) === '1',
+            'avatarSaved' => !$this->isPost() && ($_GET['avatarSaved'] ?? null) === '1',
             'animes' => $animes,
             'watchlist' => $watchlist,
             'statusFilter' => $statusFilter,

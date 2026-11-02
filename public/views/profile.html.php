@@ -10,6 +10,9 @@
     <?php if ($saved): ?>
         <p class="profile-notice" data-kind="success" role="status">Profil i ustawienia zostały zapisane.</p>
     <?php endif; ?>
+    <?php if ($avatarSaved ?? false): ?>
+        <p class="profile-notice" data-kind="success" role="status">Zdjęcie profilowe zostało zapisane.</p>
+    <?php endif; ?>
     <?php if ($errors !== []): ?>
         <div class="profile-notice" data-kind="error" role="alert">
             <ul><?php foreach ($errors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
@@ -19,7 +22,13 @@
     <?php if (!$watchlistOnly): ?>
         <div class="profile-grid">
             <section class="profile-summary" aria-labelledby="profile-title">
-                <div class="profile-avatar" aria-hidden="true">✦</div>
+                <div class="profile-avatar" aria-hidden="true">
+                    <?php if (!empty($user['avatar_url'])): ?>
+                        <img src="<?= $escape($user['avatar_url']) ?>" alt="" width="72" height="72" decoding="async">
+                    <?php else: ?>
+                        ✦
+                    <?php endif; ?>
+                </div>
                 <div class="profile-identity">
                     <h2 id="profile-title"><?= $escape($user['name']) ?></h2>
                     <p class="profile-email"><?= $escape($user['email']) ?></p>
@@ -62,11 +71,14 @@
                         <p>Twój wybór zostanie zapisany na koncie.</p>
                     </div>
                     <div class="profile-actions"><button type="submit">Zapisz profil</button></div>
-                    <div class="profile-avatar-upload">
-                        <label for="profile-avatar">Awatar</label>
-                        <input id="profile-avatar" name="avatar" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="avatar-info" disabled>
-                        <p id="avatar-info">Przesyłanie własnego awatara nie jest jeszcze dostępne. Docelowo: PNG, JPEG lub WebP do 4 MB.</p>
-                    </div>
+                </form>
+                <form action="/profile/avatar" method="post" enctype="multipart/form-data" class="profile-avatar-upload" aria-labelledby="profile-avatar-title">
+                    <h3 id="profile-avatar-title">Zdjęcie profilowe</h3>
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <label for="profile-avatar">Wybierz zdjęcie</label>
+                    <input id="profile-avatar" name="avatar" type="file" accept="image/png,image/jpeg" aria-describedby="avatar-info" required>
+                    <p id="avatar-info">JPEG lub PNG, do 4 MB. Zdjęcie będzie widoczne w Twoim profilu i przy nazwie konta.</p>
+                    <div class="profile-actions"><button type="submit">Zapisz zdjęcie</button></div>
                 </form>
             </section>
         </div>

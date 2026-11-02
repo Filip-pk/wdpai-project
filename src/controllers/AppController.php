@@ -21,6 +21,7 @@ abstract class AppController
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_theme'] = $user['theme'];
+        $_SESSION['user_avatar_url'] = $user['avatar_url'];
 
         return $user;
     }
@@ -74,6 +75,7 @@ abstract class AppController
 
         $isLoggedIn = is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0;
         $currentUserName = $isLoggedIn ? (string) ($_SESSION['user_name'] ?? '') : '';
+        $currentUserAvatarUrl = $isLoggedIn ? ($_SESSION['user_avatar_url'] ?? null) : null;
         $accountId = $isLoggedIn ? $_SESSION['user_id'] : null;
         $accountTheme = $isLoggedIn ? ($_SESSION['user_theme'] ?? 'system') : null;
         $csrfToken = $this->csrfToken();

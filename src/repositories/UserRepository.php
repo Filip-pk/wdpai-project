@@ -12,11 +12,11 @@ final class UserRepository
     {
     }
 
-    /** @return array{id: int, name: string, email: string, password_hash: string, interests: string, theme: string}|null */
+    /** @return array{id: int, name: string, email: string, password_hash: string, interests: string, theme: string, avatar_url: ?string}|null */
     public function findByEmail(string $email): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT id, name, email, password_hash, interests, theme
+            'SELECT id, name, email, password_hash, interests, theme, avatar_version
              FROM users
              WHERE LOWER(email) = LOWER(:email)'
         );
@@ -34,13 +34,14 @@ final class UserRepository
             'password_hash' => (string) $user['password_hash'],
             'interests' => (string) $user['interests'],
             'theme' => (string) $user['theme'],
+            'avatar_url' => $this->avatarUrl($user),
         ];
     }
 
     public function findById(int $id): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT id, name, email, interests, theme, created_at FROM users WHERE id = :id'
+            'SELECT id, name, email, interests, theme, created_at, avatar_version FROM users WHERE id = :id'
         );
         $statement->execute(['id' => $id]);
         $user = $statement->fetch(PDO::FETCH_ASSOC);
@@ -50,8 +51,43 @@ final class UserRepository
         }
 
         $user['id'] = (int) $user['id'];
+        $user['avatar_url'] = $this->avatarUrl($user);
 
         return $user;
+    }
+
+    public function updateAvatar(int $userId, string $contents, string $version): void
+    {
+        $statement = $this->database->prepare(
+            'UPDATE users SET avatar_data = :contents, avatar_version = :version WHERE id = :id'
+        );
+        $statement->bindValue('contents', $contents, PDO::PARAM_LOB);
+        $statement->bindValue('version', $version);
+        $statement->bindValue('id', $userId, PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    public function findAvatar(int $userId, string $version): ?string
+    {
+        $statement = $this->database->prepare(
+            'SELECT avatar_data FROM users WHERE id = :id AND avatar_version = :version'
+        );
+        $statement->execute(['id' => $userId, 'version' => $version]);
+        $contents = $statement->fetchColumn();
+
+        if (is_resource($contents)) {
+            $contents = stream_get_contents($contents);
+        }
+
+        return is_string($contents) && $contents !== '' ? $contents : null;
+    }
+
+    private function avatarUrl(array $user): ?string
+    {
+        return is_string($user['avatar_version'])
+            && preg_match('/\A[a-f0-9]{32}\z/', $user['avatar_version']) === 1
+            ? '/avatars/' . (int) $user['id'] . '?v=' . $user['avatar_version']
+            : null;
     }
 
     public function updateProfile(int $userId, string $name, string $email, string $interests, string $theme): void
