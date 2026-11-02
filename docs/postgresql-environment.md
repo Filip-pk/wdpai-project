@@ -16,9 +16,9 @@ po uzyskaniu przez bazę stanu `healthy`.
 
 Przy pierwszym uruchomieniu pustego wolumenu PostgreSQL wykonuje skrypty
 z katalogu `database`, zamontowanego w `/docker-entrypoint-initdb.d` tylko
-do odczytu. Kolejność `01` → `02` → `03` → `04` → `05` → `06` → `07`
+do odczytu. Kolejność `01` → `02` → `03` → `04` → `05` → `06` → `07` → `08`
 tworzy projekty, konta, watchlisty, zdjęcia, katalog anime, mapowania jego
-źródeł oraz indeks wyszukiwania.
+źródeł oraz indeksy wyszukiwania i sortowania według oceny.
 
 Istniejący wolumen nie jest ponownie inicjalizowany. Jeśli połączenie działa,
 ale brakuje tabel, zastosuj brakujące skrypty według

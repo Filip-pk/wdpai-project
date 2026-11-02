@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\AnimeSearchCriteria;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
@@ -84,8 +85,17 @@ final class AnimeRepository
     }
 
     /** @return array{animes: array<int, array>, total: int, page: int, totalPages: int} */
-    public function search(string $query = '', ?int $genreId = null, int $page = 1, int $perPage = 20): array
-    {
+    public function search(
+        string $query = '',
+        ?int $genreId = null,
+        int $page = 1,
+        int $perPage = 20,
+        array $filters = [],
+        string $sort = AnimeSearchCriteria::DEFAULT_SORT,
+    ): array {
+        if (!array_key_exists($sort, AnimeSearchCriteria::SORT_OPTIONS)) {
+            throw new InvalidArgumentException('Nieprawidłowy sposób sortowania.');
+        }
         $conditions = [];
         $parameters = [];
 
@@ -107,6 +117,44 @@ final class AnimeRepository
             $parameters['genre_id'] = $genreId;
         }
 
+        $ranges = [
+            'episodes' => ['a.episodes', 1, 2147483647],
+            'score' => ['a.score', 0, 10],
+            'year' => ['a.release_year', 1900, 2200],
+        ];
+        foreach ($ranges as $name => [$column, $minimum, $maximum]) {
+            $lower = $filters[$name . 'Min'] ?? null;
+            $upper = $filters[$name . 'Max'] ?? null;
+            foreach (['Min' => $lower, 'Max' => $upper] as $bound => $value) {
+                if ($value === null) {
+                    continue;
+                }
+                $numeric = is_int($value) || ($name === 'score' && is_float($value) && is_finite($value));
+                if (!$numeric || $value < $minimum || $value > $maximum) {
+                    throw new InvalidArgumentException('Nieprawidłowy zakres: ' . $name . '.');
+                }
+                $parameter = $name . '_' . strtolower($bound);
+                $conditions[] = $column . ($bound === 'Min' ? ' >= :' : ' <= :') . $parameter;
+                $parameters[$parameter] = $value;
+            }
+            if ($lower !== null && $upper !== null && $lower > $upper) {
+                throw new InvalidArgumentException('Dolna granica zakresu przekracza górną.');
+            }
+            if ($name === 'episodes' && ($lower !== null || $upper !== null)) {
+                $conditions[] = 'a.episodes > 0';
+            }
+        }
+        $type = $filters['type'] ?? '';
+        if (!is_string($type) || !array_key_exists($type, AnimeSearchCriteria::TYPE_OPTIONS)) {
+            throw new InvalidArgumentException('Nieprawidłowy format anime.');
+        }
+        if ($type !== '') {
+            $conditions[] = "CASE UPPER(TRIM(a.media_type))
+                WHEN 'TV SPECIAL' THEN 'SPECIAL' WHEN '' THEN 'UNKNOWN'
+                ELSE UPPER(TRIM(a.media_type)) END = :media_type";
+            $parameters['media_type'] = $type;
+        }
+
         $where = $conditions === [] ? '' : ' WHERE ' . implode(' AND ', $conditions);
         $count = $this->database->prepare('SELECT COUNT(*) FROM anime a' . $where);
         $count->execute($parameters);
@@ -114,18 +162,29 @@ final class AnimeRepository
         $perPage = max(1, min(100, $perPage));
         $totalPages = max(1, (int) ceil($total / $perPage));
         $page = max(1, min($page, $totalPages));
-        $order = $query === '' ? '' : "CASE
-            WHEN LOWER(a.title) = LOWER(:exact_title) THEN 0
-            WHEN EXISTS (SELECT 1 FROM jsonb_array_elements_text(a.alternative_titles) AS exact_alias(title)
-                WHERE LOWER(exact_alias.title) = LOWER(:exact_alias)) THEN 1
-            ELSE 2 END, ";
+        $relevance = $sort === 'relevance' && $query !== '';
+        $order = match ($sort) {
+            'score_asc' => 'a.score ASC NULLS LAST, LOWER(a.title), a.id',
+            'title_asc' => 'LOWER(a.title), a.id',
+            'title_desc' => 'LOWER(a.title) DESC, a.id',
+            'episodes_asc' => 'NULLIF(a.episodes, 0) ASC NULLS LAST, LOWER(a.title), a.id',
+            'episodes_desc' => 'NULLIF(a.episodes, 0) DESC NULLS LAST, LOWER(a.title), a.id',
+            'year_asc' => 'a.release_year ASC NULLS LAST, LOWER(a.title), a.id',
+            'year_desc' => 'a.release_year DESC NULLS LAST, LOWER(a.title), a.id',
+            'relevance' => $relevance ? "CASE
+                WHEN LOWER(a.title) = LOWER(:exact_title) THEN 0
+                WHEN EXISTS (SELECT 1 FROM jsonb_array_elements_text(a.alternative_titles) AS exact_alias(title)
+                    WHERE LOWER(exact_alias.title) = LOWER(:exact_alias)) THEN 1
+                ELSE 2 END, LOWER(a.title), a.id" : 'a.score DESC NULLS LAST, LOWER(a.title), a.id',
+            default => 'a.score DESC NULLS LAST, LOWER(a.title), a.id',
+        };
         $statement = $this->database->prepare(
-            self::SELECT_ANIME . $where . ' ORDER BY ' . $order . 'LOWER(a.title), a.id LIMIT :limit OFFSET :offset'
+            self::SELECT_ANIME . $where . ' ORDER BY ' . $order . ' LIMIT :limit OFFSET :offset'
         );
         foreach ($parameters as $key => $value) {
             $statement->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
-        if ($query !== '') {
+        if ($relevance) {
             $statement->bindValue('exact_title', $query);
             $statement->bindValue('exact_alias', $query);
         }

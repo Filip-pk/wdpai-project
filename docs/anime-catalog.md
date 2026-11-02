@@ -26,13 +26,14 @@ z migracjami `01`–`04` uruchom raz z katalogu projektu w Windows CMD:
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\05-anime-catalog.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\06-anime-catalog-sources.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\07-anime-catalog-search.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\08-anime-catalog-sort.sql
 ```
 
 Migracja tworzy `anime`, `genres` i `anime_genres`, zachowuje identyfikatory
 sześciu dotychczasowych tytułów i wiąże watchlistę kluczem obcym z katalogiem.
 Nie zmienia wpisów użytkowników. Migracja `06` dodaje mapowania identyfikatorów
-pozostałych dostawców. Migracja `07` dodaje indeks wyszukiwania. Jeśli `05`
-jest już wykonana, zastosuj tylko brakujące `06` i `07`.
+pozostałych dostawców. Migracja `07` dodaje indeks wyszukiwania, a `08`
+indeks domyślnego sortowania według oceny. Zastosuj tylko brakujące migracje.
 Nie uruchamiaj ponownie wykonanych migracji.
 
 ## Pełny import
@@ -118,14 +119,29 @@ podczas otwierania strony ani wyszukiwania.
 
 - Tytuł jest wyszukiwany również w nazwach alternatywnych, bez rozróżniania
   wielkości liter. Znaki `%` i `_` są zwykłą treścią zapytania.
-- Dokładny tytuł i dokładny alias mają pierwszeństwo przed dopasowaniami
-  częściowymi. Od trzech znaków wyszukiwanie korzysta z indeksu GIN
+- Domyślna kolejność to ocena malejąco (`sort=score_desc`), także po
+  odświeżeniu strony. Własne sortowanie pozostaje w adresie; wyczyszczenie
+  filtrów przywraca domyślne. Brak oceny zawsze trafia na koniec.
+- Można sortować oceną, tytułem, liczbą odcinków lub rokiem w obu kierunkach.
+  Remisy rozstrzygają tytuł i ID, co zapewnia stabilną paginację. Sortowanie
+  według trafności (`sort=relevance`) daje pierwszeństwo dokładnemu tytułowi,
+  następnie dokładnemu aliasowi; bez tytułu używa domyślnej kolejności.
+- Od trzech znaków wyszukiwanie korzysta z indeksu GIN
   `pg_trgm`, dostarczanego przez obecny obraz PostgreSQL. Krótsze zapytania
   zachowują działanie bez filtra indeksowego. Tekst indeksu jest obliczany
   automatycznie z tytułu i aliasów, również po kolejnych importach.
-- Gatunek i tytuł działają wspólnie. Gatunki źródłowe mają lokalne
+- Gatunek, tytuł, format i zakresy działają wspólnie. Przedziały odcinków
+  (`episodes_min`, `episodes_max`), oceny (`score_min`, `score_max`) i roku
+  (`year_min`, `year_max`) obejmują obie granice. Można podać tylko jedną
+  granicę. Brakujące dane są pomijane przy filtrowaniu danego zakresu;
+  zero odcinków oznacza nieznaną liczbę. Ocena ma skalę 0–10, rok 1900–2200.
+- Format (`type`) obsługuje `TV`, `MOVIE`, `OVA`, `ONA`, `SPECIAL`, `MUSIC`,
+  `CM`, `PV` i `UNKNOWN`; format źródłowy `TV Special` należy do `SPECIAL`.
+  Gatunki źródłowe mają lokalne
   etykiety; nazwy bez tłumaczenia zachowują oryginalną pisownię.
-- Jedna strona zawiera 20 wyników. Paginacja zachowuje wybrane filtry.
+- Jedna strona zawiera 20 wyników. Paginacja zachowuje wszystkie filtry
+  oraz sortowanie. Nieprawidłowe parametry zwracają formularz z komunikatem
+  i statusem HTTP 400; wartości oraz porządek SQL są walidowane na serwerze.
 - Szczegóły, pulpit i watchlista odczytują te same rekordy katalogu.
 - Okładki są pobierane przez przeglądarkę ze źródłowego CDN. Przy błędzie
   pozostaje obraz zastępczy. Pliki okładek nie są kopiowane do bazy.

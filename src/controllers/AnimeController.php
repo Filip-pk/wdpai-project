@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use Closure;
 
@@ -15,36 +16,20 @@ final class AnimeController extends AppController
 
     public function index(): void
     {
-        $searchError = null;
-        $query = $_GET['q'] ?? '';
-        if (!is_string($query) || str_contains($query, "\0")
-            || preg_match('/\A.{0,100}\z/us', $query) !== 1) {
-            $query = '';
-            $searchError = 'Wpisz tytuł o długości do 100 znaków.';
-        }
-        $query = trim($query);
-        $genre = $_GET['genre'] ?? '';
-        $genreId = $genre === '' ? null : filter_var($genre, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        if (!is_string($genre) || $genreId === false) {
-            $genreId = null;
-            $searchError = 'Wybierz gatunek z listy.';
-        }
-        $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000000]]);
-        if ($page === false) {
-            $page = 1;
-            $searchError = 'Wybierz poprawny numer strony.';
-        }
+        $criteria = AnimeSearchCriteria::fromQuery($_GET);
+        $searchError = $criteria->errors === [] ? null : implode(' ', $criteria->errors);
         if ($searchError !== null) {
             http_response_code(400);
         }
 
-        $result = $this->animes()->search($query, $genreId, $page);
+        $result = $this->animes()->search(
+            $criteria->query, $criteria->genreId, $criteria->page, 20, $criteria->filters, $criteria->sort,
+        );
         $page = $result['page'];
         $totalPages = $result['totalPages'];
+        $parameters = $criteria->parameters();
         $url = static fn (int $number): string => '/anime?' . http_build_query(
-            array_filter(['q' => $query, 'genre' => $genreId, 'page' => $number],
-                static fn (mixed $value): bool => $value !== '' && $value !== null),
-            '', '&', PHP_QUERY_RFC3986,
+            [...$parameters, 'page' => $number], '', '&', PHP_QUERY_RFC3986,
         );
         $numbers = array_unique(array_merge([1, $totalPages], range(max(1, $page - 2), min($totalPages, $page + 2))));
         sort($numbers);
@@ -55,9 +40,13 @@ final class AnimeController extends AppController
         $this->render('anime-list', [
             'pageTitle' => 'Odkrywaj anime — AniVibe',
             'animes' => $result['animes'],
-            'query' => $query,
+            'query' => $criteria->query,
             'genres' => $this->animes()->genres(),
-            'genreId' => $genreId,
+            'genreId' => $criteria->genreId,
+            'filters' => $criteria->form,
+            'sort' => $criteria->sort,
+            'sortOptions' => AnimeSearchCriteria::SORT_OPTIONS,
+            'typeOptions' => AnimeSearchCriteria::TYPE_OPTIONS,
             'page' => $page,
             'totalPages' => $totalPages,
             'total' => $result['total'],

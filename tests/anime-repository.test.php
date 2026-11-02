@@ -181,6 +181,161 @@ try {
         $assert($repository->search('', null, 0)['page'] === 1);
     });
 
+    $run('Domyślna kolejność ocen jest stabilna między stronami i umieszcza brak ocen na końcu', static function () use (
+        $repository, $entry, $assert,
+    ): void {
+        $repository->importBatch([
+            $entry(601, 'Beta', ['score' => 9.5]),
+            $entry(602, 'Alpha', ['score' => 9.5]),
+            $entry(603, 'Alpha', ['score' => 9.5]),
+            $entry(604, 'Middle', ['score' => 6.0]),
+            $entry(605, 'Zulu', ['score' => null]),
+            $entry(606, 'Aardvark', ['score' => null]),
+        ]);
+        $expected = [602, 603, 601, 604, 606, 605];
+        $all = $repository->search();
+        $assert(array_column($all['animes'], 'malId') === $expected);
+        $assert(array_keys($repository->search()['animes']) === array_keys($all['animes']));
+        $withoutQuery = $repository->search('', null, 1, 20, [], 'relevance');
+        $assert(array_keys($withoutQuery['animes']) === array_keys($all['animes']));
+        $ids = [];
+        $malIds = [];
+        for ($number = 1; $number <= 3; $number++) {
+            $page = $repository->search('', null, $number, 2);
+            $assert($page['total'] === 6 && $page['totalPages'] === 3 && count($page['animes']) === 2);
+            $ids = array_merge($ids, array_keys($page['animes']));
+            $malIds = array_merge($malIds, array_column($page['animes'], 'malId'));
+        }
+        $assert($malIds === $expected && count(array_unique($ids)) === 6);
+        $ascending = $repository->search('', null, 1, 20, [], 'score_asc');
+        $assert(array_column($ascending['animes'], 'malId') === [604, 602, 603, 601, 606, 605]);
+    });
+
+    $run('Każde sortowanie stosuje właściwe pole, a trafność jest odrębnym wyborem', static function () use (
+        $repository, $entry, $assert,
+    ): void {
+        $repository->importBatch([
+            $entry(701, 'Alpha', ['score' => 8.0, 'episodes' => 12, 'year' => 2020]),
+            $entry(702, 'Beta', ['alternativeTitles' => ['Needle'], 'score' => 9.0, 'episodes' => 24, 'year' => 2019]),
+            $entry(703, 'Needle', ['score' => 6.0, 'episodes' => 1, 'year' => 2024]),
+            $entry(704, 'Some Needle', ['score' => 8.0, 'episodes' => 24, 'year' => 2020]),
+            $entry(705, 'Unknown', ['score' => null, 'episodes' => null, 'year' => null]),
+        ]);
+        $orders = [
+            'score_desc' => [702, 701, 704, 703, 705],
+            'score_asc' => [703, 701, 704, 702, 705],
+            'title_asc' => [701, 702, 703, 704, 705],
+            'title_desc' => [705, 704, 703, 702, 701],
+            'episodes_asc' => [703, 701, 702, 704, 705],
+            'episodes_desc' => [702, 704, 701, 703, 705],
+            'year_desc' => [703, 701, 704, 702, 705],
+            'year_asc' => [702, 701, 704, 703, 705],
+        ];
+        foreach ($orders as $sort => $expected) {
+            $page = $repository->search('', null, 1, 20, [], $sort);
+            $assert(array_column($page['animes'], 'malId') === $expected, 'Nieprawidłowa kolejność: ' . $sort);
+        }
+        $assert(array_column($repository->search('Needle')['animes'], 'malId') === [702, 704, 703]);
+        $alphabetical = $repository->search('Needle', null, 1, 20, [], 'title_asc');
+        $assert(array_column($alphabetical['animes'], 'malId') === [702, 703, 704]);
+        $relevant = $repository->search('Needle', null, 1, 20, [], 'relevance');
+        $assert(array_column($relevant['animes'], 'malId') === [703, 702, 704]);
+        foreach ([
+            [[], 'score_desc; DROP TABLE anime'],
+            [['scoreMin' => 9.0, 'scoreMax' => 8.0], 'score_desc'],
+            [['episodesMax' => 0], 'score_desc'],
+        ] as [$filters, $sort]) {
+            $rejected = false;
+            try {
+                $repository->search('', null, 1, 20, $filters, $sort);
+            } catch (InvalidArgumentException) {
+                $rejected = true;
+            }
+            $assert($rejected, 'Repozytorium odrzuca niedozwolone sortowanie i zakresy.');
+        }
+    });
+
+    $run('Przedział odcinków obejmuje obie granice i łączy się z tytułem oraz gatunkiem', static function () use (
+        $repository, $entry, $assert, $connection,
+    ): void {
+        $repository->importBatch([
+            $entry(801, 'Scope Lower', ['episodes' => 12]),
+            $entry(802, 'Scope Upper', ['episodes' => 24, 'genres' => [
+                ['sourceId' => 1, 'name' => 'Action'], ['sourceId' => 2, 'name' => 'Adventure'],
+            ]]),
+            $entry(803, 'Scope Below', ['episodes' => 11]),
+            $entry(804, 'Scope Above', ['episodes' => 25]),
+            $entry(805, 'Scope Unknown', ['episodes' => null]),
+            $entry(806, 'Outside', ['episodes' => 12]),
+            $entry(807, 'Scope Comedy', ['episodes' => 18, 'genres' => [['sourceId' => 4, 'name' => 'Comedy']]]),
+            $entry(808, 'Scope Zero', ['episodes' => 0]),
+        ]);
+        $genreId = (int) $connection->query('SELECT id FROM genres WHERE source_id = 1')->fetchColumn();
+        $bounded = $repository->search('Scope', $genreId, 1, 20, ['episodesMin' => 12, 'episodesMax' => 24]);
+        $assert($bounded['total'] === 2 && array_column($bounded['animes'], 'malId') === [801, 802]);
+        $minimum = $repository->search('Scope', $genreId, 1, 20, ['episodesMin' => 24]);
+        $assert(array_column($minimum['animes'], 'malId') === [804, 802]);
+        $maximum = $repository->search('Scope', $genreId, 1, 20, ['episodesMax' => 12]);
+        $assert(array_column($maximum['animes'], 'malId') === [803, 801]);
+        $ascending = $repository->search('Scope', $genreId, 1, 20, [], 'episodes_asc');
+        $assert(array_column($ascending['animes'], 'malId') === [803, 801, 802, 804, 805, 808]);
+        $descending = $repository->search('Scope', $genreId, 1, 20, [], 'episodes_desc');
+        $assert(array_column($descending['animes'], 'malId') === [804, 802, 801, 803, 805, 808]);
+    });
+
+    $run('Przedział ocen zachowuje wartości graniczne, zero i wyklucza nieznaną ocenę', static function () use (
+        $repository, $entry, $assert,
+    ): void {
+        $repository->importBatch([
+            $entry(901, 'Score Lower', ['score' => 7.5]),
+            $entry(902, 'Score Upper', ['score' => 8.5]),
+            $entry(903, 'Score Below', ['score' => 7.49]),
+            $entry(904, 'Score Above', ['score' => 8.51]),
+            $entry(905, 'Score Unknown', ['score' => null]),
+            $entry(906, 'Score Zero', ['score' => 0.0]),
+            $entry(907, 'Score Maximum', ['score' => 10.0]),
+        ]);
+        $bounded = $repository->search('', null, 1, 20, ['scoreMin' => 7.5, 'scoreMax' => 8.5]);
+        $assert(array_column($bounded['animes'], 'malId') === [902, 901]);
+        $minimum = $repository->search('', null, 1, 20, ['scoreMin' => 8.5]);
+        $assert(array_column($minimum['animes'], 'malId') === [907, 904, 902]);
+        $zero = $repository->search('', null, 1, 20, ['scoreMin' => 0.0, 'scoreMax' => 0.0]);
+        $assert(array_column($zero['animes'], 'malId') === [906]);
+        $equalBounds = $repository->search('', null, 1, 20, ['scoreMin' => 8.5, 'scoreMax' => 8.5]);
+        $assert(array_column($equalBounds['animes'], 'malId') === [902]);
+    });
+
+    $run('Format i rok premiery uwzględniają różne nazwy źródeł oraz brak roku', static function () use (
+        $repository, $entry, $assert,
+    ): void {
+        $repository->importBatch([
+            $entry(1001, 'Film A', ['type' => 'Movie', 'year' => 2000]),
+            $entry(1002, 'Film B', ['type' => 'MOVIE', 'year' => 2024]),
+            $entry(1003, 'Film C', ['type' => 'Movie', 'year' => 1999]),
+            $entry(1004, 'Special A', ['type' => 'TV Special', 'year' => 2020]),
+            $entry(1005, 'Special B', ['type' => 'SPECIAL', 'year' => 2021]),
+            $entry(1006, 'TV A', ['type' => 'TV', 'year' => 2024]),
+            $entry(1007, 'Film D', ['type' => 'MOVIE', 'year' => null]),
+            $entry(1008, 'Unknown', ['type' => 'UNKNOWN', 'year' => null]),
+            $entry(1009, 'Commercial', ['type' => 'CM']),
+            $entry(1010, 'Promotional video', ['type' => 'PV']),
+        ]);
+        $films = $repository->search('', null, 1, 20, ['type' => 'MOVIE', 'yearMin' => 2000, 'yearMax' => 2024]);
+        $assert(array_column($films['animes'], 'malId') === [1001, 1002]);
+        $allFilms = $repository->search('', null, 1, 20, ['type' => 'MOVIE']);
+        $assert(array_column($allFilms['animes'], 'malId') === [1001, 1002, 1003, 1007]);
+        $specials = $repository->search('', null, 1, 20, ['type' => 'SPECIAL']);
+        $assert(array_column($specials['animes'], 'malId') === [1004, 1005]);
+        $unknown = $repository->search('', null, 1, 20, ['type' => 'UNKNOWN']);
+        $assert(array_column($unknown['animes'], 'malId') === [1008]);
+        foreach (['CM' => 1009, 'PV' => 1010] as $type => $malId) {
+            $format = $repository->search('', null, 1, 20, ['type' => $type]);
+            $assert(array_column($format['animes'], 'malId') === [$malId]);
+        }
+        $year = $repository->search('', null, 1, 20, ['yearMin' => 2024, 'yearMax' => 2024]);
+        $assert(array_column($year['animes'], 'malId') === [1002, 1006]);
+    });
+
     $run('Odczyt wielu ID zwraca istniejące anime i pomija brakujące', static function () use (
         $repository, $entry, $assert,
     ): void {

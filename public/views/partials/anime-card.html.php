@@ -1,4 +1,4 @@
-<article class="anime-card" data-anime-id="<?= $escape($animeId) ?>">
+<article class="anime-card" data-anime-id="<?= $escape($animeId) ?>" data-title="<?= $escape($anime['title']) ?>" data-score="<?= $escape($anime['score'] ?? '') ?>" data-episodes="<?= $escape($anime['episodes'] ?? '') ?>" data-year="<?= $escape($anime['year'] ?? '') ?>">
     <a class="anime-cover anime-card-cover" href="/anime/<?= $escape($animeId) ?>" aria-label="<?= $escape('Szczegóły: ' . $anime['title']) ?>">
         <span class="anime-cover-placeholder" aria-hidden="true"><span>✦</span><span>Brak okładki</span></span>
         <?php if (!empty($anime['coverUrl'])): ?>
