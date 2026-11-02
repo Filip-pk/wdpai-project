@@ -8,4 +8,11 @@ return [
     'database' => getenv('POSTGRES_DB'),
     'username' => getenv('POSTGRES_USER'),
     'password' => getenv('POSTGRES_PASSWORD'),
+    'mail' => [
+        'host' => getenv('MAIL_HOST') ?: 'mailpit',
+        'port' => (int) (getenv('MAIL_PORT') ?: 1025),
+        'from' => getenv('MAIL_FROM') ?: 'noreply@anivibe.local',
+        'fromName' => getenv('MAIL_FROM_NAME') ?: 'AniVibe',
+        'timeout' => 5,
+    ],
 ];

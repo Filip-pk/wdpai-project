@@ -107,7 +107,7 @@ test('registration, sessions, protected projects and logout', async (t) => {
     await t.test('registration persists the account and rejects case-insensitive duplicates', async () => {
         const fields = { name, email: `  ${email.toUpperCase()}  `, password,
             passwordConfirmation: password, csrfToken: anonymousToken };
-        redirected(await client.request('/register', fields), '/login?registered=1');
+        redirected(await client.request('/register', fields), '/login?registered=1&mail=sent');
         redirected(await client.request('/projects'), '/login');
         const login = await client.request('/login?registered=1');
         assert.equal(login.status, 200);

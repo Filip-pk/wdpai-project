@@ -26,6 +26,7 @@
     --auth-gap: 1.25rem;
     --auth-panel-padding: 1.25rem;
     --auth-shadow: var(--shadow-auth);
+    --auth-warning: #805200;
 
     width: 100%;
     max-width: 35rem;
@@ -34,6 +35,9 @@
     color: var(--auth-text);
 }
 
+[data-theme="dark"] .auth-page {
+    --auth-warning: #f6cc7a;
+}
 
 /* ========================================
    2. Powrót i główna karta
@@ -251,6 +255,11 @@
 .auth-page .auth-notice[role="status"] {
     border-color: var(--color-success);
     color: var(--color-success);
+}
+
+.auth-page .auth-notice--warning[role="status"] {
+    border-color: var(--auth-warning);
+    color: var(--auth-warning);
 }
 
 .auth-page .auth-notice ul {

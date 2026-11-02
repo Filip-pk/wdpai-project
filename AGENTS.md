@@ -37,7 +37,8 @@ Logowanie, autoryzacja, zapis do bazy i AI nie są jeszcze podłączone.
 - Wprowadzaj małe zmiany związane z zadaniem.
 - Nie usuwaj istniejącej treści ani funkcji bez uzgodnienia.
 - Odpowiadaj po polsku i krótko wyjaśniaj cel zmian.
-- Podawaj pełny kod zmienionych i nowych plików w czacie, bez ZIP-ów.
+- Domyślnie podawaj krótkie podsumowanie zmian i odnośniki do plików, bez ZIP-ów.
+- Pełny kod zmienionych i nowych plików wklejaj w czacie tylko na wyraźną prośbę.
 - Polecenia dostosowuj do Windows CMD.
 - Stosuj małe commity z prefiksami feat:, fix:, docs:, build: lub chore:.
 

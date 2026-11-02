@@ -1,7 +1,8 @@
 # Konta i sesje użytkowników
 
 Rejestracja i logowanie korzystają z PostgreSQL przez `AuthController`
-i `UserRepository`. CSS i zależności pozostają bez zmian.
+i `UserRepository`. Zależności pozostają bez zmian. Po utworzeniu konta
+aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 
 ## Przygotowanie bazy
 
@@ -20,7 +21,7 @@ skryptu `database\01-create-projects.sql`, jeśli baza jest pusta.
 | Żądanie | Zachowanie |
 | --- | --- |
 | `GET /register` | Formularz rejestracji z CSRF. |
-| `POST /register` | Walidacja, `password_hash()`, zapis konta i `303 /login?registered=1`. |
+| `POST /register` | Walidacja, `password_hash()`, zapis konta, powitanie SMTP i `303 /login?registered=1&mail=sent` lub `mail=failed`. |
 | `GET /login` | Formularz logowania z CSRF. |
 | `POST /login` | `password_verify()`, regeneracja sesji i tokenu CSRF, `303 /projects`. |
 | `GET /projects`, `GET /projects/{id}` | Dostęp po zalogowaniu; gość otrzymuje `303 /login`. |
@@ -49,7 +50,7 @@ osobne etapy. Laboratorium nie podłącza AI.
 ```cmd
 docker compose exec php php tests/user-repository.test.php
 docker compose exec php php tests/projects-application.test.php
-node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs
+node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs tests/mail-http.test.cjs
 ```
 
 Testy repozytorium używają tabeli i sekwencji tymczasowej oraz rollbacku.

@@ -16,6 +16,7 @@ use App\Repository\ProjectRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
+use App\Service\MailService;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -55,8 +56,11 @@ $routing = new Routing(static function (string $controllerClass): AppController 
     }
 
     if ($controllerClass === AuthController::class) {
+        $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
+
         return new AuthController(
             static fn (): UserRepository => new UserRepository((new Database())->connect()),
+            new MailService(...$mailConfiguration),
         );
     }
 

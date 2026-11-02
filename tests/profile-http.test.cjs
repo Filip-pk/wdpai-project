@@ -52,7 +52,7 @@ async function account(name) {
     const token = csrf(await client.request('/register'));
     redirected(await client.request('/register', {
         name, email, password, passwordConfirmation: password, csrfToken: token,
-    }), '/login?registered=1');
+    }), '/login?registered=1&mail=sent');
     redirected(await client.request('/login', { email, password, csrfToken: token }), '/projects');
     const page = await client.request('/profile');
     assert.equal(page.status, 200);

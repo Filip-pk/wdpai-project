@@ -43,7 +43,7 @@ test.before(async () => {
         passwordConfirmation: password, csrfToken: token[1],
     });
     assert.equal(registered.status, 303);
-    assert.equal(registered.headers.get('location'), '/login?registered=1');
+    assert.equal(registered.headers.get('location'), '/login?registered=1&mail=sent');
     const loggedIn = await request('/login', { email, password, csrfToken: token[1] });
     assert.equal(loggedIn.status, 303);
     assert.equal(loggedIn.headers.get('location'), '/projects');

@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Service\MailService;
 use Closure;
 use PDOException;
+use RuntimeException;
 
 final class AuthController extends AppController
 {
-    public function __construct(private UserRepository|Closure $users)
-    {
+    public function __construct(
+        private UserRepository|Closure $users,
+        private readonly MailService $mailer,
+    ) {
     }
 
     public function login(): void
@@ -54,11 +58,16 @@ final class AuthController extends AppController
             }
         }
 
+        $registered = !$this->isPost() && ($_GET['registered'] ?? null) === '1';
+        $mailStatus = $registered && in_array($_GET['mail'] ?? null, ['sent', 'failed'], true)
+            ? $_GET['mail'] : null;
+
         $this->render('login', [
             'pageTitle' => 'Logowanie — AniVibe',
             'errors' => $errors,
             'email' => $email,
-            'registered' => !$this->isPost() && ($_GET['registered'] ?? null) === '1',
+            'registered' => $registered,
+            'mailStatus' => $mailStatus,
         ]);
     }
 
@@ -112,7 +121,15 @@ final class AuthController extends AppController
                 }
 
                 if ($errors === []) {
-                    $this->redirect('/login?registered=1');
+                    try {
+                        $this->mailer->sendWelcomeEmail($email, $name);
+                        $mailStatus = 'sent';
+                    } catch (RuntimeException $exception) {
+                        error_log('Nie udało się wysłać wiadomości powitalnej: ' . $exception->getMessage());
+                        $mailStatus = 'failed';
+                    }
+
+                    $this->redirect('/login?registered=1&mail=' . $mailStatus);
                 }
 
                 http_response_code(422);

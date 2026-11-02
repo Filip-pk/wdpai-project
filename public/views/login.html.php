@@ -56,6 +56,16 @@
                 </p>
             <?php endif; ?>
 
+            <?php if (($mailStatus ?? null) === 'sent'): ?>
+                <p class="auth-notice" role="status" data-mail-status="sent">
+                    Wysłaliśmy wiadomość powitalną na podany adres e-mail.
+                </p>
+            <?php elseif (($mailStatus ?? null) === 'failed'): ?>
+                <p class="auth-notice auth-notice--warning" role="status" data-mail-status="failed">
+                    Nie udało się wysłać wiadomości powitalnej. Konto jest aktywne i możesz się zalogować.
+                </p>
+            <?php endif; ?>
+
             <?php if (($errors ?? []) !== []): ?>
                 <div class="auth-notice" role="alert">
                     <ul>
