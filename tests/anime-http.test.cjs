@@ -3,6 +3,9 @@ const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
 const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const expectedCatalogCount = process.env.ANIVIBE_EXPECTED_CATALOG_COUNT === undefined
+    ? null : Number(process.env.ANIVIBE_EXPECTED_CATALOG_COUNT);
+const unknownId = Number.MAX_SAFE_INTEGER;
 
 function browser() {
     let cookie = '';
@@ -54,16 +57,38 @@ function catalogLinks(page) {
         .map(match => new URL(match[1].replaceAll('&amp;', '&'), baseUrl));
 }
 
-test('the pilot anime catalog supports searching, genres and saved watchlists', async (t) => {
+async function resultIncludes(client, route, animeId, firstPage) {
+    const first = firstPage ?? await client.request(route);
+    if (cards(first).includes(animeId)) return true;
+
+    const pages = Math.ceil(attribute(first, 'data-result-count') / 20);
+    for (let number = 2; number <= pages; number++) {
+        const url = new URL(route, baseUrl);
+        url.searchParams.set('page', String(number));
+        const page = await client.request(url.pathname + url.search);
+        assert.equal(page.status, 200);
+        if (cards(page).includes(animeId)) return true;
+    }
+    return false;
+}
+
+test('the anime catalog supports searching, genres and saved watchlists', async (t) => {
     const guest = browser();
     let catalog;
+    let catalogTotal;
     let actionGenre;
 
-    await t.test('200 local anime are paginated into separate pages of 20', async () => {
+    await t.test('the full local catalog is paginated into separate pages of 20', async () => {
         catalog = await guest.request('/anime');
         assert.equal(catalog.status, 200);
-        assert.equal(attribute(catalog, 'data-catalog-count'), 200);
-        assert.equal(attribute(catalog, 'data-result-count'), 200);
+        catalogTotal = attribute(catalog, 'data-catalog-count');
+        assert.ok(catalogTotal >= 200, 'The catalog contains at least 200 anime');
+        if (expectedCatalogCount !== null) {
+            assert.ok(Number.isSafeInteger(expectedCatalogCount) && expectedCatalogCount >= 200,
+                'ANIVIBE_EXPECTED_CATALOG_COUNT must be an integer of at least 200');
+            assert.equal(catalogTotal, expectedCatalogCount, 'The catalog matches the completed import');
+        }
+        assert.equal(attribute(catalog, 'data-result-count'), catalogTotal);
         assert.equal(attribute(catalog, 'data-page'), 1);
         assert.equal(cards(catalog).length, 20);
         assert.equal(new Set(cards(catalog)).size, 20);
@@ -71,10 +96,10 @@ test('the pilot anime catalog supports searching, genres and saved watchlists', 
         assert.equal(attribute(second, 'data-page'), 2);
         assert.equal(cards(second).length, 20);
         assert.deepEqual(cards(second).filter(id => cards(catalog).includes(id)), []);
-        const last = await guest.request('/anime?page=9999');
+        const last = await guest.request('/anime?page=999999');
         assert.equal(last.status, 200);
-        assert.equal(attribute(last, 'data-page'), 10);
-        assert.equal(cards(last).length, 20);
+        assert.equal(attribute(last, 'data-page'), Math.ceil(catalogTotal / 20));
+        assert.equal(cards(last).length, catalogTotal % 20 || 20);
         const genreSelect = catalog.html.match(/<select\b[^>]*id="anime-genre"[^>]*>([\s\S]*?)<\/select>/);
         assert.ok(genreSelect && !/\bdisabled\b/.test(genreSelect[0]));
         actionGenre = genreSelect[1].match(/<option\b[^>]*value="(\d+)"[^>]*>\s*Akcja\s*<\/option>/)?.[1];
@@ -84,10 +109,11 @@ test('the pilot anime catalog supports searching, genres and saved watchlists', 
     await t.test('title aliases, case-insensitive queries and no-result states work', async () => {
         const naruto = await guest.request('/anime?q=nArUtO');
         assert.equal(naruto.status, 200);
-        assert.ok(cards(naruto).includes(1));
-        assert.ok(attribute(naruto, 'data-result-count') < 200);
+        assert.ok(await resultIncludes(guest, '/anime?q=nArUtO', 1, naruto));
+        assert.ok(attribute(naruto, 'data-result-count') < catalogTotal);
         const titan = await guest.request('/anime?q=Attack%20on%20Titan');
-        assert.ok(cards(titan).includes(5), 'English title and aliases resolve the existing Attack on Titan ID');
+        assert.ok(await resultIncludes(guest, '/anime?q=Attack%20on%20Titan', 5, titan),
+            'English title and aliases resolve the existing Attack on Titan ID');
         const empty = await guest.request('/anime?q=DefinitelyMissingAnime-' + randomUUID());
         assert.equal(empty.status, 200);
         assert.equal(attribute(empty, 'data-result-count'), 0);
@@ -102,16 +128,16 @@ test('the pilot anime catalog supports searching, genres and saved watchlists', 
         const filtered = await guest.request('/anime?genre=' + actionGenre);
         assert.equal(filtered.status, 200);
         const total = attribute(filtered, 'data-result-count');
-        assert.ok(total > 0 && total < 200);
+        assert.ok(total > 0 && total < catalogTotal);
         for (const url of catalogLinks(filtered).filter(url => url.searchParams.has('page'))) {
             assert.equal(url.searchParams.get('genre'), actionGenre);
         }
         const combined = await guest.request('/anime?q=Naruto&genre=' + actionGenre);
         assert.equal(combined.status, 200);
-        assert.ok(cards(combined).includes(1));
+        assert.ok(await resultIncludes(guest, '/anime?q=Naruto&genre=' + actionGenre, 1, combined));
         assert.ok(attribute(combined, 'data-result-count') <= total);
         assert.match(combined.html, new RegExp('<option\\b[^>]*value="' + actionGenre + '"[^>]*selected'));
-        const missingGenre = await guest.request('/anime?genre=999999999');
+        const missingGenre = await guest.request('/anime?genre=' + unknownId);
         assert.equal(missingGenre.status, 200);
         assert.equal(attribute(missingGenre, 'data-result-count'), 0);
     });
@@ -138,7 +164,7 @@ test('the pilot anime catalog supports searching, genres and saved watchlists', 
             assert.match(detail.html, /id="synopsis-title"/);
             assert.doesNotMatch(detail.html, /Ocena demonstracyjna/);
         }
-        assert.equal((await guest.request('/anime/999999999')).status, 404);
+        assert.equal((await guest.request('/anime/' + unknownId)).status, 404);
         assert.equal((await guest.request('/anime/0')).status, 404);
     });
 

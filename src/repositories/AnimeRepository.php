@@ -6,6 +6,8 @@ namespace App\Repository;
 
 use InvalidArgumentException;
 use PDO;
+use PDOStatement;
+use RuntimeException;
 use Throwable;
 
 final class AnimeRepository
@@ -45,6 +47,17 @@ final class AnimeRepository
             WHERE ag.anime_id = a.id), '[]'::jsonb) AS genre_names
         FROM anime a";
 
+    private bool $writeContextActive = false;
+    /** @var array<string, PDOStatement> */
+    private array $writeStatements = [];
+    private array $malIds = [];
+    private array $animeMalIds = [];
+    private array $externalIds = [];
+    private array $genreIds = [];
+    private array $seenIdentities = [];
+    private int $inserted = 0;
+    private int $updated = 0;
+
     public function __construct(private readonly PDO $database)
     {
     }
@@ -78,6 +91,11 @@ final class AnimeRepository
 
         if ($query !== '') {
             $pattern = '%' . strtr($query, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+            $queryLength = preg_match_all('/./us', $query);
+            if ($queryLength !== false && $queryLength >= 3) {
+                $conditions[] = "a.search_text ILIKE :indexed_query ESCAPE '!'";
+                $parameters['indexed_query'] = $pattern;
+            }
             $conditions[] = "(a.title ILIKE :title_query ESCAPE '!'
                 OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(a.alternative_titles) AS alias(title)
                     WHERE alias.title ILIKE :alias_query ESCAPE '!'))";
@@ -96,11 +114,20 @@ final class AnimeRepository
         $perPage = max(1, min(100, $perPage));
         $totalPages = max(1, (int) ceil($total / $perPage));
         $page = max(1, min($page, $totalPages));
+        $order = $query === '' ? '' : "CASE
+            WHEN LOWER(a.title) = LOWER(:exact_title) THEN 0
+            WHEN EXISTS (SELECT 1 FROM jsonb_array_elements_text(a.alternative_titles) AS exact_alias(title)
+                WHERE LOWER(exact_alias.title) = LOWER(:exact_alias)) THEN 1
+            ELSE 2 END, ";
         $statement = $this->database->prepare(
-            self::SELECT_ANIME . $where . ' ORDER BY LOWER(a.title), a.id LIMIT :limit OFFSET :offset'
+            self::SELECT_ANIME . $where . ' ORDER BY ' . $order . 'LOWER(a.title), a.id LIMIT :limit OFFSET :offset'
         );
         foreach ($parameters as $key => $value) {
             $statement->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        if ($query !== '') {
+            $statement->bindValue('exact_title', $query);
+            $statement->bindValue('exact_alias', $query);
         }
         $statement->bindValue('limit', $perPage, PDO::PARAM_INT);
         $statement->bindValue('offset', ($page - 1) * $perPage, PDO::PARAM_INT);
@@ -135,7 +162,213 @@ final class AnimeRepository
     }
 
     /** @return array{inserted: int, updated: int, total: int} */
-    public function importBatch(array $animes): array
+    public function importBatch(iterable $animes, bool $mergeMissing = false): array
+    {
+        if ($this->writeContextActive) {
+            throw new RuntimeException('Import katalogu jest już uruchomiony na tym połączeniu.');
+        }
+
+        return $this->writeScope(function () use ($animes, $mergeMissing): array {
+            foreach ($animes as $anime) {
+                if (!is_array($anime)) {
+                    throw new InvalidArgumentException('Nieprawidłowy rekord anime.');
+                }
+                $this->upsert($anime, $mergeMissing);
+            }
+
+            return ['inserted' => $this->inserted, 'updated' => $this->updated, 'total' => $this->count()];
+        });
+    }
+
+    public function upsert(array $anime, bool $mergeMissing = false): int
+    {
+        if (!$this->writeContextActive) {
+            return $this->writeScope(fn (): int => $this->upsert($anime, $mergeMissing));
+        }
+
+        [$malId, $identities] = $this->identities($anime);
+        $matches = [];
+        if ($malId !== null && isset($this->malIds[$malId])) {
+            $matches[$this->malIds[$malId]] = true;
+        }
+        foreach ($identities as $key => $identity) {
+            if (isset($this->seenIdentities[$key])) {
+                throw new InvalidArgumentException('Partia zawiera powtórzony identyfikator anime: ' . $identity['provider'] . ':' . $identity['externalId'] . '.');
+            }
+            if (isset($this->externalIds[$key])) {
+                $matches[$this->externalIds[$key]] = true;
+            }
+            if ($identity['provider'] === 'mal' && isset($this->malIds[(int) $identity['externalId']])) {
+                $matches[$this->malIds[(int) $identity['externalId']]] = true;
+            }
+        }
+        if (count($matches) > 1) {
+            throw new RuntimeException('Identyfikatory źródłowe wskazują różne istniejące anime. Import nie scala ich automatycznie.');
+        }
+
+        $id = $matches === [] ? null : (int) array_key_first($matches);
+        $existingMalId = $id === null ? null : ($this->animeMalIds[$id] ?? null);
+        if ($malId !== null && $existingMalId !== null && $malId !== $existingMalId) {
+            throw new RuntimeException('Nowy identyfikator MAL jest sprzeczny z dotychczasowym anime.');
+        }
+
+        $values = [
+            'mal_id' => $malId, 'title' => $anime['title'],
+            'alternative_titles' => json_encode($anime['alternativeTitles'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+            'description' => $anime['description'], 'description_language' => $anime['descriptionLanguage'],
+            'cover_url' => $anime['coverUrl'], 'episodes' => $anime['episodes'], 'score' => $anime['score'],
+            'studio' => $anime['studio'], 'release_year' => $anime['year'],
+            'media_type' => $anime['type'], 'source_url' => $anime['sourceUrl'],
+        ];
+
+        if ($id === null) {
+            $statement = $this->writeStatement('insert_anime',
+                'INSERT INTO anime (mal_id, title, alternative_titles, description, description_language,
+                    cover_url, episodes, score, studio, release_year, media_type, source_url)
+                 VALUES (:mal_id, :title, :alternative_titles, :description, :description_language,
+                    :cover_url, :episodes, :score, :studio, :release_year, :media_type, :source_url)
+                 RETURNING id'
+            );
+            $statement->execute($values);
+            $id = (int) $statement->fetchColumn();
+            $this->inserted++;
+        } else {
+            $values['id'] = $id;
+            if ($mergeMissing) {
+                $values['description_present'] = $anime['description'] !== '' ? 1 : 0;
+            }
+            $statement = $this->writeStatement($mergeMissing ? 'merge_anime' : 'replace_anime',
+                'UPDATE anime SET mal_id = COALESCE(:mal_id, mal_id), title = :title,
+                    alternative_titles = ' . ($mergeMissing
+                        ? "(SELECT COALESCE(jsonb_agg(value ORDER BY value), '[]'::jsonb)
+                            FROM (SELECT DISTINCT value FROM jsonb_array_elements(alternative_titles || CAST(:alternative_titles AS JSONB))) AS aliases)"
+                        : ':alternative_titles') . ',
+                    description = ' . ($mergeMissing ? "COALESCE(NULLIF(:description, ''), description)" : ':description') . ',
+                    description_language = ' . ($mergeMissing
+                        ? 'CASE WHEN :description_present = 1 THEN :description_language ELSE description_language END'
+                        : ':description_language') . ',
+                    cover_url = ' . ($mergeMissing ? 'COALESCE(:cover_url, cover_url)' : ':cover_url') . ',
+                    episodes = ' . ($mergeMissing ? 'COALESCE(:episodes, episodes)' : ':episodes') . ',
+                    score = ' . ($mergeMissing ? 'COALESCE(:score, score)' : ':score') . ',
+                    studio = ' . ($mergeMissing ? "COALESCE(NULLIF(:studio, ''), studio)" : ':studio') . ',
+                    release_year = ' . ($mergeMissing ? 'COALESCE(:release_year, release_year)' : ':release_year') . ',
+                    media_type = ' . ($mergeMissing ? "COALESCE(NULLIF(NULLIF(:media_type, ''), 'UNKNOWN'), media_type)" : ':media_type') . ',
+                    source_url = ' . ($mergeMissing ? 'COALESCE(:source_url, source_url)' : ':source_url') . ',
+                    source_updated_at = CURRENT_TIMESTAMP WHERE id = :id RETURNING id'
+            );
+            $statement->execute($values);
+            if ((int) $statement->fetchColumn() !== $id) {
+                throw new RuntimeException('Anime zniknęło podczas aktualizacji katalogu.');
+            }
+            if (!$mergeMissing) {
+                $this->writeStatement('delete_genres', 'DELETE FROM anime_genres WHERE anime_id = :anime_id')
+                    ->execute(['anime_id' => $id]);
+            }
+            $this->updated++;
+        }
+
+        $effectiveMalId = $malId ?? $existingMalId;
+        $this->animeMalIds[$id] = $effectiveMalId;
+        if ($effectiveMalId !== null) {
+            $this->malIds[$effectiveMalId] = $id;
+        }
+        foreach ($identities as $key => $identity) {
+            if (!isset($this->externalIds[$key])) {
+                $mapping = $this->writeStatement('insert_identity',
+                    'INSERT INTO anime_external_ids (provider, external_id, anime_id)
+                     VALUES (:provider, :external_id, :anime_id)
+                     ON CONFLICT (provider, external_id) DO NOTHING RETURNING anime_id'
+                );
+                $mapping->execute([
+                    'provider' => $identity['provider'], 'external_id' => $identity['externalId'], 'anime_id' => $id,
+                ]);
+                $mappedId = $mapping->fetchColumn();
+                if ($mappedId === false) {
+                    $lookup = $this->writeStatement('lookup_identity',
+                        'SELECT anime_id FROM anime_external_ids WHERE provider = :provider AND external_id = :external_id'
+                    );
+                    $lookup->execute(['provider' => $identity['provider'], 'external_id' => $identity['externalId']]);
+                    $mappedId = $lookup->fetchColumn();
+                }
+                if ((int) $mappedId !== $id) {
+                    throw new RuntimeException('Identyfikator źródłowy został przypisany do innego anime podczas importu.');
+                }
+                $this->externalIds[$key] = $id;
+            }
+            $this->seenIdentities[$key] = true;
+        }
+
+        $genreIds = [];
+        foreach ($anime['genres'] as $genre) {
+            $sourceId = $genre['sourceId'];
+            $name = $genre['name'];
+            if (!isset($this->genreIds[$sourceId]) || $this->genreIds[$sourceId]['name'] !== $name) {
+                $genreStatement = $this->writeStatement('upsert_genre',
+                    'INSERT INTO genres (source_id, name) VALUES (:source_id, :name)
+                     ON CONFLICT (source_id) DO UPDATE SET name = EXCLUDED.name RETURNING id'
+                );
+                $genreStatement->execute(['source_id' => $sourceId, 'name' => $name]);
+                $this->genreIds[$sourceId] = ['id' => (int) $genreStatement->fetchColumn(), 'name' => $name];
+            }
+            $genreIds[$this->genreIds[$sourceId]['id']] = true;
+        }
+        if ($genreIds !== []) {
+            $count = count($genreIds);
+            $links = $this->writeStatement('link_genres_' . $count,
+                'INSERT INTO anime_genres (anime_id, genre_id) VALUES '
+                    . implode(', ', array_fill(0, $count, '(?, ?)')) . ' ON CONFLICT DO NOTHING'
+            );
+            $parameters = [];
+            foreach (array_keys($genreIds) as $genreId) {
+                $parameters[] = $id;
+                $parameters[] = $genreId;
+            }
+            $links->execute($parameters);
+        }
+
+        return $id;
+    }
+
+    private function identities(array $anime): array
+    {
+        $malId = $anime['malId'] ?? null;
+        if ($malId !== null && (!is_int($malId) || $malId < 1 || $malId > 2147483647)) {
+            throw new InvalidArgumentException('Nieprawidłowy identyfikator MAL.');
+        }
+        $identities = [];
+        if ($malId !== null) {
+            $identities['mal' . "\0" . $malId] = ['provider' => 'mal', 'externalId' => (string) $malId];
+        }
+        $externalIds = $anime['externalIds'] ?? [];
+        if (!is_array($externalIds) || count($externalIds) > 100) {
+            throw new InvalidArgumentException('Nieprawidłowa lista identyfikatorów źródłowych.');
+        }
+        foreach ($externalIds as $identity) {
+            $provider = is_array($identity) ? ($identity['provider'] ?? null) : null;
+            $externalId = is_array($identity) ? ($identity['externalId'] ?? null) : null;
+            if (!is_string($provider) || strlen($provider) > 32
+                || preg_match('/\A[a-z0-9][a-z0-9_-]*\z/', $provider) !== 1
+                || !is_string($externalId) || $externalId === '' || $externalId !== trim($externalId)
+                || str_contains($externalId, "\0") || preg_match('/\A.{1,255}\z/us', $externalId) !== 1) {
+                throw new InvalidArgumentException('Nieprawidłowy identyfikator źródłowy anime.');
+            }
+            if ($provider === 'mal') {
+                if (!ctype_digit($externalId) || strlen($externalId) > 10
+                    || (int) $externalId < 1 || (int) $externalId > 2147483647) {
+                    throw new InvalidArgumentException('Nieprawidłowy źródłowy identyfikator MAL.');
+                }
+                $externalId = (string) (int) $externalId;
+            }
+            $identities[$provider . "\0" . $externalId] = ['provider' => $provider, 'externalId' => $externalId];
+        }
+        if ($identities === []) {
+            throw new InvalidArgumentException('Anime musi mieć przynajmniej jeden identyfikator źródłowy.');
+        }
+
+        return [$malId, $identities];
+    }
+
+    private function writeScope(callable $operation): mixed
     {
         $nested = $this->database->inTransaction();
         if ($nested) {
@@ -143,32 +376,33 @@ final class AnimeRepository
         } else {
             $this->database->beginTransaction();
         }
-        $inserted = 0;
-        $updated = 0;
-        $seen = [];
 
         try {
-            foreach ($animes as $anime) {
-                $malId = $anime['malId'] ?? null;
-                if (!is_int($malId) || $malId < 1 || isset($seen[$malId])) {
-                    throw new InvalidArgumentException('Nieprawidłowy lub powtórzony identyfikator anime.');
+            $this->database->query('SELECT pg_advisory_xact_lock(1668178293, 1)')->fetchColumn();
+            $this->writeContextActive = true;
+            foreach ($this->database->query('SELECT id, mal_id FROM anime') as $row) {
+                $id = (int) $row['id'];
+                $malId = $row['mal_id'] === null ? null : (int) $row['mal_id'];
+                $this->animeMalIds[$id] = $malId;
+                if ($malId !== null) {
+                    $this->malIds[$malId] = $id;
                 }
-                $seen[$malId] = true;
-                $existing = $this->database->prepare('SELECT id FROM anime WHERE mal_id = :mal_id');
-                $existing->execute(['mal_id' => $malId]);
-                $exists = $existing->fetchColumn() !== false;
-                $this->upsert($anime);
-                $exists ? $updated++ : $inserted++;
+            }
+            foreach ($this->database->query('SELECT provider, external_id, anime_id FROM anime_external_ids') as $row) {
+                $this->externalIds[$row['provider'] . "\0" . $row['external_id']] = (int) $row['anime_id'];
+            }
+            foreach ($this->database->query('SELECT id, source_id, name FROM genres') as $row) {
+                $this->genreIds[(int) $row['source_id']] = ['id' => (int) $row['id'], 'name' => $row['name']];
             }
 
-            $total = $this->count();
+            $result = $operation();
             if ($nested) {
                 $this->database->exec('RELEASE SAVEPOINT anime_catalog_import');
             } else {
                 $this->database->commit();
             }
 
-            return ['inserted' => $inserted, 'updated' => $updated, 'total' => $total];
+            return $result;
         } catch (Throwable $exception) {
             if ($nested) {
                 $this->database->exec('ROLLBACK TO SAVEPOINT anime_catalog_import');
@@ -177,48 +411,22 @@ final class AnimeRepository
                 $this->database->rollBack();
             }
             throw $exception;
+        } finally {
+            $this->writeContextActive = false;
+            $this->writeStatements = [];
+            $this->malIds = [];
+            $this->animeMalIds = [];
+            $this->externalIds = [];
+            $this->genreIds = [];
+            $this->seenIdentities = [];
+            $this->inserted = 0;
+            $this->updated = 0;
         }
     }
 
-    public function upsert(array $anime): int
+    private function writeStatement(string $name, string $sql): PDOStatement
     {
-        $statement = $this->database->prepare(
-            'INSERT INTO anime (mal_id, title, alternative_titles, description, description_language,
-                cover_url, episodes, score, studio, release_year, media_type, source_url)
-             VALUES (:mal_id, :title, :alternative_titles, :description, :description_language,
-                :cover_url, :episodes, :score, :studio, :release_year, :media_type, :source_url)
-             ON CONFLICT (mal_id) DO UPDATE SET title = EXCLUDED.title,
-                alternative_titles = EXCLUDED.alternative_titles, description = EXCLUDED.description,
-                description_language = EXCLUDED.description_language, cover_url = EXCLUDED.cover_url,
-                episodes = EXCLUDED.episodes, score = EXCLUDED.score, studio = EXCLUDED.studio,
-                release_year = EXCLUDED.release_year, media_type = EXCLUDED.media_type,
-                source_url = EXCLUDED.source_url, source_updated_at = CURRENT_TIMESTAMP
-             RETURNING id'
-        );
-        $statement->execute([
-            'mal_id' => $anime['malId'], 'title' => $anime['title'],
-            'alternative_titles' => json_encode($anime['alternativeTitles'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
-            'description' => $anime['description'], 'description_language' => $anime['descriptionLanguage'],
-            'cover_url' => $anime['coverUrl'], 'episodes' => $anime['episodes'], 'score' => $anime['score'],
-            'studio' => $anime['studio'], 'release_year' => $anime['year'],
-            'media_type' => $anime['type'], 'source_url' => $anime['sourceUrl'],
-        ]);
-        $id = (int) $statement->fetchColumn();
-        $delete = $this->database->prepare('DELETE FROM anime_genres WHERE anime_id = :anime_id');
-        $delete->execute(['anime_id' => $id]);
-        $genreStatement = $this->database->prepare(
-            'INSERT INTO genres (source_id, name) VALUES (:source_id, :name)
-             ON CONFLICT (source_id) DO UPDATE SET name = EXCLUDED.name RETURNING id'
-        );
-        $linkStatement = $this->database->prepare(
-            'INSERT INTO anime_genres (anime_id, genre_id) VALUES (:anime_id, :genre_id) ON CONFLICT DO NOTHING'
-        );
-        foreach ($anime['genres'] as $genre) {
-            $genreStatement->execute(['source_id' => $genre['sourceId'], 'name' => $genre['name']]);
-            $linkStatement->execute(['anime_id' => $id, 'genre_id' => (int) $genreStatement->fetchColumn()]);
-        }
-
-        return $id;
+        return $this->writeStatements[$name] ??= $this->database->prepare($sql);
     }
 
     private function mapRows(array $rows): array

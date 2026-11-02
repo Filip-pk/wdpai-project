@@ -150,7 +150,7 @@ $isProjectsPage = $currentPath === '/projects'
     <aside class="prototype-notice" aria-label="Informacja o prototypie">
         <p>
             <strong>Wersja demonstracyjna.</strong>
-            Konta, profile i watchlisty są zapisywane. Katalog zawiera próbne dane; rozmowy AI pozostają demonstracyjne.
+            Konta, profile i watchlisty są zapisywane. Rozmowy AI pozostają demonstracyjne.
         </p>
     </aside>
 

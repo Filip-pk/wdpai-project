@@ -13,7 +13,7 @@
             <?php endif; ?>
         </div>
         <div class="anime-details-identity">
-            <p class="eyebrow"><?= $escape(($anime['type'] ?? '') === '' ? 'Poznaj serię' : $anime['type']) ?></p>
+            <p class="eyebrow"><?= $escape(empty($anime['type']) || $anime['type'] === 'UNKNOWN' ? 'Poznaj serię' : $anime['type']) ?></p>
             <h1><?= $escape($anime['title']) ?></h1>
             <ul class="anime-genres" aria-label="Gatunki">
                 <?php foreach ($anime['genres'] as $genreName): ?>
@@ -31,7 +31,7 @@
                 <span class="anime-language">Opis w języku angielskim</span>
             <?php endif; ?>
         </div>
-        <p class="anime-synopsis"<?= ($anime['descriptionLanguage'] ?? '') === 'en' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
+        <p class="anime-synopsis"<?= ($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== '' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
     </section>
 
     <section class="anime-details-section" aria-labelledby="anime-facts-title">
@@ -41,12 +41,18 @@
             <div><dt>Studio</dt><dd><?= $escape($anime['studio'] === '' ? 'Nieznane' : $anime['studio']) ?></dd></div>
             <div><dt>Rok premiery</dt><dd><?= isset($anime['year']) ? $escape($anime['year']) : 'Nieznany' ?></dd></div>
             <div><dt>Liczba odcinków</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznana' ?></dd></div>
-            <div><dt>Ocena MAL</dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+            <div><dt><?= ($anime['malId'] ?? null) !== null ? 'Ocena MAL' : 'Ocena' ?></dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
         </dl>
         <?php if (!empty($anime['sourceUrl']) && str_starts_with($anime['sourceUrl'], 'https://')): ?>
-            <p class="anime-source">Dane o anime: <a href="<?= $escape($anime['sourceUrl']) ?>" rel="external noreferrer">MyAnimeList</a>.
-                Próbka katalogu: <a href="https://huggingface.co/datasets/TheRealVigilante/Processed_Top_15k_Anime" rel="external noreferrer">Processed Top 15k Anime</a> — TheRealVigilante, na podstawie zbioru Quan Than.</p>
+            <p class="anime-source">Dane o anime: <a href="<?= $escape($anime['sourceUrl']) ?>" rel="external noreferrer"><?= $escape($anime['sourceLabel']) ?></a>.</p>
         <?php endif; ?>
+        <details class="anime-source">
+            <summary>Źródła katalogu</summary>
+            <p><a href="https://github.com/cedya77/anime-offline-database" rel="external noreferrer">Anime Offline Database — cedya77</a>,
+                kontynuacja <a href="https://github.com/manami-project/anime-offline-database" rel="external noreferrer">manami-project</a>;
+                opisy i oceny ze <a href="https://huggingface.co/datasets/moviebrain01/anime-dataset-2025" rel="external noreferrer">snapshotu moviebrain01</a>
+                oraz <a href="https://huggingface.co/datasets/TheRealVigilante/Processed_Top_15k_Anime" rel="external noreferrer">TheRealVigilante / Quan Than</a>.</p>
+        </details>
     </section>
 
     <section class="anime-details-section" aria-labelledby="anime-actions-title">

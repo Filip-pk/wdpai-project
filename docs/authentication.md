@@ -9,10 +9,10 @@ aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 Nowa, pusta baza otrzymuje schemat automatycznie przy pierwszym uruchomieniu
 PostgreSQL. Docker Compose montuje katalog `database` jako
 `/docker-entrypoint-initdb.d` tylko do odczytu; PostgreSQL wykonuje skrypty
-`01`, `02`, `03`, `04` i `05` w kolejności nazw.
+`01`, `02`, `03`, `04`, `05`, `06` i `07` w kolejności nazw.
 
 Jeśli baza była już uruchomiona, ale nie ma jeszcze tabel aplikacji,
-z katalogu projektu w Windows CMD wykonaj raz wszystkie pięć skryptów:
+z katalogu projektu w Windows CMD wykonaj raz wszystkie siedem skryptów:
 
 ```cmd
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\01-create-projects.sql
@@ -20,6 +20,8 @@ docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB e
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\03-user-profiles.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\04-user-avatars.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\05-anime-catalog.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\06-anime-catalog-sources.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\07-anime-catalog-search.sql
 ```
 
 Skrypty tworzą projekty, konta, pola profilu, watchlisty i zdjęcia. Nie uruchamiaj
@@ -28,7 +30,8 @@ tabele `users` i `projects`, ale brakuje pól profilu, wykonaj tylko skrypt
 `03`, a następnie migrację zdjęć `04`, zgodnie z
 [dokumentacją profili](user-profiles.md).
 
-Migracja `05` dodaje katalog używany przez profile i watchlisty. Dane próbne
+Migracja `05` dodaje katalog, `06` mapowania źródeł pełnego importu,
+a `07` indeks wyszukiwania. Dane
 pobierz według [instrukcji katalogu anime](anime-catalog.md).
 
 Rejestracja i logowanie wymagają również kolumn `interests` i `theme`

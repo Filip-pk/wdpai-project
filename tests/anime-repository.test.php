@@ -35,7 +35,7 @@ try {
     $connection = (new Database())->connect();
     $connection->beginTransaction();
 
-    foreach (['anime', 'genres', 'anime_genres'] as $table) {
+    foreach (['anime', 'genres', 'anime_genres', 'anime_external_ids'] as $table) {
         $connection->exec('CREATE TEMP TABLE ' . $table . ' (LIKE public.' . $table . ' INCLUDING ALL) ON COMMIT DROP');
         $statement = $connection->prepare(
             "SELECT count(*) FROM pg_class WHERE oid = to_regclass(:table)
@@ -137,12 +137,15 @@ try {
             $entry(105, '100% Real'), $entry(106, '1000 Real'),
             $entry(107, 'Under_score'), $entry(108, 'UnderXscore'),
             $entry(109, "O'Reilly"),
+            $entry(113, 'Escaped aliases', ['alternativeTitles' => ['He said "Hello"', 'Path\\Name']]),
         ]);
         $assert($repository->search('%')['total'] === 1);
         $assert($repository->search('_')['total'] === 1);
         $assert($repository->search("O'Reilly")['total'] === 1);
+        $assert($repository->search('"Hello"')['total'] === 1);
+        $assert($repository->search('Path\\Name')['total'] === 1);
         $assert($repository->search("' OR 1=1 --")['total'] === 0);
-        $assert($repository->count() === 5);
+        $assert($repository->count() === 6);
     });
 
     $run('Gatunek i tytuł filtrują wspólnie, bez powielania wyników', static function () use (
@@ -185,6 +188,123 @@ try {
         $ids = array_keys($repository->search()['animes']);
         $found = $repository->findByIds([$ids[0], $ids[0], PHP_INT_MAX, $ids[1]]);
         $assert(count($found) === 2 && isset($found[$ids[0]], $found[$ids[1]]));
+    });
+
+    $run('Anime bez MAL ID zachowuje własne ID przy ponownym imporcie po źródle zewnętrznym', static function () use (
+        $repository, $entry, $assert, $connection,
+    ): void {
+        $source = $entry(501, 'Tytuł bez MAL', [
+            'malId' => null,
+            'sourceUrl' => 'https://anilist.co/anime/123',
+            'externalIds' => [['provider' => 'anilist', 'externalId' => '123']],
+        ]);
+        $stream = (static function () use ($source): Generator {
+            yield $source;
+        })();
+        $result = $repository->importBatch($stream);
+        $id = array_key_first($repository->search()['animes']);
+        $assert($result['inserted'] === 1 && $result['total'] === 1);
+        $assert($repository->findById($id)['malId'] === null);
+
+        $result = $repository->importBatch([array_replace($source, ['title' => 'Nowa nazwa bez MAL'])]);
+        $assert($result['inserted'] === 0 && $result['updated'] === 1 && $result['total'] === 1);
+        $assert($repository->findById($id)['title'] === 'Nowa nazwa bez MAL');
+        $mapping = $connection->query(
+            "SELECT anime_id FROM anime_external_ids WHERE provider = 'anilist' AND external_id = '123'"
+        )->fetchColumn();
+        $assert((int) $mapping === $id);
+        $assert((int) $connection->query('SELECT count(*) FROM anime_external_ids')->fetchColumn() === 1);
+    });
+
+    $run('Późniejsze powiązanie MAL uzupełnia ten sam rekord bez duplikatu anime', static function () use (
+        $repository, $entry, $assert, $connection,
+    ): void {
+        $repository->importBatch([$entry(502, 'Anime z AniList', [
+            'malId' => null,
+            'sourceUrl' => 'https://anilist.co/anime/124',
+            'externalIds' => [['provider' => 'anilist', 'externalId' => '124']],
+        ])]);
+        $id = array_key_first($repository->search()['animes']);
+
+        $result = $repository->importBatch([$entry(1502, 'Anime z powiązaniem MAL', [
+            'externalIds' => [
+                ['provider' => 'anilist', 'externalId' => '124'],
+                ['provider' => 'mal', 'externalId' => '1502'],
+            ],
+        ])]);
+        $assert($result['inserted'] === 0 && $result['updated'] === 1 && $repository->count() === 1);
+        $assert($repository->findById($id)['malId'] === 1502);
+        $mappings = $connection->query('SELECT anime_id FROM anime_external_ids')->fetchAll(PDO::FETCH_COLUMN);
+        $assert(count($mappings) === 2 && count(array_unique(array_map('intval', $mappings))) === 1);
+        $assert((int) $mappings[0] === $id);
+    });
+
+    $run('Uboga aktualizacja zachowuje opis i znane fakty oraz łączy aliasy i gatunki', static function () use (
+        $repository, $entry, $assert,
+    ): void {
+        $rich = $entry(1503, 'Wzbogacone anime', [
+            'description' => 'Znany polski opis fabuły.',
+            'descriptionLanguage' => 'pl',
+            'alternativeTitles' => ['Rich alias'],
+            'score' => 9.1,
+        ]);
+        $repository->importBatch([$rich]);
+        $id = array_key_first($repository->search()['animes']);
+
+        $repository->importBatch([$entry(1503, 'Wzbogacone anime', [
+            'description' => '',
+            'descriptionLanguage' => 'en',
+            'coverUrl' => null,
+            'episodes' => null,
+            'score' => null,
+            'year' => null,
+            'alternativeTitles' => ['Sparse alias'],
+            'genres' => [['sourceId' => 4, 'name' => 'Comedy']],
+        ])], true);
+        $anime = $repository->findById($id);
+        $assert($repository->count() === 1 && $anime['description'] === $rich['description']);
+        $assert($anime['descriptionLanguage'] === 'pl');
+        foreach (['coverUrl', 'episodes', 'score', 'year'] as $field) {
+            $assert($anime[$field] === $rich[$field], 'Uboga aktualizacja nie może usunąć znanego pola ' . $field . '.');
+        }
+        $assert(in_array('Rich alias', $anime['alternativeTitles'], true)
+            && in_array('Sparse alias', $anime['alternativeTitles'], true));
+        $assert(count($anime['genres']) === 2
+            && in_array('Akcja', $anime['genres'], true) && in_array('Komedia', $anime['genres'], true));
+    });
+
+    $run('Sprzeczne powiązania źródeł przerywają partię bez zmiany istniejących anime', static function () use (
+        $repository, $entry, $assert, $connection,
+    ): void {
+        $repository->importBatch([
+            $entry(1701, 'Pierwsze anime', ['externalIds' => [
+                ['provider' => 'mal', 'externalId' => '1701'],
+                ['provider' => 'anilist', 'externalId' => '7001'],
+            ]]),
+            $entry(1702, 'Drugie anime', ['externalIds' => [
+                ['provider' => 'mal', 'externalId' => '1702'],
+                ['provider' => 'anilist', 'externalId' => '7002'],
+            ]]),
+        ]);
+        $caught = null;
+        try {
+            $repository->importBatch([
+                $entry(1703, 'Nieutrwalony nowy wpis'),
+                $entry(1701, 'Sprzeczna aktualizacja', ['externalIds' => [
+                    ['provider' => 'mal', 'externalId' => '1701'],
+                    ['provider' => 'anilist', 'externalId' => '7002'],
+                ]]),
+            ]);
+        } catch (Throwable $exception) {
+            $caught = $exception;
+        }
+
+        $assert($caught !== null && $repository->count() === 2);
+        $assert($repository->search('Pierwsze anime')['total'] === 1
+            && $repository->search('Drugie anime')['total'] === 1);
+        $assert($repository->search('Nieutrwalony')['total'] === 0
+            && $repository->search('Sprzeczna')['total'] === 0);
+        $assert((int) $connection->query('SELECT count(*) FROM anime_external_ids')->fetchColumn() === 4);
     });
 
     $run('Błąd wewnątrz partii nie zapisuje części importu', static function () use ($repository, $entry, $assert): void {

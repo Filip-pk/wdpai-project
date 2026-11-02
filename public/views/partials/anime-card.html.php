@@ -4,7 +4,7 @@
         <?php if (!empty($anime['coverUrl'])): ?>
             <img data-anime-cover src="<?= $escape($anime['coverUrl']) ?>" alt="" width="300" height="450" loading="lazy" decoding="async" referrerpolicy="no-referrer">
         <?php endif; ?>
-        <?php if (!empty($anime['type'])): ?>
+        <?php if (!empty($anime['type']) && $anime['type'] !== 'UNKNOWN'): ?>
             <span class="anime-type"><?= $escape($anime['type']) ?></span>
         <?php endif; ?>
     </a>
@@ -15,9 +15,9 @@
                 <li><?= $escape($genreName) ?></li>
             <?php endforeach; ?>
         </ul>
-        <p class="anime-card-description"<?= ($anime['descriptionLanguage'] ?? '') === 'en' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
+        <p class="anime-card-description"<?= ($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== '' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
         <dl class="anime-card-facts">
-            <div><dt><?= empty($anime['sourceUrl']) ? 'Ocena demonstracyjna' : 'Ocena MAL' ?></dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+            <div><dt><?= !array_key_exists('malId', $anime) ? 'Ocena demonstracyjna' : ($anime['malId'] !== null ? 'Ocena MAL' : 'Ocena') ?></dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
             <div><dt>Odcinki</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznane' ?></dd></div>
             <?php if (isset($anime['year'])): ?>
                 <div><dt>Premiera</dt><dd><?= $escape($anime['year']) ?></dd></div>

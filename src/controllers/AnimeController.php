@@ -83,6 +83,19 @@ final class AnimeController extends AppController
             return;
         }
 
+        $anime['sourceLabel'] = match (parse_url($anime['sourceUrl'] ?? '', PHP_URL_HOST)) {
+            'myanimelist.net' => 'MyAnimeList',
+            'anilist.co' => 'AniList',
+            'anidb.net' => 'AniDB',
+            'kitsu.app', 'kitsu.io' => 'Kitsu',
+            'anime-planet.com' => 'Anime-Planet',
+            'anisearch.com' => 'aniSearch',
+            'simkl.com' => 'SIMKL',
+            'livechart.me' => 'LiveChart',
+            'animenewsnetwork.com' => 'Anime News Network',
+            default => 'Strona źródłowa',
+        };
+
         $this->render('anime-details', [
             'pageTitle' => $anime['title'] . ' — AniVibe',
             'anime' => $anime,
