@@ -6,12 +6,18 @@ namespace App\Controller;
 
 use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
+use App\Repository\CollectionRepository;
+use App\Repository\UserRepository;
+use App\Service\CollectionService;
 use Closure;
 
 final class AnimeController extends AppController
 {
-    public function __construct(private AnimeRepository|Closure $animes)
-    {
+    public function __construct(
+        private AnimeRepository|Closure $animes,
+        private CollectionRepository|Closure $collections,
+        private UserRepository|Closure $users,
+    ) {
     }
 
     public function index(): void
@@ -60,6 +66,85 @@ final class AnimeController extends AppController
 
     public function show(int $id): void
     {
+        $this->renderAnime($id);
+    }
+
+    public function addToCollections(int $id): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $this->renderAnime($id, ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            return;
+        }
+
+        $ids = $_POST['collectionIds'] ?? [];
+        $collectionIds = [];
+        if (!is_array($ids) || $ids === [] || count($ids) > 100) {
+            http_response_code(422);
+            $this->renderAnime($id, ['Wybierz od 1 do 100 własnych kolekcji.']);
+            return;
+        }
+        foreach ($ids as $value) {
+            $collectionId = is_string($value) ? filter_var($value, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]) : false;
+            if ($collectionId === false) {
+                http_response_code(422);
+                $this->renderAnime($id, ['Wybierz poprawne kolekcje.']);
+                return;
+            }
+            $collectionIds[] = $collectionId;
+        }
+        $collectionIds = array_values(array_unique($collectionIds));
+        if ($this->animes()->findById($id) === null
+            || !$this->collections()->addAnimeToManyForUser($user['id'], $collectionIds, $id)) {
+            $this->collectionNotFound();
+            return;
+        }
+
+        $this->redirect('/anime/' . $id . '?collectionSaved=1');
+    }
+
+    public function createCollection(int $id): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $form = [
+            'name' => trim($this->postString('name')),
+            'description' => trim($this->postString('description')),
+        ];
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $this->renderAnime($id, ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'], $form);
+            return;
+        }
+
+        $errors = CollectionService::validate($form['name'], $form['description']);
+        if (!is_string($_POST['description'] ?? '') || !is_string($_POST['name'] ?? '')) {
+            $errors[] = 'Podaj nazwę i opis kolekcji jako tekst.';
+        }
+        if ($errors !== []) {
+            http_response_code(422);
+            $this->renderAnime($id, $errors, $form);
+            return;
+        }
+        if ($this->animes()->findById($id) === null) {
+            $this->collectionNotFound();
+            return;
+        }
+        $this->collections()->ensureDefaultForUser($user['id']);
+        if ($this->collections()->createWithAnimeForUser($user['id'], $form['name'], $form['description'], $id) === 0) {
+            $this->collectionNotFound();
+            return;
+        }
+
+        $this->redirect('/anime/' . $id . '?collectionSaved=1');
+    }
+
+    private function renderAnime(int $id, array $errors = [], array $collectionForm = []): void
+    {
         $anime = $id > 0 ? $this->animes()->findById($id) : null;
 
         if ($anime === null) {
@@ -89,7 +174,49 @@ final class AnimeController extends AppController
             'pageTitle' => $anime['title'] . ' — AniVibe',
             'anime' => $anime,
             'animeId' => $id,
+            'collections' => $this->animeCollections(),
+            'animeCollectionIds' => is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0
+                ? $this->collections()->collectionIdsForAnime($_SESSION['user_id'], $id) : [],
+            'collectionErrors' => $errors,
+            'collectionForm' => $collectionForm + ['name' => '', 'description' => ''],
+            'selectedCollectionIds' => [],
+            'collectionNotice' => !$this->isPost() && ($_GET['collectionSaved'] ?? null) === '1'
+                ? 'Anime zostało dodane do wybranych kolekcji.' : null,
         ]);
+    }
+
+    private function animeCollections(): array
+    {
+        if (!is_int($_SESSION['user_id'] ?? null) || $_SESSION['user_id'] <= 0) {
+            return [];
+        }
+        $user = $this->currentUser($this->users());
+        if (!$this->isPost()) {
+            $this->collections()->ensureDefaultForUser($user['id']);
+        }
+        return $this->collections()->findForUser($user['id']);
+    }
+
+    private function collectionNotFound(): void
+    {
+        http_response_code(404);
+        $this->render('not-found', ['pageTitle' => 'Nie znaleziono anime lub kolekcji — AniVibe']);
+    }
+
+    private function collections(): CollectionRepository
+    {
+        if ($this->collections instanceof Closure) {
+            $this->collections = ($this->collections)();
+        }
+        return $this->collections;
+    }
+
+    private function users(): UserRepository
+    {
+        if ($this->users instanceof Closure) {
+            $this->users = ($this->users)();
+        }
+        return $this->users;
     }
 
     private function animes(): AnimeRepository

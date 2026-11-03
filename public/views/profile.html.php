@@ -1,6 +1,8 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
 <div class="profile-page">
+    <?php require __DIR__ . '/partials/profile-tabs.html.php'; ?>
+
     <header class="profile-heading">
         <p class="eyebrow">Twoje konto AniVibe</p>
         <h1><?= $watchlistOnly ? 'Ulubione anime' : 'Twój profil' ?></h1>

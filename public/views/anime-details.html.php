@@ -55,6 +55,61 @@
         </details>
     </section>
 
+    <section class="anime-details-section anime-collection-actions" aria-labelledby="anime-collections-title">
+        <h2 id="anime-collections-title">Twoje prywatne kolekcje</h2>
+        <?php if ($isLoggedIn): ?>
+            <?php if ($collectionNotice !== null): ?>
+                <p class="anime-collection-notice" data-kind="success" role="status"><?= $escape($collectionNotice) ?></p>
+            <?php endif; ?>
+            <?php if ($collectionErrors !== []): ?>
+                <div class="anime-collection-notice" data-kind="error" role="alert">
+                    <ul><?php foreach ($collectionErrors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+                </div>
+            <?php endif; ?>
+
+            <details class="anime-collection-picker"<?= $collectionErrors !== [] ? ' open' : '' ?>>
+                <summary>Dodaj do kolekcji</summary>
+                <form action="/anime/<?= $escape($animeId) ?>/collections" method="post" class="collection-form">
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <fieldset class="collection-choices">
+                        <legend>Wybierz jedną lub kilka swoich kolekcji</legend>
+                        <?php foreach ($collections as $collection): ?>
+                            <?php $alreadyAdded = in_array($collection['id'], $animeCollectionIds, true); ?>
+                            <label class="collection-choice" for="anime-collection-<?= $escape($collection['id']) ?>">
+                                <input id="anime-collection-<?= $escape($collection['id']) ?>" name="collectionIds[]" type="checkbox" value="<?= $escape($collection['id']) ?>"<?= $alreadyAdded || in_array($collection['id'], $selectedCollectionIds, true) ? ' checked' : '' ?><?= $alreadyAdded ? ' disabled' : '' ?>>
+                                <span class="collection-choice-copy">
+                                    <span class="collection-choice-name"><?= $escape($collection['name']) ?></span>
+                                    <?php if ($alreadyAdded): ?><span class="collection-choice-added">Dodano</span><?php endif; ?>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </fieldset>
+                    <button type="submit">Dodaj do wybranych kolekcji</button>
+                </form>
+                <p class="collection-help">Możesz dodać ten tytuł do wielu kolekcji. Zachowasz status i postęp na watchliście.</p>
+            </details>
+
+            <details class="anime-collection-picker"<?= $collectionForm['name'] !== '' || $collectionForm['description'] !== '' ? ' open' : '' ?>>
+                <summary>Utwórz nową kolekcję</summary>
+                <form action="/anime/<?= $escape($animeId) ?>/collections/create" method="post" class="collection-form">
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <div class="profile-field">
+                        <label for="anime-collection-name">Nazwa kolekcji</label>
+                        <input id="anime-collection-name" name="name" type="text" maxlength="120" value="<?= $escape($collectionForm['name']) ?>" placeholder="Np. Do obejrzenia ze znajomymi" required>
+                    </div>
+                    <div class="profile-field">
+                        <label for="anime-collection-description">Krótki opis <span>(opcjonalnie)</span></label>
+                        <textarea id="anime-collection-description" name="description" rows="3" maxlength="500"><?= $escape($collectionForm['description']) ?></textarea>
+                    </div>
+                    <button type="submit">Utwórz kolekcję i dodaj anime</button>
+                </form>
+            </details>
+            <p><a href="/profile/collections">Przejdź do moich kolekcji →</a></p>
+        <?php else: ?>
+            <p><a href="/login">Zaloguj się</a>, aby tworzyć własne kolekcje i dodawać do nich anime.</p>
+        <?php endif; ?>
+    </section>
+
     <section class="anime-details-section" aria-labelledby="anime-actions-title">
         <h2 id="anime-actions-title">Twoja kolekcja i ocena</h2>
 

@@ -3,6 +3,32 @@
     gap: var(--space-6);
 }
 
+.profile-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    min-width: 0;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.profile-tabs a {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.profile-tabs a:hover,
+.profile-tabs a[aria-current="page"] {
+    border-color: var(--color-border);
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
 .page-content .profile-page > *,
 .page-content .profile-page :where(section, article) > * + * {
     margin-top: 0;

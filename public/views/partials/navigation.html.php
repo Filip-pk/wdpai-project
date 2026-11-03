@@ -22,7 +22,7 @@ $navigation = $isWelcome
                     href="<?= $escape($url) ?>"
                     <?= $currentPath === $url
                         || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
-                        || ($url === '/profile' && $currentPath === '/profile/avatar')
+                        || ($url === '/profile' && str_starts_with((string) $currentPath, '/profile/'))
                         ? 'aria-current="page"' : '' ?>
                 >
                     <?= $escape($label) ?>

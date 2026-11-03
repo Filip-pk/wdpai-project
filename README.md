@@ -14,6 +14,8 @@ AI i rozmowy z postaciami.
 - Rejestracja, logowanie i prywatna watchlista: dodawanie i usuwanie anime,
   statusy „Planowane”, „Oglądam”, „Ukończone” oraz zapis obejrzanych odcinków.
 - Edycja profilu, zainteresowania i zdjęcie profilowe JPG/PNG do 4 MB.
+- Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
+  należeć do kilku kolekcji niezależnie od statusu i postępu na watchliście.
 - Jasny, ciemny i systemowy motyw oraz układ dostosowany do telefonu i komputera.
 - Wiadomość powitalna po rejestracji, przechwytywana lokalnie przez Mailpit.
 
@@ -101,7 +103,7 @@ i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
 uruchomił się już podczas budowania obrazu.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-`database/01`–`08`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
+`database/01`–`09`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
 ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
 dołączane do repozytorium.
 
@@ -218,6 +220,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Autorzy źródeł i licencje danych](docs/anime-catalog.md#źródła-i-licencje)
 - [Konta i logowanie](docs/authentication.md)
 - [Profile, zdjęcia i watchlisty](docs/user-profiles.md)
+- [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)
 - [Środowisko PostgreSQL i przechowywanie danych](docs/postgresql-environment.md)
 

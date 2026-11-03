@@ -7,12 +7,14 @@ use App\Controller\AnimeController;
 use App\Controller\AppController;
 use App\Controller\AuthController;
 use App\Controller\ChatController;
+use App\Controller\CollectionController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Database;
 use App\Repository\AnimeRepository;
+use App\Repository\CollectionRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
@@ -39,8 +41,29 @@ header('Cache-Control: no-store');
 
 $routing = new Routing(static function (string $controllerClass): AppController {
     if ($controllerClass === AnimeController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+
         return new AnimeController(
-            static fn (): AnimeRepository => new AnimeRepository((new Database())->connect()),
+            static fn (): AnimeRepository => new AnimeRepository($connect()),
+            static fn (): CollectionRepository => new CollectionRepository($connect()),
+            static fn (): UserRepository => new UserRepository($connect()),
+        );
+    }
+
+    if ($controllerClass === CollectionController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+
+        return new CollectionController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): CollectionRepository => new CollectionRepository($connect()),
+            static fn (): AnimeRepository => new AnimeRepository($connect()),
+            static fn (): WatchlistRepository => new WatchlistRepository($connect()),
         );
     }
 
@@ -92,6 +115,8 @@ $routing->get('/dashboard', DashboardController::class, 'index');
 
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');
+$routing->post('/anime/{id}/collections', AnimeController::class, 'addToCollections');
+$routing->post('/anime/{id}/collections/create', AnimeController::class, 'createCollection');
 
 $routing->get('/chat', ChatController::class, 'index');
 $routing->get('/chat/{id}', ChatController::class, 'show');
@@ -99,6 +124,11 @@ $routing->get('/chat/{id}', ChatController::class, 'show');
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->post('/profile', ProfileController::class, 'index');
 $routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');
+$routing->get('/profile/collections', CollectionController::class, 'index');
+$routing->post('/profile/collections', CollectionController::class, 'create');
+$routing->get('/profile/collections/{id}', CollectionController::class, 'show');
+$routing->post('/profile/collections/{id}', CollectionController::class, 'update');
+$routing->post('/profile/collections/{id}/remove', CollectionController::class, 'removeAnime');
 $routing->get('/avatars/{id}', ProfileController::class, 'avatar');
 $routing->post('/profile/theme', ProfileController::class, 'theme');
 $routing->get('/watchlist', ProfileController::class, 'watchlist');

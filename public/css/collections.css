@@ -1,0 +1,349 @@
+.collections-layout,
+.collection-grid,
+.collection-anime-grid,
+.collections-library,
+.collection-content,
+.collection-form,
+.collection-panel,
+.collection-card-copy,
+.collection-anime-copy,
+.anime-collection-actions {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.collections-layout {
+    align-items: start;
+    gap: var(--space-6);
+}
+
+.collections-section-heading,
+.collection-toolbar,
+.collection-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.collections-page h1,
+.collection-description,
+.collection-card h3,
+.collection-anime-card h3 {
+    overflow-wrap: anywhere;
+}
+
+.collections-page .collection-grid,
+.collections-page .collection-anime-grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.collection-grid > li,
+.collection-anime-grid > li {
+    min-width: 0;
+}
+
+.collection-card,
+.collection-anime-card,
+.collection-panel,
+.collection-empty,
+.anime-collection-picker {
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+}
+
+.collection-card {
+    height: 100%;
+    transition: border-color 160ms ease;
+}
+
+.collection-card:hover,
+.collection-card:focus-within {
+    border-color: var(--color-brand);
+}
+
+.collection-card:focus-within {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+}
+
+.collection-card-link {
+    display: grid;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.collection-previews {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    background-color: var(--color-border);
+}
+
+.collection-preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+    font-size: 1.5rem;
+}
+
+.collection-preview img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.collection-card-copy {
+    padding: var(--space-4);
+}
+
+.collection-card-copy h3 {
+    color: var(--color-text);
+    font-size: 1.15rem;
+}
+
+.collection-description {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+}
+
+.collection-private,
+.collection-help {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.collection-count {
+    display: flex;
+    justify-content: space-between;
+    align-self: end;
+    gap: var(--space-2);
+    color: var(--color-brand);
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.collection-panel,
+.collection-empty {
+    padding: var(--space-5);
+}
+
+.collection-panel > p,
+.anime-collection-picker > p {
+    font-size: 0.875rem;
+}
+
+.page-standard .collection-form,
+.page-standard .collection-remove-form {
+    margin: 0;
+}
+
+.collection-form .profile-field {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.collection-form .profile-field label {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.collection-form textarea {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+.collection-form button {
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+}
+
+.collection-editor {
+    display: block;
+}
+
+.collection-editor[open] > .collection-form {
+    margin-top: var(--space-5);
+}
+
+.collection-editor summary,
+.anime-collection-picker summary {
+    cursor: pointer;
+    color: var(--color-brand);
+    font-weight: 700;
+}
+
+.collection-editor summary:focus-visible,
+.anime-collection-picker summary:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+}
+
+.collection-empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    background-color: var(--color-surface-raised);
+}
+
+.collection-empty > span {
+    color: var(--color-brand);
+    font-size: 2rem;
+}
+
+.collection-anime-card {
+    display: grid;
+    grid-template-columns: minmax(5rem, 32%) minmax(0, 1fr);
+    height: 100%;
+}
+
+.collection-anime-cover {
+    min-height: 11rem;
+    border-radius: 0;
+}
+
+.collection-anime-copy {
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}
+
+.collection-anime-copy h3 {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.collection-anime-copy .collection-watchlist-status {
+    color: var(--color-brand);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.page-standard .collection-remove-form {
+    margin: var(--space-2) 0 0;
+}
+
+.collection-remove-form button {
+    min-height: 2.75rem;
+    max-width: 100%;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+    font-size: 0.75rem;
+    white-space: normal;
+}
+
+.collection-pagination {
+    justify-content: center;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.875rem;
+}
+
+.anime-collection-picker {
+    padding: var(--space-4);
+}
+
+.page-standard .page-content .anime-collection-actions > * {
+    margin-top: 0;
+}
+
+.anime-collection-picker > .collection-form,
+.anime-collection-picker > p {
+    margin-top: var(--space-4);
+}
+
+.collection-choices {
+    max-height: 22rem;
+    overflow-y: auto;
+}
+
+.collection-choice {
+    display: flex;
+    align-items: start;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-2);
+    border-radius: var(--radius-small);
+    cursor: pointer;
+}
+
+.collection-choice:has(input:checked) {
+    background-color: var(--color-surface-raised);
+}
+
+.collection-choice input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-height: 0;
+    margin: 0.15rem 0 0;
+    accent-color: var(--color-brand);
+}
+
+.collection-choice-copy {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.collection-choice-name {
+    font-weight: 700;
+}
+
+.collection-choice-added {
+    color: var(--color-brand);
+    font-size: 0.75rem;
+}
+
+.anime-collection-notice {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+}
+
+.anime-collection-notice[data-kind="success"] {
+    color: var(--color-success);
+}
+
+.anime-collection-notice[data-kind="error"] {
+    color: var(--color-danger);
+}
+
+@media (min-width: 38rem) {
+    .collection-grid,
+    .collection-anime-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 64rem) {
+    .collections-layout {
+        grid-template-columns: minmax(0, 2fr) minmax(17rem, 1fr);
+    }
+
+    .collection-anime-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

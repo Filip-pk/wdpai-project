@@ -25,6 +25,7 @@ $currentPath = parse_url(
 $isWelcome = $currentPath === '/';
 $isProjectsPage = $currentPath === '/projects'
     || str_starts_with((string) $currentPath, '/projects/');
+$isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
 ?>
 
 <!doctype html>
@@ -77,14 +78,17 @@ $isProjectsPage = $currentPath === '/projects'
         <link rel="stylesheet" href="<?= $assetUrl('/css/projects.css') ?>">
     <?php endif; ?>
 
-    <?php if (str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist'], true)): ?>
+    <?php if ($isCollectionsPage || str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/catalog.css') ?>">
         <script src="<?= $assetUrl('/js/catalog.js') ?>" defer></script>
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
-    <?php if (in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist'], true)): ?>
+    <?php if ($isCollectionsPage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
+    <?php endif; ?>
+    <?php if ($isCollectionsPage || str_starts_with((string) $currentPath, '/anime/')): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/collections.css') ?>">
     <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">
@@ -150,7 +154,7 @@ $isProjectsPage = $currentPath === '/projects'
     <aside class="prototype-notice" aria-label="Informacja o prototypie">
         <p>
             <strong>Wersja demonstracyjna.</strong>
-            Konta, profile i watchlisty są zapisywane. Rozmowy AI pozostają demonstracyjne.
+            Konta, profile, watchlisty i prywatne kolekcje są zapisywane. Rozmowy AI pozostają demonstracyjne.
         </p>
     </aside>
 
