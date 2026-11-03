@@ -10,6 +10,7 @@ $navigation = $isWelcome
         '/chat' => 'Czat AI',
         '/watchlist' => 'Ulubione',
         '/profile' => 'Profil',
+        '/ranking' => 'Ranking',
         '/projects' => 'Projekty',
     ];
 ?>

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\AnimeRepository;
+use App\Repository\ExperienceRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Service\AvatarService;
+use App\Service\ExperienceService;
 use App\Service\ProfileService;
 use Closure;
 
@@ -25,6 +27,7 @@ final class ProfileController extends AppController
         private WatchlistRepository|Closure $watchlists,
         private AnimeRepository|Closure $animes,
         private RatingRepository|Closure $ratings,
+        private ExperienceRepository|Closure $experience,
     ) {
     }
 
@@ -212,6 +215,7 @@ final class ProfileController extends AppController
             'animes' => $animes,
             'watchlist' => $watchlist,
             'userRatings' => $this->ratings()->findByAnimeIdsForUser($user['id'], array_column($watchlist, 'animeId')),
+            'experience' => ExperienceService::progress($this->experience()->totalForUser($user['id'])),
             'statusFilter' => $statusFilter,
             'visibleWatchlist' => $statusFilter === '' ? $watchlist : array_values(array_filter(
                 $watchlist, static fn (array $entry): bool => $entry['status'] === $statusFilter,
@@ -256,5 +260,13 @@ final class ProfileController extends AppController
             $this->ratings = ($this->ratings)();
         }
         return $this->ratings;
+    }
+
+    private function experience(): ExperienceRepository
+    {
+        if ($this->experience instanceof Closure) {
+            $this->experience = ($this->experience)();
+        }
+        return $this->experience;
     }
 }

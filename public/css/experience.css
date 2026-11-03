@@ -1,0 +1,321 @@
+.experience-panel,
+.experience-progress,
+.ranking-page,
+.ranking-heading,
+.ranking-overview,
+.ranking-own,
+.ranking-board {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.ranking-page {
+    gap: var(--space-6);
+}
+
+.page-standard .page-content :where(.experience-panel, .ranking-page) > *,
+.page-standard .page-content .ranking-page :where(section, li, details) > * {
+    margin-top: 0;
+}
+
+.experience-panel,
+.ranking-own,
+.ranking-rules,
+.ranking-row,
+.ranking-empty {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+}
+
+.experience-heading,
+.experience-identity,
+.ranking-board-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.experience-heading,
+.ranking-board-heading {
+    justify-content: space-between;
+}
+
+.experience-identity > div {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.experience-symbol,
+.ranking-avatar {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--radius-small);
+    color: var(--color-button-text);
+    background-image: linear-gradient(135deg, var(--color-button-start), var(--color-button-end));
+}
+
+.experience-symbol {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.6rem;
+}
+
+.experience-panel h2,
+.ranking-own h2 {
+    font-size: 1rem;
+}
+
+.experience-level,
+.ranking-own-position {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.page-standard .page-content .experience-level,
+.page-standard .page-content .ranking-own-position {
+    color: var(--color-brand);
+}
+
+.experience-total {
+    font-size: 0.875rem;
+}
+
+.experience-total strong {
+    color: var(--color-text);
+    font-size: 1.1rem;
+}
+
+.experience-progress {
+    gap: var(--space-2);
+}
+
+.experience-progress label,
+.experience-progress p,
+.ranking-count {
+    font-size: 0.8rem;
+}
+
+.experience-progress label {
+    font-weight: 700;
+}
+
+.experience-progress progress {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: 0.75rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-pill);
+    accent-color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.experience-progress progress::-webkit-progress-bar {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-raised);
+}
+
+.experience-progress progress::-webkit-progress-value {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-brand);
+}
+
+.experience-progress progress::-moz-progress-bar {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-brand);
+}
+
+.experience-ranking-link,
+.ranking-own a {
+    justify-self: start;
+    padding-block: var(--space-2);
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.ranking-heading {
+    justify-items: start;
+    gap: var(--space-3);
+}
+
+.ranking-overview {
+    align-items: stretch;
+}
+
+.ranking-own {
+    align-content: start;
+    background-color: var(--color-surface-raised);
+}
+
+.ranking-own-position {
+    font-size: 2.5rem;
+}
+
+.ranking-own > p:not(.ranking-own-position),
+.ranking-rules {
+    font-size: 0.875rem;
+}
+
+.ranking-rules summary {
+    color: var(--color-brand);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ranking-rules summary:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+}
+
+.ranking-rules ul {
+    display: grid;
+    gap: var(--space-2);
+    padding-inline-start: var(--space-5);
+}
+
+.page-standard .ranking-page .ranking-rules[open] > ul {
+    margin-block: var(--space-4);
+}
+
+.page-standard .ranking-page .ranking-rules[open] > p {
+    margin-top: var(--space-4);
+}
+
+.ranking-board-heading > div {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.ranking-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.ranking-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: minmax(2.5rem, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+}
+
+.ranking-row-own {
+    border-color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.ranking-position {
+    align-self: start;
+    padding-top: var(--space-2);
+    color: var(--color-brand);
+    font-size: 0.875rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.ranking-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.ranking-avatar {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.25rem;
+}
+
+.ranking-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ranking-user-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+}
+
+.ranking-you {
+    display: inline-block;
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-brand);
+    border-radius: var(--radius-pill);
+    color: var(--color-brand);
+    font-size: 0.7rem;
+    vertical-align: middle;
+}
+
+.ranking-values {
+    display: grid;
+    grid-column: 2 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    min-width: 0;
+    margin: 0;
+}
+
+.ranking-values > div {
+    min-width: 0;
+}
+
+.ranking-values dt {
+    font-size: 0.75rem;
+}
+
+.ranking-values dd {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text);
+    font-size: 1rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+@media (min-width: 42rem) {
+    .ranking-row {
+        grid-template-columns: 3.5rem minmax(0, 1fr) minmax(12rem, 0.5fr);
+        padding: var(--space-4) var(--space-5);
+    }
+
+    .ranking-values {
+        grid-column: auto;
+    }
+
+    .ranking-position {
+        align-self: center;
+        padding-top: 0;
+    }
+}
+
+@media (min-width: 56rem) {
+    .ranking-overview {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+    }
+}

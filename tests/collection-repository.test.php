@@ -20,7 +20,7 @@ $assert = static function (bool $condition, string $message = 'Warunek testu nie
 try {
     $connection = (new Database())->connect();
     $connection->beginTransaction();
-    foreach (['users', 'anime', 'user_watchlist', 'anime_collections', 'anime_collection_items'] as $table) {
+    foreach (['users', 'anime', 'user_watchlist', 'user_anime_experience', 'anime_collections', 'anime_collection_items'] as $table) {
         $connection->exec('CREATE TEMP TABLE ' . $table . ' (LIKE public.' . $table . ' INCLUDING ALL) ON COMMIT DROP');
         $statement = $connection->prepare(
             'SELECT count(*) FROM pg_class WHERE oid = to_regclass(:table)

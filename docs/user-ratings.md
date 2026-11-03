@@ -3,7 +3,7 @@
 Zalogowane konto może wystawić każdemu anime własną ocenę od 1 do 10,
 zmienić ją albo usunąć. Oceny są prywatne i zapisane w PostgreSQL.
 Na stronie anime i watchliście są oznaczone jako „Twoja ocena”, oddzielnie
-od importowanej oceny MAL lub innego źródła.
+od importowanej oceny katalogowej.
 
 Wystawienie oceny nie wymaga dodawania anime do watchlisty ani kolekcji.
 Zapis, zmiana i usunięcie oceny nie zmieniają statusu, postępu oglądania,

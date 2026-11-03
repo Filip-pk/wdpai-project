@@ -12,9 +12,11 @@ use App\Controller\DashboardController;
 use App\Controller\DefaultController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
+use App\Controller\RankingController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
+use App\Repository\ExperienceRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
@@ -80,6 +82,19 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): WatchlistRepository => new WatchlistRepository($connect()),
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): RatingRepository => new RatingRepository($connect()),
+            static fn (): ExperienceRepository => new ExperienceRepository($connect()),
+        );
+    }
+
+    if ($controllerClass === RankingController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+
+        return new RankingController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): ExperienceRepository => new ExperienceRepository($connect()),
         );
     }
 
@@ -115,6 +130,7 @@ $routing->get('/register', AuthController::class, 'register');
 $routing->post('/register', AuthController::class, 'register');
 $routing->post('/logout', AuthController::class, 'logout');
 $routing->get('/dashboard', DashboardController::class, 'index');
+$routing->get('/ranking', RankingController::class, 'index');
 
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');

@@ -17,7 +17,9 @@ AI i rozmowy z postaciami.
 - Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
   należeć do kilku kolekcji niezależnie od statusu i postępu na watchliście.
 - Prywatne oceny anime w skali 1–10: zapis, zmiana i usuwanie, z podglądem
-  na stronie anime, w profilu i na watchliście, niezależnie od ocen MAL.
+  na stronie anime, w profilu i na watchliście, niezależnie od ocen katalogowych.
+- Poziomy i EXP: 5 punktów za odcinek oraz 100 za ukończony tytuł;
+  rosnące progi poziomów i aktualny ranking TOP 100 użytkowników.
 - Jasny, ciemny i systemowy motyw oraz układ dostosowany do telefonu i komputera.
 - Wiadomość powitalna po rejestracji, przechwytywana lokalnie przez Mailpit.
 
@@ -105,7 +107,7 @@ i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
 uruchomił się już podczas budowania obrazu.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-`database/01`–`10`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
+`database/01`–`11`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
 ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
 dołączane do repozytorium.
 
@@ -224,6 +226,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Profile, zdjęcia i watchlisty](docs/user-profiles.md)
 - [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
 - [Prywatne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
+- [Poziomy, EXP i ranking TOP 100](docs/user-experience.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)
 - [Środowisko PostgreSQL i przechowywanie danych](docs/postgresql-environment.md)
 

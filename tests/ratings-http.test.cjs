@@ -47,7 +47,7 @@ function rating(page) {
 }
 
 function sourceScore(page) {
-    const match = page.html.match(/<dt>(?:Ocena MAL|Ocena)<\/dt>\s*<dd>([^<]*)<\/dd>/);
+    const match = page.html.match(/<dt>Ocena<\/dt>\s*<dd>([^<]*)<\/dd>/);
     assert.ok(match, 'The source score remains present separately from the own rating');
     return match[1];
 }

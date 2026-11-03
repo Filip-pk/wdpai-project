@@ -21,6 +21,8 @@
         </div>
     <?php endif; ?>
 
+    <?php require __DIR__ . '/partials/experience.html.php'; ?>
+
     <?php if (!$watchlistOnly): ?>
         <div class="profile-grid">
             <section class="profile-summary" aria-labelledby="profile-title">

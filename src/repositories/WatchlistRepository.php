@@ -39,9 +39,18 @@ final class WatchlistRepository
     public function saveForUser(int $userId, int $animeId, string $status, int $watched): void
     {
         $statement = $this->database->prepare(
-            'INSERT INTO user_watchlist (user_id, anime_id, status, watched)
-             VALUES (:user_id, :anime_id, :status, :watched)
-             ON CONFLICT (user_id, anime_id) DO UPDATE SET status = EXCLUDED.status, watched = EXCLUDED.watched'
+            "WITH saved AS (
+                INSERT INTO user_watchlist (user_id, anime_id, status, watched)
+                VALUES (:user_id, :anime_id, :status, :watched)
+                ON CONFLICT (user_id, anime_id)
+                DO UPDATE SET status = EXCLUDED.status, watched = EXCLUDED.watched
+                RETURNING user_id, anime_id, status, watched
+             )
+             INSERT INTO user_anime_experience (user_id, anime_id, watched, completed)
+             SELECT user_id, anime_id, watched, status = 'completed' FROM saved WHERE TRUE
+             ON CONFLICT (user_id, anime_id)
+             DO UPDATE SET watched = EXCLUDED.watched, completed = EXCLUDED.completed,
+                           updated_at = CURRENT_TIMESTAMP"
         );
         $statement->execute([
             'user_id' => $userId,
