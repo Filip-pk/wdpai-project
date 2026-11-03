@@ -438,6 +438,98 @@
     font-weight: 700;
 }
 
+.anime-rating-panel {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface-raised);
+    scroll-margin-top: var(--space-5);
+}
+
+.page-standard .page-content .anime-rating-panel > * {
+    margin: 0;
+}
+
+.page-standard .anime-rating-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+    margin: 0;
+}
+
+.anime-rating-field {
+    display: grid;
+    flex: 1 1 14rem;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.anime-rating-field label,
+.anime-rating-help {
+    font-size: 0.875rem;
+}
+
+.anime-rating-field label {
+    font-weight: 700;
+}
+
+.anime-rating-field select {
+    min-width: 0;
+    min-height: 2.75rem;
+}
+
+.anime-rating-form button {
+    flex: 0 1 auto;
+}
+
+.anime-rating-current,
+.page-standard .watchlist-rating {
+    color: var(--color-brand);
+    font-weight: 700;
+}
+
+.watchlist-rating {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.watchlist-rating a {
+    font-size: 0.875rem;
+    font-weight: 400;
+}
+
+.page-standard .anime-rating-remove {
+    margin: 0;
+}
+
+.page-standard .anime-rating-remove button {
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: none;
+}
+
+.anime-rating-notice {
+    padding: var(--space-3);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+}
+
+.anime-rating-panel .anime-rating-notice[data-kind="success"] {
+    color: var(--color-success);
+}
+
+.anime-rating-panel .anime-rating-notice[data-kind="error"] {
+    color: var(--color-danger);
+}
+
 @media (min-width: 40rem) {
     .anime-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

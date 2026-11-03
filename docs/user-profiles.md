@@ -60,7 +60,9 @@ i losową wersję `avatar_version`. Odczyt `/avatars/{id}?v=...` zwraca sam
 obraz PNG z `nosniff`; link do zdjęcia jest dostępny również bez logowania.
 Oryginalne nazwy plików i ścieżki przesyłania nie są zapisywane.
 
-Synchronizacja MyAnimeList, oceny i AI nadal są demonstracyjne.
+Synchronizacja MyAnimeList i AI nadal są demonstracyjne.
+[Prywatne oceny anime](user-ratings.md) w skali 1–10 są zapisywane na koncie
+i widoczne przy tytułach w profilu oraz na watchliście.
 [Katalog anime](anime-catalog.md) korzysta z PostgreSQL; watchlista przechowuje
 przypisania jego tytułów do użytkowników.
 

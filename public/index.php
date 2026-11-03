@@ -16,6 +16,7 @@ use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\ProjectRepository;
+use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
@@ -50,6 +51,7 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): CollectionRepository => new CollectionRepository($connect()),
             static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): RatingRepository => new RatingRepository($connect()),
         );
     }
 
@@ -77,6 +79,7 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): WatchlistRepository => new WatchlistRepository($connect()),
             static fn (): AnimeRepository => new AnimeRepository($connect()),
+            static fn (): RatingRepository => new RatingRepository($connect()),
         );
     }
 
@@ -115,6 +118,8 @@ $routing->get('/dashboard', DashboardController::class, 'index');
 
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');
+$routing->post('/anime/{id}/rating', AnimeController::class, 'saveRating');
+$routing->post('/anime/{id}/rating/remove', AnimeController::class, 'removeRating');
 $routing->post('/anime/{id}/collections', AnimeController::class, 'addToCollections');
 $routing->post('/anime/{id}/collections/create', AnimeController::class, 'createCollection');
 

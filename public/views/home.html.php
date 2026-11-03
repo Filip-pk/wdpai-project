@@ -113,36 +113,6 @@
         </p>
     </section>
 
-    <section class="welcome-social" aria-labelledby="social-title">
-        <h2 id="social-title" class="social-title">
-            Lub kontynuuj przez
-        </h2>
-
-        <div class="social-actions">
-            <button
-                type="button"
-                class="button button-social"
-                disabled
-                aria-describedby="social-info"
-            >
-                Google
-            </button>
-
-            <button
-                type="button"
-                class="button button-social"
-                disabled
-                aria-describedby="social-info"
-            >
-                Discord
-            </button>
-        </div>
-
-        <p id="social-info" class="helper-text">
-            Logowanie zewnętrzne jest na razie elementem makiety.
-        </p>
-    </section>
-
     <footer class="welcome-footer">
         <p class="technology-badge">
             <span aria-hidden="true">✦</span>

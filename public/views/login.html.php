@@ -141,45 +141,6 @@
                 </fieldset>
             </form>
 
-            <section
-                class="auth-social"
-                aria-labelledby="alternative-login-title"
-            >
-                <h2 id="alternative-login-title" class="auth-divider">
-                    Lub zaloguj się przez
-                </h2>
-
-                <div class="auth-social-actions">
-                    <button
-                        type="button"
-                        class="auth-provider"
-                        disabled
-                        aria-describedby="providers-info"
-                    >
-                        <span class="auth-provider-icon" aria-hidden="true">
-                            G
-                        </span>
-                        Google
-                    </button>
-
-                    <button
-                        type="button"
-                        class="auth-provider"
-                        disabled
-                        aria-describedby="providers-info"
-                    >
-                        <span class="auth-provider-icon" aria-hidden="true">
-                            ◈
-                        </span>
-                        Discord
-                    </button>
-                </div>
-
-                <p id="providers-info" class="auth-help">
-                    Logowanie zewnętrzne nie jest jeszcze dostępne.
-                </p>
-            </section>
-
             <div class="auth-register">
                 <p>Nie masz jeszcze konta?</p>
 

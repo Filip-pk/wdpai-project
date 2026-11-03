@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\AnimeRepository;
+use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Service\AvatarService;
@@ -23,6 +24,7 @@ final class ProfileController extends AppController
         private UserRepository|Closure $users,
         private WatchlistRepository|Closure $watchlists,
         private AnimeRepository|Closure $animes,
+        private RatingRepository|Closure $ratings,
     ) {
     }
 
@@ -209,6 +211,7 @@ final class ProfileController extends AppController
             'avatarSaved' => !$this->isPost() && ($_GET['avatarSaved'] ?? null) === '1',
             'animes' => $animes,
             'watchlist' => $watchlist,
+            'userRatings' => $this->ratings()->findByAnimeIdsForUser($user['id'], array_column($watchlist, 'animeId')),
             'statusFilter' => $statusFilter,
             'visibleWatchlist' => $statusFilter === '' ? $watchlist : array_values(array_filter(
                 $watchlist, static fn (array $entry): bool => $entry['status'] === $statusFilter,
@@ -245,5 +248,13 @@ final class ProfileController extends AppController
         }
 
         return $this->watchlists;
+    }
+
+    private function ratings(): RatingRepository
+    {
+        if ($this->ratings instanceof Closure) {
+            $this->ratings = ($this->ratings)();
+        }
+        return $this->ratings;
     }
 }

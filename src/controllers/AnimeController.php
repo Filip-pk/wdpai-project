@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
+use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Service\CollectionService;
 use Closure;
@@ -17,6 +18,7 @@ final class AnimeController extends AppController
         private AnimeRepository|Closure $animes,
         private CollectionRepository|Closure $collections,
         private UserRepository|Closure $users,
+        private RatingRepository|Closure $ratings,
     ) {
     }
 
@@ -143,7 +145,53 @@ final class AnimeController extends AppController
         $this->redirect('/anime/' . $id . '?collectionSaved=1');
     }
 
-    private function renderAnime(int $id, array $errors = [], array $collectionForm = []): void
+    public function saveRating(int $id): void
+    {
+        $this->changeRating($id, false);
+    }
+
+    public function removeRating(int $id): void
+    {
+        $this->changeRating($id, true);
+    }
+
+    private function changeRating(int $id, bool $remove): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $this->renderAnime($id, ratingErrors: ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            return;
+        }
+
+        if ($id <= 0 || $this->animes()->findById($id) === null) {
+            $this->renderAnime($id);
+            return;
+        }
+
+        if ($remove) {
+            $this->ratings()->removeForUser($user['id'], $id);
+            $this->redirect('/anime/' . $id . '?ratingRemoved=1#anime-rating-title');
+        }
+
+        $rating = $this->postString('rating');
+        if (preg_match('/\A(?:[1-9]|10)\z/', $rating) !== 1) {
+            http_response_code(422);
+            $this->renderAnime($id, ratingErrors: ['Wybierz ocenę od 1 do 10, bez części ułamkowej.']);
+            return;
+        }
+
+        $this->ratings()->saveForUser($user['id'], $id, (int) $rating);
+        $this->redirect('/anime/' . $id . '?ratingSaved=1#anime-rating-title');
+    }
+
+    private function renderAnime(
+        int $id,
+        array $errors = [],
+        array $collectionForm = [],
+        array $ratingErrors = [],
+    ): void
     {
         $anime = $id > 0 ? $this->animes()->findById($id) : null;
 
@@ -170,11 +218,15 @@ final class AnimeController extends AppController
             default => 'Strona źródłowa',
         };
 
+        $collections = $this->animeCollections();
+        $userRating = is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0
+            ? $this->ratings()->findForUser($_SESSION['user_id'], $id) : null;
+
         $this->render('anime-details', [
             'pageTitle' => $anime['title'] . ' — AniVibe',
             'anime' => $anime,
             'animeId' => $id,
-            'collections' => $this->animeCollections(),
+            'collections' => $collections,
             'animeCollectionIds' => is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0
                 ? $this->collections()->collectionIdsForAnime($_SESSION['user_id'], $id) : [],
             'collectionErrors' => $errors,
@@ -182,6 +234,14 @@ final class AnimeController extends AppController
             'selectedCollectionIds' => [],
             'collectionNotice' => !$this->isPost() && ($_GET['collectionSaved'] ?? null) === '1'
                 ? 'Anime zostało dodane do wybranych kolekcji.' : null,
+            'userRating' => $userRating,
+            'ratingValue' => $ratingErrors === [] ? (string) ($userRating ?? '') : $this->postString('rating'),
+            'ratingErrors' => $ratingErrors,
+            'ratingNotice' => !$this->isPost() ? match (true) {
+                ($_GET['ratingSaved'] ?? null) === '1' => 'Twoja ocena została zapisana.',
+                ($_GET['ratingRemoved'] ?? null) === '1' => 'Twoja ocena została usunięta.',
+                default => null,
+            } : null,
         ]);
     }
 
@@ -226,5 +286,13 @@ final class AnimeController extends AppController
         }
 
         return $this->animes;
+    }
+
+    private function ratings(): RatingRepository
+    {
+        if ($this->ratings instanceof Closure) {
+            $this->ratings = ($this->ratings)();
+        }
+        return $this->ratings;
     }
 }

@@ -34,6 +34,11 @@
 
                 <p>Status: <?= $escape($watchlistStatuses[$entry['status']]) ?></p>
 
+                <p class="watchlist-rating" data-user-rating="<?= $escape($userRatings[$animeId] ?? '') ?>">
+                    Twoja ocena: <?= isset($userRatings[$animeId]) ? $escape($userRatings[$animeId]) . ' / 10' : 'Brak oceny' ?>
+                    <a href="/anime/<?= $escape($animeId) ?>#anime-rating-title"><?= isset($userRatings[$animeId]) ? 'Zmień ocenę' : 'Oceń anime' ?></a>
+                </p>
+
                 <label for="progress-<?= $escape($animeId) ?>">
                     Obejrzane:
                     <?= $escape($entry['watched']) ?>

@@ -111,7 +111,7 @@
     </section>
 
     <section class="anime-details-section" aria-labelledby="anime-actions-title">
-        <h2 id="anime-actions-title">Twoja kolekcja i ocena</h2>
+        <h2 id="anime-actions-title">Twoja watchlista i ocena</h2>
 
         <?php if ($isLoggedIn): ?>
             <form action="/watchlist" method="post">
@@ -124,27 +124,42 @@
             <p><a href="/login">Zaloguj się</a>, aby dodać anime do swojej watchlisty.</p>
         <?php endif; ?>
 
-        <form action="/anime/review" method="post">
-            <fieldset disabled>
-                <legend>Twoja ocena</legend>
-
-                <label for="anime-rating">
-                    Oceń anime w skali od 1 do 10
-                </label>
-
-                <input
-                    id="anime-rating"
-                    name="rating"
-                    type="number"
-                    min="1"
-                    max="10"
-                    step="1"
-                    required
-                >
-
-                <button type="submit">Zapisz ocenę</button>
-            </fieldset>
-        </form>
+        <section class="anime-rating-panel" aria-labelledby="anime-rating-title"<?php if ($isLoggedIn): ?> data-user-rating="<?= $escape($userRating ?? '') ?>"<?php endif; ?>>
+            <h3 id="anime-rating-title">Twoja ocena</h3>
+            <?php if ($isLoggedIn): ?>
+                <p class="anime-rating-current"><?= $userRating !== null ? 'Twoja ocena: ' . $escape($userRating) . ' / 10' : 'To anime czeka na Twoją ocenę.' ?></p>
+                <p class="anime-rating-help" id="anime-rating-help">Ocena jest prywatna. Możesz ją zmienić lub usunąć. Ocena katalogowa i postęp oglądania pozostają niezależne.</p>
+                <?php if ($ratingNotice !== null): ?>
+                    <p class="anime-rating-notice" data-kind="success" role="status"><?= $escape($ratingNotice) ?></p>
+                <?php endif; ?>
+                <?php if ($ratingErrors !== []): ?>
+                    <div class="anime-rating-notice" data-kind="error" role="alert">
+                        <ul><?php foreach ($ratingErrors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+                    </div>
+                <?php endif; ?>
+                <form action="/anime/<?= $escape($animeId) ?>/rating" method="post" class="anime-rating-form">
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <div class="anime-rating-field">
+                        <label for="anime-rating">Oceń anime w skali od 1 do 10</label>
+                        <select id="anime-rating" name="rating" aria-describedby="anime-rating-help"<?= $ratingErrors !== [] ? ' aria-invalid="true"' : '' ?> required>
+                            <option value=""<?= $ratingValue === '' ? ' selected' : '' ?>>Wybierz ocenę</option>
+                            <?php for ($value = 1; $value <= 10; $value++): ?>
+                                <option value="<?= $escape($value) ?>"<?= $ratingValue === (string) $value ? ' selected' : '' ?>><?= $escape($value) ?> / 10</option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <button type="submit">Zapisz ocenę</button>
+                </form>
+                <?php if ($userRating !== null): ?>
+                    <form action="/anime/<?= $escape($animeId) ?>/rating/remove" method="post" class="anime-rating-remove">
+                        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                        <button type="submit">Usuń ocenę</button>
+                    </form>
+                <?php endif; ?>
+            <?php else: ?>
+                <p><a href="/login">Zaloguj się</a>, aby zapisać własną ocenę tego anime.</p>
+            <?php endif; ?>
+        </section>
 
         <a href="/chat">Przejdź do asystenta AI</a>
     </section>

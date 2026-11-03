@@ -9,10 +9,10 @@ aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 Nowa, pusta baza otrzymuje schemat automatycznie przy pierwszym uruchomieniu
 PostgreSQL. Docker Compose montuje katalog `database` jako
 `/docker-entrypoint-initdb.d` tylko do odczytu; PostgreSQL wykonuje skrypty
-`01`–`08` w kolejności nazw.
+`01`–`10` w kolejności nazw.
 
 Jeśli baza była już uruchomiona, ale nie ma jeszcze tabel aplikacji,
-z katalogu projektu w Windows CMD wykonaj raz wszystkie osiem skryptów:
+z katalogu projektu w Windows CMD wykonaj raz wszystkie dziesięć skryptów:
 
 ```cmd
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\01-create-projects.sql
@@ -23,6 +23,8 @@ docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB e
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\06-anime-catalog-sources.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\07-anime-catalog-search.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\08-anime-catalog-sort.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\09-user-collections.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\10-user-anime-ratings.sql
 ```
 
 Skrypty tworzą projekty, konta, pola profilu, watchlisty i zdjęcia. Nie uruchamiaj
@@ -34,6 +36,8 @@ tabele `users` i `projects`, ale brakuje pól profilu, wykonaj tylko skrypt
 Migracja `05` dodaje katalog, `06` mapowania źródeł pełnego importu,
 `07` indeks wyszukiwania, a `08` indeks sortowania według oceny. Dane
 pobierz według [instrukcji katalogu anime](anime-catalog.md).
+Migracja `09` dodaje [prywatne kolekcje](user-collections.md), a `10`
+[prywatne oceny anime](user-ratings.md).
 
 Rejestracja i logowanie wymagają również kolumn `interests` i `theme`
 z trzeciego skryptu oraz `avatar_version` z czwartego. Samo działające
@@ -71,7 +75,7 @@ opisuje [dokumentacja profili](user-profiles.md).
 
 To uwierzytelnianie i kontrola dostępu do strony dla zalogowanych. Projekty
 są wspólne; model nie zawiera właściciela ani ról. Uprawnienia do edycji
-konkretnych zasobów, reset hasła, OAuth i ograniczanie prób logowania to
+konkretnych zasobów, reset hasła i ograniczanie prób logowania to
 osobne etapy. Laboratorium nie podłącza AI.
 
 ## Weryfikacja

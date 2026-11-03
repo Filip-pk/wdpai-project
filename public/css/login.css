@@ -440,69 +440,8 @@
 
 
 /* ========================================
-   7. Pozostałe sposoby logowania
+   7. Tekst pomocniczy
    ======================================== */
-
-.auth-page .auth-social {
-    display: grid;
-    gap: 0.9rem;
-}
-
-.auth-page .auth-social > * {
-    margin: 0;
-}
-
-.auth-page .auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-
-    color: var(--auth-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    line-height: 1.5;
-    text-align: center;
-}
-
-.auth-page .auth-divider::before,
-.auth-page .auth-divider::after {
-    flex: 1 1 1rem;
-    height: 1px;
-
-    content: "";
-    background-color: var(--auth-border);
-}
-
-.auth-page .auth-social-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-}
-
-.auth-page .auth-provider {
-    display: inline-flex;
-    flex: 1 1 8rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.65rem;
-
-    min-height: 3rem;
-    padding: 0.75rem;
-
-    border: 1px dashed var(--auth-border);
-    border-radius: var(--auth-field-radius);
-
-    color: var(--auth-muted);
-    background-color: var(--auth-surface);
-
-    font-size: 0.9rem;
-    font-weight: 700;
-}
-
-.auth-page .auth-provider-icon {
-    color: var(--auth-brand);
-    font-size: 1.1rem;
-}
 
 .auth-page .auth-help {
     color: var(--auth-muted);
