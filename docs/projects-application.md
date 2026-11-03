@@ -70,5 +70,5 @@ docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB e
 Testy ograniczeń korzystają z tabeli tymczasowej i nie zmieniają zapisanych
 projektów ani ich sekwencji ID.
 
-Sposób restartu bazy i ograniczenia istniejącego anonimowego wolumenu opisuje
+Sposób restartu bazy i przechowywanie danych w nazwanym wolumenie opisuje
 [dokumentacja środowiska](postgresql-environment.md#przechowywanie-danych).

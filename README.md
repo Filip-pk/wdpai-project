@@ -179,10 +179,18 @@ docker compose stop
 Nie trzeba ponownie pobierać katalogu ani wykonywać importu. Do zwykłego
 restartu możesz też użyć `docker compose restart`.
 
-**W obecnej konfiguracji baza korzysta z anonimowego wolumenu Dockera.**
-Używaj `stop` i `start` do codziennej pracy. Sekwencja `docker compose down`
-i ponowne `up` nie przypisuje automatycznie starego wolumenu do nowego
-kontenera, więc możesz otrzymać nową pustą bazę. Szczegóły są w
+**Baza zapisuje dane w nazwanym wolumenie `pg-data`.** Jego nazwa w Dockerze
+zależy od nazwy projektu Compose, np. `my-app_pg-data`. Do codziennej pracy
+używaj `stop` i `start`. Zwykłe `docker compose down` i ponowne `up` również
+zachowują bazę, jeśli używasz tej samej nazwy projektu.
+
+`docker compose down -v` usuwa wolumen i dane bazy. Polecenie
+`docker volume prune -a` może usunąć nieużywany nazwany wolumen.
+Przed usuwaniem wolumenów wykonaj kopię zapasową.
+
+Jeśli aktualizujesz starszą instalację z anonimowym wolumenem, najpierw
+wykonaj kopię starej bazy i przenieś ją do nazwanego wolumenu. Samo podłączenie
+pustego `pg-data` nie przenosi kont, watchlist ani katalogu. Szczegóły są w
 [opisie przechowywania danych](docs/postgresql-environment.md#przechowywanie-danych).
 
 ## Najczęstsze problemy
@@ -192,7 +200,7 @@ kontenera, więc możesz otrzymać nową pustą bazę. Szczegóły są w
 | Nie znaleziono `docker` lub `node` | Dokończ instalację narzędzia i otwórz nowe okno CMD. |
 | Docker nie może połączyć się z silnikiem | Uruchom Docker Desktop i zaczekaj na jego gotowość; projekt wymaga kontenerów Linux. |
 | Brak `vendor/autoload.php` | Wykonaj polecenie `composer install` z kroku 4. |
-| Katalog pokazuje tylko 6 anime | Wykonaj pobieranie i import z kroku 5. |
+| Katalog pokazuje tylko 6 anime | Na nowej instalacji wykonaj import z kroku 5. Jeśli katalog był już zaimportowany, najpierw sprawdź podłączenie właściwego wolumenu i odzyskaj poprzednią bazę; sam import nie przywróci kont ani watchlist. |
 | Brak `manifest.json` | Najpierw zakończ pobieranie poleceniem Node.js; sprawdź dostęp do GitHuba i Hugging Face. |
 | Port jest zajęty | Zmień odpowiedni port w `.env`: `APP_PORT`, `POSTGRES_PORT`, `PGADMIN_PORT` lub `MAILPIT_PORT`, a potem ponów polecenie `up` z kroku 4. Adres w przeglądarce musi używać nowego portu. |
 | Brakuje tabel w istniejącej bazie | Skrypty inicjalizacyjne działają tylko na pustej bazie. Zastosuj brakujące migracje według [instrukcji bazy](docs/authentication.md#przygotowanie-bazy). |
@@ -207,6 +215,7 @@ docker compose exec php php scripts/check-postgres.php
 ## Więcej informacji
 
 - [Katalog anime, import i wyszukiwanie](docs/anime-catalog.md)
+- [Autorzy źródeł i licencje danych](docs/anime-catalog.md#źródła-i-licencje)
 - [Konta i logowanie](docs/authentication.md)
 - [Profile, zdjęcia i watchlisty](docs/user-profiles.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)

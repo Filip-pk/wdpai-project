@@ -44,27 +44,45 @@ przy powodzeniu albo `1` przy błędzie.
 
 ## Przechowywanie danych
 
-W sprawdzonym środowisku katalog `/var/lib/postgresql/data` jest podłączony
-do istniejącego anonimowego wolumenu Dockera. Restart kontenera zachowuje
-ten wolumen. Zwykłe `docker compose up` przy odtwarzaniu istniejącego
-kontenera również wykorzystuje jego dotychczasowy wolumen.
+Usługa `db` montuje nazwany wolumen `pg-data` w `/var/lib/postgresql/data`.
+Docker Compose dodaje do jego nazwy nazwę projektu, np. `my-app_pg-data`.
+W tym wolumenie znajdują się konta, watchlisty, zdjęcia profilowe i katalog anime.
 
-Wolumen `pg-data` zadeklarowany w Compose nie jest obecnie podłączony do bazy.
-Przy wykonaniu `docker compose down` i późniejszym `up` anonimowy wolumen
-nie zostanie automatycznie przypisany do nowego kontenera. Nie stosuj tej
-sekwencji do ponownego uruchamiania obecnej bazy; do restartu użyj:
+Do codziennego zatrzymywania i wznawiania środowiska używaj `docker compose stop`
+i `docker compose start`. Do restartu samej bazy służy:
 
 ```cmd
 docker compose restart db
 ```
 
-Przed przejściem na nazwany wolumen trzeba wykonać kopię bazy i zaplanować
-jej odtworzenie albo jawnie ponownie podłączyć istniejący wolumen.
-Samo podpięcie nowego pustego `pg-data` uruchomi oddzielną bazę.
-Na tym etapie zachowujemy dotychczasowe miejsce danych.
+Zwykłe `docker compose down` usuwa kontenery i sieć, ale pozostawia nazwany
+wolumen. Kolejne `up` z tą samą nazwą projektu korzysta z zachowanej bazy.
+Zmiana nazwy katalogu projektu, opcji `-p` lub `COMPOSE_PROJECT_NAME` może
+spowodować użycie innego wolumenu, dlatego zachowuj tę samą nazwę projektu.
 
-Aktualne podłączenie sprawdzisz poleceniem:
+`docker compose down -v` usuwa również zadeklarowane wolumeny i zapisane
+w nich dane. `docker volume prune -a` może usunąć nieużywane nazwane wolumeny,
+np. po wykonaniu `down`. Przed takimi operacjami wykonaj kopię zapasową bazy.
+
+### Aktualizacja starszej instalacji
+
+Starsza konfiguracja korzystała z anonimowego wolumenu PostgreSQL.
+Przed uruchomieniem konfiguracji z nazwanym `pg-data` wykonaj kopię starej
+bazy i przenieś lub odtwórz dane w nazwanym wolumenie. Nie usuwaj starego
+wolumenu, dopóki nie potwierdzisz obecności katalogu, kont, watchlist i zdjęć.
+
+Samo podłączenie pustego `pg-data` nie przenosi poprzednich danych: inicjalizuje
+oddzielną bazę z sześcioma anime bez okładek. Ponowny import anime nie odzyskuje
+kont ani watchlist. Jeśli po aktualizacji widzisz tylko sześć początkowych
+tytułów, najpierw sprawdź podłączenie wolumenu i możliwość odzyskania starej bazy.
+
+Nazwę kontenera bazy i aktualne podłączenie sprawdzisz poleceniami:
 
 ```cmd
+docker compose ps db
 docker inspect --format "{{json .Mounts}}" my-app-db-1
 ```
+
+W drugim poleceniu zastąp `my-app-db-1` nazwą z kolumny `NAME` pierwszego
+polecenia. W montowaniach powinien być widoczny nazwany wolumen projektu
+z punktem docelowym `/var/lib/postgresql/data`.

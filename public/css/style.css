@@ -498,30 +498,177 @@ html[data-theme="dark"] .theme-icon-sun {
 }
 
 .site-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: var(--space-4);
-    padding-block: var(--space-5);
-
-    border-top: 1px solid var(--color-border);
-
+    display: grid;
+    gap: var(--space-6);
+    margin-bottom: var(--space-5);
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-large);
     color: var(--color-muted);
+    background-color: var(--color-surface);
+    background-image: radial-gradient(ellipse at top left, var(--color-glow-violet), transparent 65%);
     font-size: 0.875rem;
 }
 
-.site-footer nav {
-    display: flex;
-    flex-wrap: wrap;
+.footer-main {
+    display: grid;
+    gap: var(--space-6);
+    align-items: start;
+}
+
+.footer-main > * {
+    min-width: 0;
+}
+
+.footer-brand {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+}
+
+.footer-brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    color: var(--color-text);
+    font-size: 1.35rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.footer-brand-link:hover {
+    color: var(--color-brand);
+}
+
+.footer-brand-mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-small);
+    background-image: linear-gradient(135deg, var(--color-button-start), var(--color-button-end));
+    font-size: 1.5rem;
+}
+
+.footer-brand-description {
+    max-width: 42ch;
+}
+
+.footer-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
 }
 
-.site-footer a {
+.footer-nav-group {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.footer-nav-group h2 {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.footer-nav-group ul {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.footer-navigation a {
     display: inline-flex;
     align-items: center;
     min-height: 2.75rem;
+    padding-block: var(--space-2);
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.footer-navigation a:hover {
+    color: var(--color-brand);
+    text-decoration: underline;
+}
+
+.footer-credits {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+}
+
+.footer-credits h2 {
+    color: var(--color-text);
+    font-size: 1rem;
+}
+
+.footer-source-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.footer-source-card {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface-raised);
+}
+
+.footer-source-heading {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.footer-source-heading a {
+    color: var(--color-text);
+}
+
+.footer-source-heading a:hover {
+    color: var(--color-brand);
+}
+
+.footer-source-description,
+.footer-credits > p {
+    font-size: 0.8125rem;
+}
+
+.footer-credits p {
+    max-width: none;
+}
+
+.footer-bottom {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.footer-copyright {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.footer-legal-notes {
+    max-width: 90ch;
+    font-size: 0.8125rem;
 }
 
 .skip-link {
@@ -1064,6 +1211,15 @@ progress {
    ======================================== */
 
 @media (min-width: 48rem) {
+    .footer-main {
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: var(--space-7);
+    }
+
+    .footer-source-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .site-header,
     .prototype-notice,
     .page-content,
@@ -1102,6 +1258,17 @@ progress {
    ======================================== */
 
 @media (min-width: 64rem) {
+    .footer-bottom {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--space-6);
+        align-items: start;
+    }
+
+    .footer-legal-notes {
+        justify-self: end;
+        text-align: end;
+    }
+
     .welcome {
         max-width: none;
 

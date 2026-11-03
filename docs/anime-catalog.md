@@ -73,9 +73,29 @@ Po połączeniu z 42 dodatkowymi pozycjami HF katalog ma 38 379 anime:
 wszystkie 200 identyfikatorów pierwotnej próbki i istniejące watchlisty.
 To wynik konkretnego zestawu plików; następne wydania mogą zmienić liczniki.
 
-AOD jest udostępniane na ODbL 1.0 i DbCL 1.0 z atrybucją obu projektów.
-Karta moviebrain01 deklaruje CC-BY-4.0. Źródła są wskazane również
-w szczegółach anime; oryginalna próbka zachowuje atrybucję autorów.
+### Źródła i licencje
+
+- [Anime Offline Database — cedya77](https://github.com/cedya77/anime-offline-database)
+  kontynuuje pracę [manami-project](https://github.com/manami-project/anime-offline-database).
+  Zbiór jest udostępniany na [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/)
+  i [DbCL 1.0](https://opendatacommons.org/licenses/dbcl/1-0/), z atrybucją obu projektów.
+- [Anime Dataset 2025 — moviebrain01](https://huggingface.co/datasets/moviebrain01/anime-dataset-2025)
+  deklaruje [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- Wcześniejsza próbka pochodzi z [Processed Top 15k Anime — Youssef ElNahas
+  (TheRealVigilante)](https://huggingface.co/datasets/TheRealVigilante/Processed_Top_15k_Anime),
+  na podstawie [zbioru Quan Than](https://www.kaggle.com/datasets/quanthan/top-15000-ranked-anime-dataset-update-to-32025).
+  Karta próbki wskazuje [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+  dla zbioru oryginalnego; nie potwierdza to automatycznie jednakowych praw
+  do wszystkich treści w przetworzonej próbce.
+
+W AniVibe dane połączono i ujednolicono; część nazw gatunków przetłumaczono
+na polski. Autorzy zbiorów nie są wskazywani jako patroni ani partnerzy projektu.
+Oznaczenia autorów, źródeł i licencji są dostępne we wspólnej stopce;
+szczegóły anime wskazują również stronę źródłową konkretnego tytułu.
+
+Oznaczenia licencji pochodzą od wydawców zbiorów. Opisy i grafiki mogą
+podlegać odrębnym prawom. Sama atrybucja i edukacyjny charakter projektu
+nie stanowią potwierdzenia uzyskania wszystkich wymaganych zgód.
 
 ## Opcjonalny import próbki
 
