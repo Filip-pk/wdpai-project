@@ -49,10 +49,10 @@ po 24 tytuły nie zmieniają tych liczników. EXP nadal uwzględnia zachowane
 postępy tytułów usuniętych z listy. Nieistniejący użytkownik zwraca 404.
 Odczyt profilu innego konta nie zmienia właściciela prywatnych formularzy.
 
-Przycisk „Napisz wiadomość” otwiera demonstracyjny formularz z odbiorcą.
-Wysyłanie jest wyłączone, a treść nie jest zapisywana. Bez JavaScript dostępna
-jest rozwijana informacja o niedostępnej wysyłce. Prywatne wiadomości wymagają
-osobnego wdrożenia; przycisk nie korzysta z e-maila użytkownika ani czatu AI.
+Przycisk „Napisz wiadomość” otwiera [prywatną rozmowę](private-messages.md)
+z wybranym użytkownikiem. Jeśli rozmowa już istnieje, otwiera ten sam wątek.
+Pierwsza wiadomość tworzy rozmowę; sam podgląd formularza nie zapisuje danych.
+Gość najpierw przechodzi do logowania. Wysyłanie działa bez JavaScript.
 
 ## Zdjęcie profilowe
 

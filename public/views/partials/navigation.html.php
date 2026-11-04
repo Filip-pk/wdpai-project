@@ -8,6 +8,7 @@ $navigation = $isWelcome
         '/dashboard' => 'Pulpit',
         '/anime' => 'Odkrywaj',
         '/chat' => 'Czat AI',
+        '/messages' => 'Wiadomości',
         '/watchlist' => 'Ulubione',
         '/profile' => 'Profil',
         '/ranking' => 'Ranking',
@@ -24,6 +25,7 @@ $navigation = $isWelcome
                     <?= $currentPath === $url
                         || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
                         || ($url === '/profile' && str_starts_with((string) $currentPath, '/profile/'))
+                        || ($url === '/messages' && str_starts_with((string) $currentPath, '/messages/'))
                         ? 'aria-current="page"' : '' ?>
                 >
                     <?= $escape($label) ?>

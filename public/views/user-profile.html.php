@@ -26,16 +26,10 @@
             <?php if ($isOwnProfile): ?>
                 <a class="user-profile-action" href="/profile">Edytuj profil</a>
             <?php else: ?>
-                <button class="user-profile-action profile-message-button" type="button" data-open-message aria-haspopup="dialog" aria-controls="profile-message-dialog" hidden>Napisz wiadomość</button>
+                <a class="user-profile-action" href="<?= $isLoggedIn ? '/messages/new/' . $escape($profileUser['id']) : '/login' ?>">Napisz wiadomość</a>
             <?php endif; ?>
         </div>
 
-        <?php if (!$isOwnProfile): ?>
-            <details class="profile-message-fallback" data-message-fallback>
-                <summary>Napisz wiadomość</summary>
-                <p>Prywatne wiadomości nie są jeszcze dostępne. Wysyłanie zostanie udostępnione w kolejnej wersji aplikacji.</p>
-            </details>
-        <?php endif; ?>
     </header>
 
     <?php
@@ -109,21 +103,6 @@
         </section>
     </div>
 
-    <?php if (!$isOwnProfile): ?>
-        <dialog id="profile-message-dialog" class="profile-message-dialog" aria-labelledby="profile-message-title" aria-describedby="profile-message-info" hidden>
-            <form method="dialog" class="profile-message-form">
-                <div class="profile-message-heading">
-                    <h2 id="profile-message-title">Napisz wiadomość</h2>
-                    <button type="submit" value="cancel" aria-label="Zamknij okno wiadomości">Zamknij</button>
-                </div>
-                <p>Do: <strong><?= $escape($profileUser['name']) ?></strong></p>
-                <p id="profile-message-info" class="profile-notice">Prywatne wiadomości nie są jeszcze dostępne. To podgląd formularza — treść nie jest wysyłana ani zapisywana.</p>
-                <label for="profile-message-content">Treść wiadomości</label>
-                <textarea id="profile-message-content" rows="5" maxlength="2000" placeholder="Wiadomości będą dostępne w kolejnej wersji…" aria-describedby="profile-message-info"></textarea>
-                <button type="button" disabled>Wyślij wiadomość</button>
-            </form>
-        </dialog>
-    <?php endif; ?>
 </div>
 
 <?php require __DIR__ . '/partials/footer.html.php'; ?>

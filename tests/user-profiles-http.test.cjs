@@ -93,8 +93,8 @@ test('public user profiles expose identity, EXP and read-only watchlists while p
             statistics(page, 0, 0, 0, 0, 0);
             assert.deepEqual(entries(page), []);
             assert.match(page.html, /Napisz wiadomość/);
-            assert.match(page.html, /Prywatne wiadomości nie są jeszcze dostępne/);
-            assert.match(page.html, /<button\b[^>]*disabled[^>]*>Wyślij wiadomość/);
+            assert.ok(page.html.includes('href="' + (client === guest ? '/login' : '/messages/new/' + first.id) + '"'));
+            assert.doesNotMatch(page.html, /Prywatne wiadomości nie są jeszcze dostępne|profile-message-dialog/);
             assert.match(page.headers.get('cache-control'), /no-store/);
         }
         const own = await first.client.request(route);

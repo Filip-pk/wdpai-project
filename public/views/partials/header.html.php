@@ -101,8 +101,8 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isImportPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/import.css') ?>">
     <?php endif; ?>
-    <?php if ($isUserProfilePage): ?>
-        <script src="<?= $assetUrl('/js/user-profile.js') ?>" defer></script>
+    <?php if ($currentPath === '/messages' || str_starts_with((string) $currentPath, '/messages/')): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/messages.css') ?>">
     <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">

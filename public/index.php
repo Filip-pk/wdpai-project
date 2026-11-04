@@ -11,6 +11,7 @@ use App\Controller\CollectionController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
 use App\Controller\MalImportController;
+use App\Controller\MessageController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Controller\RankingController;
@@ -20,6 +21,7 @@ use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\MalImportRepository;
+use App\Repository\MessageRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
@@ -73,6 +75,18 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): CollectionRepository => new CollectionRepository($connect()),
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): WatchlistRepository => new WatchlistRepository($connect()),
+        );
+    }
+
+    if ($controllerClass === MessageController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+
+        return new MessageController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): MessageRepository => new MessageRepository($connect()),
         );
     }
 
@@ -162,6 +176,12 @@ $routing->post('/anime/{id}/collections/create', AnimeController::class, 'create
 
 $routing->get('/chat', ChatController::class, 'index');
 $routing->get('/chat/{id}', ChatController::class, 'show');
+
+$routing->get('/messages', MessageController::class, 'index');
+$routing->get('/messages/new/{id}', MessageController::class, 'compose');
+$routing->post('/messages/new/{id}', MessageController::class, 'compose');
+$routing->get('/messages/{id}', MessageController::class, 'show');
+$routing->post('/messages/{id}', MessageController::class, 'show');
 
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->post('/profile', ProfileController::class, 'index');
