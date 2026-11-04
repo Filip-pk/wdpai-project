@@ -24,9 +24,12 @@ Przykładów Kacpra nie przenosimy do kont użytkowników.
 - Motyw `system`, `light` lub `dark` jest zapisywany na koncie, także przez
   przyciski w nagłówku. Gość nadal korzysta z ustawienia tej przeglądarki.
 - `/watchlist`: własne tytuły, filtrowanie po statusie, zapis postępu i usuwanie.
+- Watchlista w ulubionych i profilu wyświetla po 24 tytuły na stronę.
+  Paginacja zachowuje wybrany status, a zmiana filtra zaczyna od pierwszej strony.
+  Zapis postępu i usunięcie tytułu zachowują stronę oraz filtr.
 - Przycisk na stronie anime dodaje tytuł jako planowany. Ponowne dodanie
   zachowuje wcześniejszy postęp. Planowane ma 0 odcinków, ukończone całą serię.
-- Liczniki profilu uwzględniają własną listę, niezależnie od filtra.
+- Liczniki profilu uwzględniają całą własną listę, niezależnie od filtra i strony.
 
 Właściciel zawsze pochodzi z sesji. Pola `userId` i `user_id` przesłane przez
 przeglądarkę nie wyznaczają konta. Zapis wymaga CSRF i parametryzowanego SQL.
@@ -60,7 +63,8 @@ i losową wersję `avatar_version`. Odczyt `/avatars/{id}?v=...` zwraca sam
 obraz PNG z `nosniff`; link do zdjęcia jest dostępny również bez logowania.
 Oryginalne nazwy plików i ścieżki przesyłania nie są zapisywane.
 
-Synchronizacja MyAnimeList i AI nadal są demonstracyjne.
+Listę MyAnimeList można przenieść przez [import pliku XML/XML.GZ](mal-watchlist-import.md).
+Automatyczna synchronizacja MyAnimeList i AI nadal są demonstracyjne.
 [Prywatne oceny anime](user-ratings.md) w skali 1–10 są zapisywane na koncie
 i widoczne przy tytułach w profilu oraz na watchliście.
 [Katalog anime](anime-catalog.md) korzysta z PostgreSQL; watchlista przechowuje
@@ -80,7 +84,10 @@ node --test tests/avatar-http.test.cjs
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs
 docker compose exec php php tests/user-repository.test.php
 docker compose exec php php tests/projects-application.test.php
+docker compose exec -T php php tests/pagination.test.php
 ```
+
+Test paginacji działa na tabelach tymczasowych i nie zostawia kont w bazie.
 
 Test profili tworzy dwa losowe konta w lokalnej bazie i zachowuje je.
 Test zdjęć tworzy kolejne dwa konta oraz sprawdza walidację plików,

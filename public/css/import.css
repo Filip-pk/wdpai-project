@@ -1,0 +1,294 @@
+.import-panel,
+.import-upload-content,
+.import-entries,
+.import-entry-list,
+.import-entry {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.import-panel,
+.import-entry {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+}
+
+.page-standard .page-content .import-page :where(.import-panel, .import-entry, .import-upload-content, .import-section-heading) > * {
+    margin-top: 0;
+}
+
+.import-section-heading,
+.import-entry-heading,
+.import-actions,
+.import-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.import-section-heading > div,
+.import-entry-heading > div {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.import-step,
+.import-private,
+.import-help,
+.import-before,
+.import-entry-reason {
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.page-standard .page-content .import-step {
+    color: var(--color-brand);
+    font-weight: 700;
+}
+
+.import-private {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-muted);
+    background-color: var(--color-surface-raised);
+}
+
+.import-counts,
+.import-entry-values {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    min-width: 0;
+    margin: 0;
+}
+
+.import-counts > div {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+}
+
+.import-counts dt,
+.import-entry-values dt {
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.import-counts dd {
+    margin: 0;
+    color: var(--color-brand);
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.import-policy {
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--color-brand);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+    font-size: 0.875rem;
+}
+
+.import-actions {
+    justify-content: flex-start;
+}
+
+.page-standard .import-page :where(.import-confirm-form, .import-cancel-form, .import-upload-form) {
+    margin: 0;
+}
+
+.import-confirm-form button,
+.import-upload-form > button {
+    color: var(--color-button-text);
+    border-color: transparent;
+    background-image: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+    font-weight: 800;
+}
+
+.page-standard .import-page .import-cancel-form button {
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    box-shadow: none;
+}
+
+.import-primary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-brand);
+    border-radius: var(--radius-small);
+    font-weight: 700;
+}
+
+.import-page .import-entry-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.import-entry h3 {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.import-entry-values > div {
+    min-width: 0;
+}
+
+.import-entry-values dd {
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-2) 0 0;
+    overflow-wrap: anywhere;
+}
+
+.import-before {
+    color: var(--color-muted);
+}
+
+.import-action-label {
+    flex: 0 0 auto;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    background-color: var(--color-surface-raised);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.import-action-label[data-kind="add"],
+.import-action-label[data-kind="update"] {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+}
+
+.import-entry-reason {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    overflow-wrap: anywhere;
+}
+
+.import-pagination {
+    justify-content: center;
+    padding-top: var(--space-3);
+    font-size: 0.875rem;
+}
+
+.import-pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+}
+
+.import-upload-panel {
+    display: block;
+}
+
+.import-upload-panel > summary {
+    color: var(--color-brand);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.import-upload-panel > summary:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+}
+
+.import-upload-panel[open] .import-upload-content {
+    margin-top: var(--space-5);
+}
+
+.import-instructions {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    font-size: 0.875rem;
+}
+
+.import-upload-form {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.import-upload-form > button {
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+}
+
+.import-upload-form input[type="file"] {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.8rem;
+}
+
+.import-upload-form input[type="file"]::file-selector-button {
+    min-height: 2.75rem;
+    margin-inline-end: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    background-color: var(--color-surface-raised);
+    font: inherit;
+    cursor: pointer;
+}
+
+.import-policy-choice {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+}
+
+.import-policy-choice label {
+    display: flex;
+    align-items: start;
+    gap: var(--space-3);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.import-policy-choice input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-height: 0;
+    margin-top: 0.15rem;
+}
+
+.import-policy-choice p {
+    font-size: 0.8rem;
+}
+
+@media (min-width: 42rem) {
+    .import-counts {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .import-entry-values {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

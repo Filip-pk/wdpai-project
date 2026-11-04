@@ -12,7 +12,10 @@ AI i rozmowy z postaciami.
 - Sortowanie oceną, tytułem, odcinkami i rokiem w obu kierunkach;
   domyślnie najlepiej oceniane anime. Paginacja zachowuje wybrane kryteria.
 - Rejestracja, logowanie i prywatna watchlista: dodawanie i usuwanie anime,
-  statusy „Planowane”, „Oglądam”, „Ukończone” oraz zapis obejrzanych odcinków.
+  statusy „Planowane”, „Oglądam”, „Ukończone”, „Wstrzymane” i „Porzucone”
+  oraz zapis obejrzanych odcinków.
+- Import własnej listy MyAnimeList z XML/XML.GZ: podgląd i zatwierdzenie,
+  zachowanie istniejących danych lub jawna aktualizacja oraz raport i EXP.
 - Edycja profilu, zainteresowania i zdjęcie profilowe JPG/PNG do 4 MB.
 - Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
   należeć do kilku kolekcji niezależnie od statusu i postępu na watchliście.
@@ -24,7 +27,7 @@ AI i rozmowy z postaciami.
 - Wiadomość powitalna po rejestracji, przechwytywana lokalnie przez Mailpit.
 
 Asystent AI, rozmowy z postaciami, personalizowane rekomendacje
-i synchronizacja listy MyAnimeList są obecnie demonstracyjne
+i automatyczna synchronizacja listy MyAnimeList są obecnie demonstracyjne
 lub wyłączone. Katalog korzysta z importowanych ocen; Ollama nie jest jeszcze
 podłączona do aplikacji.
 
@@ -107,7 +110,7 @@ i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
 uruchomił się już podczas budowania obrazu.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-`database/01`–`11`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
+`database/01`–`12`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
 ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
 dołączane do repozytorium.
 
@@ -227,6 +230,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
 - [Prywatne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
 - [Poziomy, EXP i ranking TOP 100](docs/user-experience.md)
+- [Import listy MyAnimeList z XML/XML.GZ](docs/mal-watchlist-import.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)
 - [Środowisko PostgreSQL i przechowywanie danych](docs/postgresql-environment.md)
 

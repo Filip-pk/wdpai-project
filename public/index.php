@@ -10,6 +10,7 @@ use App\Controller\ChatController;
 use App\Controller\CollectionController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
+use App\Controller\MalImportController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Controller\RankingController;
@@ -17,12 +18,14 @@ use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\ExperienceRepository;
+use App\Repository\MalImportRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\MailService;
+use App\Service\MalImportService;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -86,6 +89,18 @@ $routing = new Routing(static function (string $controllerClass): AppController 
         );
     }
 
+    if ($controllerClass === MalImportController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+
+        return new MalImportController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): MalImportService => new MalImportService(new MalImportRepository($connect())),
+        );
+    }
+
     if ($controllerClass === RankingController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -145,6 +160,10 @@ $routing->get('/chat/{id}', ChatController::class, 'show');
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->post('/profile', ProfileController::class, 'index');
 $routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');
+$routing->get('/profile/import', MalImportController::class, 'index');
+$routing->post('/profile/import/preview', MalImportController::class, 'preview');
+$routing->post('/profile/import/confirm', MalImportController::class, 'confirm');
+$routing->post('/profile/import/cancel', MalImportController::class, 'cancel');
 $routing->get('/profile/collections', CollectionController::class, 'index');
 $routing->post('/profile/collections', CollectionController::class, 'create');
 $routing->get('/profile/collections/{id}', CollectionController::class, 'show');

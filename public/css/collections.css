@@ -259,6 +259,20 @@
     font-size: 0.875rem;
 }
 
+.collection-pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+}
+
+.collection-pagination a:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+}
+
 .anime-collection-picker {
     padding: var(--space-4);
 }

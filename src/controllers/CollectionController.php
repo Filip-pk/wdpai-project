@@ -77,7 +77,7 @@ final class CollectionController extends AppController
                 $this->notFound();
                 return;
             }
-            $this->redirect('/profile/collections/' . $id);
+            $this->redirect($this->collectionUrl($id));
         }
 
         $this->renderCollections($user, $collection, errors: $errors, editForm: $form);
@@ -110,7 +110,7 @@ final class CollectionController extends AppController
                     $this->notFound();
                     return;
                 }
-                $this->redirect('/profile/collections/' . $id);
+                $this->redirect($this->collectionUrl($id));
             }
         }
 
@@ -149,24 +149,24 @@ final class CollectionController extends AppController
         array $errors = [],
         array $editForm = [],
     ): void {
-        $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
+        $page = $this->requestedPage();
+        $collectionPage = $collection === null
+            ? $this->collections()->findPageForUser($user['id'], $page)
+            : ['collections' => [], 'page' => 1, 'totalPages' => 1, 'total' => 0];
         $result = $collection === null
             ? ['animeIds' => [], 'page' => 1, 'totalPages' => 1, 'total' => 0]
-            : $this->collections()->animeIdsForUser($user['id'], $collection['id'], $page === false ? 1 : $page);
+            : $this->collections()->animeIdsForUser($user['id'], $collection['id'], $page);
         $watchlist = [];
         if ($collection !== null) {
-            foreach ($this->watchlists()->findForUser($user['id']) as $entry) {
-                if (in_array($entry['animeId'], $result['animeIds'], true)) {
-                    $watchlist[$entry['animeId']] = $entry;
-                }
+            foreach ($this->watchlists()->findByAnimeIdsForUser($user['id'], $result['animeIds']) as $entry) {
+                $watchlist[$entry['animeId']] = $entry;
             }
         }
 
         $this->render('collections', [
             'pageTitle' => ($collection['name'] ?? 'Moje kolekcje') . ' — AniVibe',
-            'collections' => $this->collections()->findForUser($user['id']),
+            'collections' => $collectionPage['collections'],
+            'collectionsPagination' => $collectionPage,
             'selectedCollection' => $collection,
             'collectionAnimes' => $this->animes()->findByIds($result['animeIds']),
             'collectionWatchlist' => $watchlist,
@@ -179,6 +179,22 @@ final class CollectionController extends AppController
             'errors' => $errors,
             'notice' => null,
         ]);
+    }
+
+    private function requestedPage(): int
+    {
+        $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+
+        return $page === false ? 1 : $page;
+    }
+
+    private function collectionUrl(int $id): string
+    {
+        $page = $this->requestedPage();
+
+        return '/profile/collections/' . $id . ($page > 1 ? '?page=' . $page : '');
     }
 
     private function notFound(): void

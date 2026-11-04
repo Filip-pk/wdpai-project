@@ -39,7 +39,7 @@
                 </div>
                 <p class="profile-interests"><?= $escape($user['interests'] === '' ? 'Dodaj zainteresowania, aby opowiedzieć o swoim anime klimacie.' : $user['interests']) ?></p>
                 <dl class="profile-stats">
-                    <div><dt>Tytuły na Twojej liście</dt><dd data-watchlist-count="<?= count($watchlist) ?>"><?= count($watchlist) ?></dd></div>
+                    <div><dt>Tytuły na Twojej liście</dt><dd data-watchlist-count="<?= $escape($watchlistTotal) ?>"><?= $escape($watchlistTotal) ?></dd></div>
                     <div><dt>Ukończone serie</dt><dd data-completed-count="<?= $escape($completedCount) ?>"><?= $escape($completedCount) ?></dd></div>
                 </dl>
             </section>
@@ -91,9 +91,9 @@
     <div class="profile-watchlist"><?php require __DIR__ . '/partials/watchlist.html.php'; ?></div>
 
     <aside class="profile-empty" aria-labelledby="import-title">
-        <h2 id="import-title">Synchronizacja MyAnimeList</h2>
-        <p>Opcjonalna funkcja z makiety. Na tym etapie import nie jest dostępny.</p>
-        <button type="button" disabled>Synchronizuj</button>
+        <h2 id="import-title">Import z MyAnimeList</h2>
+        <p>Wgraj eksport swojej listy XML lub XML.GZ. Sprawdź podgląd, a następnie przenieś statusy, obejrzane odcinki i własne oceny.</p>
+        <a href="/profile/import">Importuj z MyAnimeList <span aria-hidden="true">→</span></a>
     </aside>
 </div>
 

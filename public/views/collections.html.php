@@ -23,7 +23,7 @@
             <section class="collections-library" aria-labelledby="collections-title">
                 <div class="collections-section-heading">
                     <h2 id="collections-title">Twoje listy</h2>
-                    <span class="collection-private">Prywatne · <?= count($collections) ?></span>
+                    <span class="collection-private" data-collections-total="<?= $escape($collectionsPagination['total']) ?>">Prywatne · <?= $escape($collectionsPagination['total']) ?></span>
                 </div>
                 <ul class="collection-grid">
                     <?php foreach ($collections as $collection): ?>
@@ -51,6 +51,18 @@
                         </li>
                     <?php endforeach; ?>
                 </ul>
+
+                <?php if ($collectionsPagination['totalPages'] > 1): ?>
+                    <nav class="collection-pagination" aria-label="Strony listy kolekcji">
+                        <?php if ($collectionsPagination['page'] > 1): ?>
+                            <a href="/profile/collections?page=<?= $escape($collectionsPagination['page'] - 1) ?>" rel="prev">← Poprzednia</a>
+                        <?php endif; ?>
+                        <span>Strona <?= $escape($collectionsPagination['page']) ?> z <?= $escape($collectionsPagination['totalPages']) ?></span>
+                        <?php if ($collectionsPagination['page'] < $collectionsPagination['totalPages']): ?>
+                            <a href="/profile/collections?page=<?= $escape($collectionsPagination['page'] + 1) ?>" rel="next">Następna →</a>
+                        <?php endif; ?>
+                    </nav>
+                <?php endif; ?>
             </section>
 
             <section class="collection-panel" aria-labelledby="collection-create-title">
@@ -79,7 +91,7 @@
 
         <details class="collection-panel collection-editor"<?= $editForm['name'] !== $selectedCollection['name'] || $editForm['description'] !== $selectedCollection['description'] ? ' open' : '' ?>>
             <summary>Edytuj nazwę i opis</summary>
-            <form action="/profile/collections/<?= $escape($selectedCollection['id']) ?>" method="post" class="collection-form">
+            <form action="/profile/collections/<?= $escape($selectedCollection['id']) ?><?= $pagination['page'] > 1 ? '?page=' . $escape($pagination['page']) : '' ?>" method="post" class="collection-form">
                 <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                 <div class="profile-field">
                     <label for="collection-edit-name">Nazwa kolekcji</label>
@@ -122,12 +134,12 @@
                                     <h3><a href="/anime/<?= $escape($collectionAnimeId) ?>"><?= $escape($collectionAnime['title']) ?></a></h3>
                                     <?php $entry = $collectionWatchlist[$collectionAnimeId] ?? null; ?>
                                     <?php if ($entry !== null): ?>
-                                        <p class="collection-watchlist-status"><?= $escape(['planned' => 'Planowane', 'watching' => 'Oglądam', 'completed' => 'Ukończone'][$entry['status']] ?? $entry['status']) ?></p>
+                                        <p class="collection-watchlist-status"><?= $escape(['planned' => 'Planowane', 'watching' => 'Oglądam', 'completed' => 'Ukończone', 'on_hold' => 'Wstrzymane', 'dropped' => 'Porzucone'][$entry['status']] ?? $entry['status']) ?></p>
                                         <p class="collection-help">Obejrzane odcinki: <?= $escape($entry['watched']) ?><?= ($collectionAnime['episodes'] ?? 0) > 0 ? ' / ' . $escape($collectionAnime['episodes']) : '' ?></p>
                                     <?php else: ?>
                                         <p class="collection-help">Jeszcze poza watchlistą</p>
                                     <?php endif; ?>
-                                    <form action="/profile/collections/<?= $escape($selectedCollection['id']) ?>/remove" method="post" class="collection-remove-form">
+                                    <form action="/profile/collections/<?= $escape($selectedCollection['id']) ?>/remove<?= $pagination['page'] > 1 ? '?page=' . $escape($pagination['page']) : '' ?>" method="post" class="collection-remove-form">
                                         <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                                         <input type="hidden" name="animeId" value="<?= $escape($collectionAnimeId) ?>">
                                         <button type="submit" aria-label="<?= $escape('Usuń z kolekcji: ' . $collectionAnime['title']) ?>">Usuń z tej kolekcji</button>
@@ -142,11 +154,11 @@
             <?php if ($pagination['totalPages'] > 1): ?>
                 <nav class="collection-pagination" aria-label="Strony kolekcji">
                     <?php if ($pagination['page'] > 1): ?>
-                        <a href="/profile/collections/<?= $escape($selectedCollection['id']) ?>?page=<?= $escape($pagination['page'] - 1) ?>">← Poprzednia</a>
+                        <a href="/profile/collections/<?= $escape($selectedCollection['id']) ?>?page=<?= $escape($pagination['page'] - 1) ?>" rel="prev">← Poprzednia</a>
                     <?php endif; ?>
                     <span>Strona <?= $escape($pagination['page']) ?> z <?= $escape($pagination['totalPages']) ?></span>
                     <?php if ($pagination['page'] < $pagination['totalPages']): ?>
-                        <a href="/profile/collections/<?= $escape($selectedCollection['id']) ?>?page=<?= $escape($pagination['page'] + 1) ?>">Następna →</a>
+                        <a href="/profile/collections/<?= $escape($selectedCollection['id']) ?>?page=<?= $escape($pagination['page'] + 1) ?>" rel="next">Następna →</a>
                     <?php endif; ?>
                 </nav>
             <?php endif; ?>

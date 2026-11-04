@@ -24,6 +24,27 @@ final class CollectionRepository
 
     public function findForUser(int $userId): array
     {
+        return $this->fetchForUser($userId);
+    }
+
+    /** @return array{collections: list<array>, page: int, totalPages: int, total: int} */
+    public function findPageForUser(int $userId, int $page = 1, int $perPage = 12): array
+    {
+        $statement = $this->database->prepare('SELECT count(*) FROM anime_collections WHERE user_id = :user_id');
+        $statement->execute(['user_id' => $userId]);
+        $total = (int) $statement->fetchColumn();
+        $perPage = max(1, min(100, $perPage));
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        $page = max(1, min($page, $totalPages));
+
+        return [
+            'collections' => $this->fetchForUser($userId, $perPage, ($page - 1) * $perPage),
+            'page' => $page, 'totalPages' => $totalPages, 'total' => $total,
+        ];
+    }
+
+    private function fetchForUser(int $userId, ?int $limit = null, int $offset = 0): array
+    {
         $statement = $this->database->prepare(
             "SELECT collections.id, collections.name, collections.description, collections.is_default,
                     (SELECT count(*) FROM anime_collection_items items
@@ -40,8 +61,14 @@ final class CollectionRepository
                     ), '[]'::jsonb) AS previews
              FROM anime_collections collections WHERE collections.user_id = :user_id
              ORDER BY collections.is_default DESC, collections.id"
+            . ($limit === null ? '' : ' LIMIT :limit OFFSET :offset')
         );
-        $statement->execute(['user_id' => $userId]);
+        $statement->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        if ($limit !== null) {
+            $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
+        }
+        $statement->execute();
 
         return array_map($this->mapCollection(...), $statement->fetchAll(PDO::FETCH_ASSOC));
     }

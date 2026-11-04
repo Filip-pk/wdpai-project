@@ -9,10 +9,10 @@ aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 Nowa, pusta baza otrzymuje schemat automatycznie przy pierwszym uruchomieniu
 PostgreSQL. Docker Compose montuje katalog `database` jako
 `/docker-entrypoint-initdb.d` tylko do odczytu; PostgreSQL wykonuje skrypty
-`01`–`11` w kolejności nazw.
+`01`–`12` w kolejności nazw.
 
 Jeśli baza była już uruchomiona, ale nie ma jeszcze tabel aplikacji,
-z katalogu projektu w Windows CMD wykonaj raz wszystkie jedenaście skryptów:
+z katalogu projektu w Windows CMD wykonaj raz wszystkie dwanaście skryptów:
 
 ```cmd
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\01-create-projects.sql
@@ -26,6 +26,7 @@ docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB e
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\09-user-collections.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\10-user-anime-ratings.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\11-user-experience.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\12-watchlist-import.sql
 ```
 
 Skrypty tworzą projekty, konta, pola profilu, watchlisty i zdjęcia. Nie uruchamiaj
@@ -41,6 +42,8 @@ Migracja `09` dodaje [prywatne kolekcje](user-collections.md), a `10`
 [prywatne oceny anime](user-ratings.md).
 Migracja `11` dodaje [EXP, poziomy i ranking TOP 100](user-experience.md)
 oraz uwzględnia dotychczasowe postępy na watchlistach.
+Migracja `12` dodaje statusy „Wstrzymane” i „Porzucone” potrzebne do
+[importu listy MyAnimeList](mal-watchlist-import.md).
 
 Rejestracja i logowanie wymagają również kolumn `interests` i `theme`
 z trzeciego skryptu oraz `avatar_version` z czwartego. Samo działające

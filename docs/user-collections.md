@@ -8,7 +8,9 @@ a także usuwać z nich pojedyncze anime.
 Nazwa ma od 1 do 120 znaków, a opcjonalny opis do 500 znaków. Na stronie anime
 można wybrać kilka własnych kolekcji. Ponowne dodanie tego samego tytułu do
 tej samej kolekcji nie tworzy duplikatu. Kolekcje mają podgląd do czterech
-okładek, a ich zawartość jest stronicowana po 24 tytuły.
+okładek. Lista „Moje kolekcje” wyświetla po 12 kolekcji na stronę,
+a zawartość pojedynczej kolekcji po 24 tytuły. Zmiana nazwy i usuwanie anime
+zachowują bieżącą stronę kolekcji.
 
 Status i postęp oglądania należą do watchlisty. Dodawanie i usuwanie anime
 w kolekcjach nie zmienia watchlisty. Usunięcie tytułu z watchlisty również
@@ -39,6 +41,7 @@ formularzy wymagają logowania i tokenu CSRF.
 
 ```cmd
 docker compose exec -T php php tests/collection-repository.test.php
+docker compose exec -T php php tests/pagination.test.php
 node --test tests/collections-http.test.cjs
 ```
 

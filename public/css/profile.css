@@ -393,6 +393,38 @@
     background-color: var(--color-surface);
 }
 
+.watchlist-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.watchlist-pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.watchlist-pagination a:hover {
+    border-color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.watchlist-pagination span {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
 .profile-empty {
     display: grid;
     justify-items: start;

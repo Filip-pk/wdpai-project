@@ -1,7 +1,7 @@
 <section aria-labelledby="watchlist-title">
     <h2 id="watchlist-title">Twoja watchlista</h2>
 
-    <p>Liczba tytułów: <?= count($watchlist) ?></p>
+    <p>Liczba tytułów: <?= $escape($watchlistTotal) ?><?php if ($statusFilter !== ''): ?> · W wybranym statusie: <?= $escape($watchlistPagination['total']) ?><?php endif; ?></p>
 
     <form action="<?= $watchlistOnly ? '/watchlist' : '/profile' ?>" method="get" class="watchlist-toolbar">
         <label for="watchlist-status">Status oglądania</label>
@@ -16,7 +16,7 @@
 
     <?php if ($visibleWatchlist === []): ?>
         <div class="profile-empty">
-            <p><?= $watchlist === [] ? 'Twoja watchlista jest pusta. Wybierz pierwsze anime w katalogu.' : 'Brak anime o wybranym statusie.' ?></p>
+            <p><?= $watchlistTotal === 0 ? 'Twoja watchlista jest pusta. Wybierz pierwsze anime w katalogu.' : 'Brak anime o wybranym statusie.' ?></p>
             <a href="/anime">Odkryj anime</a>
         </div>
     <?php endif; ?>
@@ -59,6 +59,9 @@
                 <form action="/watchlist" method="post" class="watchlist-edit">
                     <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                     <input type="hidden" name="animeId" value="<?= $escape($animeId) ?>">
+                    <input type="hidden" name="listPage" value="<?= $escape($watchlistPagination['page']) ?>">
+                    <input type="hidden" name="listStatus" value="<?= $escape($statusFilter) ?>">
+                    <input type="hidden" name="listView" value="<?= $watchlistOnly ? 'watchlist' : 'profile' ?>">
                     <label for="entry-status-<?= $escape($animeId) ?>">Status</label>
                     <select id="entry-status-<?= $escape($animeId) ?>" name="status">
                         <?php foreach ($watchlistStatuses as $value => $label): ?>
@@ -72,10 +75,24 @@
                 <form action="/watchlist/remove" method="post" class="watchlist-remove">
                     <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                     <input type="hidden" name="animeId" value="<?= $escape($animeId) ?>">
+                    <input type="hidden" name="listPage" value="<?= $escape($watchlistPagination['page']) ?>">
+                    <input type="hidden" name="listStatus" value="<?= $escape($statusFilter) ?>">
+                    <input type="hidden" name="listView" value="<?= $watchlistOnly ? 'watchlist' : 'profile' ?>">
                     <button type="submit" aria-label="<?= $escape('Usuń z watchlisty: ' . $anime['title']) ?>">Usuń z listy</button>
                 </form>
                 </article>
             </li>
         <?php endforeach; ?>
     </ul>
+    <?php if ($watchlistPagination['totalPages'] > 1): ?>
+        <nav class="watchlist-pagination" aria-label="Strony watchlisty">
+            <?php if ($watchlistPagination['page'] > 1): ?>
+                <a href="<?= $escape($watchlistPagination['previousUrl']) ?>" rel="prev">← Poprzednia</a>
+            <?php endif; ?>
+            <span>Strona <?= $escape($watchlistPagination['page']) ?> z <?= $escape($watchlistPagination['totalPages']) ?></span>
+            <?php if ($watchlistPagination['page'] < $watchlistPagination['totalPages']): ?>
+                <a href="<?= $escape($watchlistPagination['nextUrl']) ?>" rel="next">Następna →</a>
+            <?php endif; ?>
+        </nav>
+    <?php endif; ?>
 </section>

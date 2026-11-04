@@ -20,6 +20,8 @@ final class ProfileController extends AppController
         'planned' => 'Planowane',
         'watching' => 'Oglądam',
         'completed' => 'Ukończone',
+        'on_hold' => 'Wstrzymane',
+        'dropped' => 'Porzucone',
     ];
 
     public function __construct(
@@ -186,23 +188,32 @@ final class ProfileController extends AppController
             }
 
             if ($errors === []) {
-                $this->redirect('/watchlist');
+                $page = filter_var($this->postString('listPage'), FILTER_VALIDATE_INT, [
+                    'options' => ['min_range' => 1],
+                ]);
+                $status = $this->postString('listStatus');
+                $this->redirect($this->watchlistPath(
+                    $this->postString('listView') !== 'profile',
+                    $page === false ? 1 : $page,
+                    isset(self::STATUSES[$status]) ? $status : '',
+                ));
             }
             http_response_code(422);
         }
 
-        $this->renderProfile(true, $user, $errors);
+        $this->renderProfile($this->postString('listView') !== 'profile', $user, $errors, $user);
     }
 
     private function renderProfile(bool $watchlistOnly, array $user, array $errors = [], array $form = []): void
     {
-        $watchlist = $this->watchlists()->findForUser($user['id']);
-        $animes = $this->animes()->findByIds(array_column($watchlist, 'animeId'));
-        $watchlist = array_values(array_filter(
-            $watchlist, static fn (array $entry): bool => isset($animes[$entry['animeId']]),
-        ));
-        $statusFilter = is_string($_GET['status'] ?? null) && isset(self::STATUSES[$_GET['status']])
-            ? $_GET['status'] : '';
+        $requestedStatus = $_POST['listStatus'] ?? $_GET['status'] ?? '';
+        $statusFilter = is_string($requestedStatus) && isset(self::STATUSES[$requestedStatus])
+            ? $requestedStatus : '';
+        $page = filter_var($_POST['listPage'] ?? $_GET['page'] ?? '1', FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        $result = $this->watchlists()->findPageForUser($user['id'], $page === false ? 1 : $page, status: $statusFilter);
+        $animeIds = array_column($result['entries'], 'animeId');
 
         $this->render('profile', [
             'pageTitle' => ($watchlistOnly ? 'Watchlista' : 'Twój profil') . ' — AniVibe',
@@ -212,19 +223,33 @@ final class ProfileController extends AppController
             'errors' => $errors,
             'saved' => !$this->isPost() && ($_GET['saved'] ?? null) === '1',
             'avatarSaved' => !$this->isPost() && ($_GET['avatarSaved'] ?? null) === '1',
-            'animes' => $animes,
-            'watchlist' => $watchlist,
-            'userRatings' => $this->ratings()->findByAnimeIdsForUser($user['id'], array_column($watchlist, 'animeId')),
+            'animes' => $this->animes()->findByIds($animeIds),
+            'watchlistTotal' => $result['watchlistTotal'],
+            'watchlistPagination' => $result + [
+                'previousUrl' => $this->watchlistPath($watchlistOnly, $result['page'] - 1, $statusFilter),
+                'nextUrl' => $this->watchlistPath($watchlistOnly, $result['page'] + 1, $statusFilter),
+            ],
+            'userRatings' => $this->ratings()->findByAnimeIdsForUser($user['id'], $animeIds),
             'experience' => ExperienceService::progress($this->experience()->totalForUser($user['id'])),
             'statusFilter' => $statusFilter,
-            'visibleWatchlist' => $statusFilter === '' ? $watchlist : array_values(array_filter(
-                $watchlist, static fn (array $entry): bool => $entry['status'] === $statusFilter,
-            )),
+            'visibleWatchlist' => $result['entries'],
             'watchlistStatuses' => self::STATUSES,
-            'completedCount' => count(array_filter(
-                $watchlist, static fn (array $entry): bool => $entry['status'] === 'completed',
-            )),
+            'completedCount' => $result['completedCount'],
         ]);
+    }
+
+    private function watchlistPath(bool $watchlistOnly, int $page, string $status): string
+    {
+        $parameters = [];
+        if ($status !== '') {
+            $parameters['status'] = $status;
+        }
+        if ($page > 1) {
+            $parameters['page'] = $page;
+        }
+
+        return ($watchlistOnly ? '/watchlist' : '/profile')
+            . ($parameters === [] ? '' : '?' . http_build_query($parameters));
     }
 
     private function users(): UserRepository
