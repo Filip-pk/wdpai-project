@@ -1,0 +1,242 @@
+.anime-comments,
+.comments-heading > div,
+.comment-form,
+.comment-field,
+.comments-list,
+.comment-card,
+.comment-dates,
+.comment-delete-form {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.anime-comments {
+    gap: var(--space-5);
+    scroll-margin-top: var(--space-5);
+}
+
+.page-standard .page-content .anime-comments > *,
+.page-standard .page-content .anime-comments :where(article, header, footer, form) > * {
+    margin: 0;
+}
+
+.comments-heading,
+.comment-header,
+.comment-form-actions,
+.comment-owner-actions,
+.comments-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.comments-heading p,
+.comment-field p,
+.comment-dates {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.anime-comments .comment-form,
+.anime-comments .comment-delete-form {
+    margin: 0;
+}
+
+.comment-form {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+}
+
+.comment-form h3 {
+    font-size: 1rem;
+}
+
+.comment-field label {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.comment-field textarea {
+    min-height: 8rem;
+    background-color: var(--color-input-background);
+}
+
+.comment-form-actions button,
+.comment-delete-form button {
+    max-width: 100%;
+    min-height: 2.75rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.comment-form-actions a,
+.comment-edit {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.comments-list {
+    padding: 0;
+    list-style: none;
+}
+
+.comments-list > li {
+    min-width: 0;
+}
+
+.comment-card {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+    scroll-margin-top: var(--space-5);
+}
+
+.comment-header {
+    justify-content: space-between;
+}
+
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    max-width: 100%;
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.comment-author:hover .comment-author-name {
+    color: var(--color-brand);
+    text-decoration: underline;
+}
+
+.comment-avatar {
+    display: grid;
+    flex: 0 0 3rem;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    overflow: hidden;
+    border-radius: var(--radius-small);
+    color: var(--color-button-text);
+    background-image: linear-gradient(135deg, var(--color-button-start), var(--color-button-end));
+    font-size: 1.4rem;
+}
+
+.comment-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.comment-author-name,
+.comment-dates,
+.comment-body {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.comment-dates {
+    gap: var(--space-1);
+}
+
+.page-standard .page-content .comment-body {
+    color: var(--color-text);
+    white-space: pre-wrap;
+}
+
+.comment-owner-actions {
+    align-items: start;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border);
+}
+
+.comment-delete {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.comment-delete summary {
+    min-height: 2.75rem;
+    padding-block: var(--space-3);
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.comment-delete summary:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+}
+
+.comment-delete-form {
+    justify-items: start;
+    padding-top: var(--space-2);
+}
+
+.anime-comments .comment-delete-form button {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    background: var(--color-surface);
+    box-shadow: none;
+}
+
+.comment-notice,
+.comments-empty,
+.comments-login {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    overflow-wrap: anywhere;
+}
+
+.page-standard .page-content .comment-notice[data-kind="success"] {
+    color: var(--color-success);
+    border-color: currentColor;
+}
+
+.page-standard .page-content .comment-notice[data-kind="error"] {
+    color: var(--color-danger);
+    border-color: currentColor;
+}
+
+.comment-notice ul {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+}
+
+.comments-pagination {
+    justify-content: center;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.875rem;
+}
+
+.comments-pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    font-weight: 700;
+}
+
+@media (min-width: 48rem) {
+    .comment-form,
+    .comment-card {
+        padding: var(--space-5);
+    }
+}

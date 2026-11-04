@@ -7,9 +7,11 @@ namespace App\Controller;
 use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
+use App\Repository\CommentRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Service\CollectionService;
+use App\Service\CommentService;
 use Closure;
 
 final class AnimeController extends AppController
@@ -19,6 +21,7 @@ final class AnimeController extends AppController
         private CollectionRepository|Closure $collections,
         private UserRepository|Closure $users,
         private RatingRepository|Closure $ratings,
+        private CommentRepository|Closure $comments,
     ) {
     }
 
@@ -155,6 +158,104 @@ final class AnimeController extends AppController
         $this->changeRating($id, true);
     }
 
+    public function createComment(int $id): void
+    {
+        $this->changeComment($id, 'create');
+    }
+
+    public function updateComment(int $id, int $commentId): void
+    {
+        $this->changeComment($id, 'edit', $commentId);
+    }
+
+    public function deleteComment(int $id, int $commentId): void
+    {
+        $this->changeComment($id, 'delete', $commentId);
+    }
+
+    private function changeComment(int $id, string $action, ?int $commentId = null): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+
+        if ($id <= 0 || $this->animes()->findById($id) === null) {
+            $this->renderAnime($id);
+            return;
+        }
+
+        $comment = $commentId === null ? null : $this->comments()->findByIdForUser($user['id'], $id, $commentId);
+        if ($action !== 'create' && $comment === null) {
+            $this->commentNotFound();
+            return;
+        }
+
+        $page = $this->commentPage($_POST['commentsPage'] ?? '1');
+        $body = trim(str_replace(["\r\n", "\r"], "\n", $this->postString('body')), " \t\n\r");
+        $errors = [];
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+        } elseif ($action !== 'delete') {
+            $errors = CommentService::validate($body);
+            if ($errors !== []) {
+                http_response_code(422);
+            }
+        }
+
+        if ($errors !== []) {
+            $this->renderAnime(
+                $id,
+                commentErrors: $errors,
+                commentBody: $body,
+                editingComment: $action === 'edit' ? $comment : null,
+                commentsPage: $page,
+            );
+            return;
+        }
+
+        if ($action === 'create') {
+            $this->comments()->createForUser($user['id'], $id, $body);
+            $this->redirect($this->commentsPath($id, 1, 'commentSaved'));
+        }
+
+        $changed = $action === 'edit'
+            ? $this->comments()->updateForUser($user['id'], $id, $commentId, $body)
+            : $this->comments()->removeForUser($user['id'], $id, $commentId);
+        if (!$changed) {
+            $this->commentNotFound();
+            return;
+        }
+
+        $page = $this->comments()->findPageForAnime($id, $page)['page'];
+        $this->redirect($this->commentsPath($id, $page, $action === 'edit' ? 'commentUpdated' : 'commentRemoved'));
+    }
+
+    private function commentPage(mixed $value): int
+    {
+        $page = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        return $page === false ? 1 : $page;
+    }
+
+    private function commentsPath(int $animeId, int $page, string $notice = ''): string
+    {
+        $parameters = [];
+        if ($page > 1) {
+            $parameters['commentsPage'] = $page;
+        }
+        if ($notice !== '') {
+            $parameters[$notice] = '1';
+        }
+
+        return '/anime/' . $animeId
+            . ($parameters === [] ? '' : '?' . http_build_query($parameters)) . '#comments';
+    }
+
+    private function commentNotFound(): void
+    {
+        http_response_code(404);
+        $this->render('not-found', ['pageTitle' => 'Nie znaleziono komentarza — AniVibe']);
+    }
+
     private function changeRating(int $id, bool $remove): void
     {
         $this->requireLogin();
@@ -191,6 +292,10 @@ final class AnimeController extends AppController
         array $errors = [],
         array $collectionForm = [],
         array $ratingErrors = [],
+        array $commentErrors = [],
+        string $commentBody = '',
+        ?array $editingComment = null,
+        ?int $commentsPage = null,
     ): void
     {
         $anime = $id > 0 ? $this->animes()->findById($id) : null;
@@ -222,6 +327,20 @@ final class AnimeController extends AppController
         $userRating = is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0
             ? $this->ratings()->findForUser($_SESSION['user_id'], $id) : null;
 
+        if (!$this->isPost() && array_key_exists('editComment', $_GET)) {
+            $this->requireLogin();
+            $commentId = filter_var($_GET['editComment'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $editingComment = $commentId === false ? null
+                : $this->comments()->findByIdForUser($_SESSION['user_id'], $id, $commentId);
+            if ($editingComment === null) {
+                $this->commentNotFound();
+                return;
+            }
+            $commentBody = $editingComment['body'];
+        }
+
+        $comments = $this->comments()->findPageForAnime($id, $commentsPage ?? $this->commentPage($_GET['commentsPage'] ?? '1'));
+
         $this->render('anime-details', [
             'pageTitle' => $anime['title'] . ' — AniVibe',
             'anime' => $anime,
@@ -240,6 +359,20 @@ final class AnimeController extends AppController
             'ratingNotice' => !$this->isPost() ? match (true) {
                 ($_GET['ratingSaved'] ?? null) === '1' => 'Twoja ocena została zapisana.',
                 ($_GET['ratingRemoved'] ?? null) === '1' => 'Twoja ocena została usunięta.',
+                default => null,
+            } : null,
+            'comments' => $comments + [
+                'previousUrl' => $this->commentsPath($id, $comments['page'] - 1),
+                'nextUrl' => $this->commentsPath($id, $comments['page'] + 1),
+            ],
+            'commentErrors' => $commentErrors,
+            'commentBody' => $commentBody,
+            'editingComment' => $editingComment,
+            'commentFormPage' => $comments['page'],
+            'commentNotice' => !$this->isPost() ? match (true) {
+                ($_GET['commentSaved'] ?? null) === '1' => 'Komentarz został dodany.',
+                ($_GET['commentUpdated'] ?? null) === '1' => 'Komentarz został zaktualizowany.',
+                ($_GET['commentRemoved'] ?? null) === '1' => 'Komentarz został usunięty.',
                 default => null,
             } : null,
         ]);
@@ -294,5 +427,14 @@ final class AnimeController extends AppController
             $this->ratings = ($this->ratings)();
         }
         return $this->ratings;
+    }
+
+    private function comments(): CommentRepository
+    {
+        if ($this->comments instanceof Closure) {
+            $this->comments = ($this->comments)();
+        }
+
+        return $this->comments;
     }
 }

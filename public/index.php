@@ -17,6 +17,7 @@ use App\Controller\RankingController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
+use App\Repository\CommentRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\MalImportRepository;
 use App\Repository\ProjectRepository;
@@ -57,6 +58,7 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): CollectionRepository => new CollectionRepository($connect()),
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): RatingRepository => new RatingRepository($connect()),
+            static fn (): CommentRepository => new CommentRepository($connect()),
         );
     }
 
@@ -150,6 +152,9 @@ $routing->get('/users/{id}', ProfileController::class, 'show');
 
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');
+$routing->post('/anime/{id}/comments', AnimeController::class, 'createComment');
+$routing->post('/anime/{id}/comments/{commentId}/edit', AnimeController::class, 'updateComment');
+$routing->post('/anime/{id}/comments/{commentId}/delete', AnimeController::class, 'deleteComment');
 $routing->post('/anime/{id}/rating', AnimeController::class, 'saveRating');
 $routing->post('/anime/{id}/rating/remove', AnimeController::class, 'removeRating');
 $routing->post('/anime/{id}/collections', AnimeController::class, 'addToCollections');
