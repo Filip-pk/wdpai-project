@@ -67,6 +67,59 @@ final class ProfileController extends AppController
         $this->renderProfile(false, $user, $errors, $form);
     }
 
+    public function show(int $id): void
+    {
+        $profileUser = $this->users()->findPublicById($id);
+
+        if ($profileUser === null) {
+            http_response_code(404);
+            $this->render('not-found', ['pageTitle' => 'Nie znaleziono użytkownika — AniVibe']);
+            return;
+        }
+
+        if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
+            $this->currentUser($this->users());
+        }
+
+        $requestedStatus = $_GET['status'] ?? '';
+        $statusFilter = is_string($requestedStatus) && isset(self::STATUSES[$requestedStatus])
+            ? $requestedStatus : '';
+        $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        $result = $this->watchlists()->findPageForUser($id, $page === false ? 1 : $page, status: $statusFilter);
+
+        $this->render('user-profile', [
+            'pageTitle' => $profileUser['name'] . ' — Profil użytkownika — AniVibe',
+            'profileUser' => $profileUser,
+            'profilePath' => '/users/' . $id,
+            'isOwnProfile' => ($_SESSION['user_id'] ?? null) === $id,
+            'experience' => ExperienceService::progress($this->experience()->totalForUser($id)),
+            'statistics' => $this->watchlists()->statisticsForUser($id),
+            'animes' => $this->animes()->findByIds(array_column($result['entries'], 'animeId')),
+            'visibleWatchlist' => $result['entries'],
+            'watchlistStatuses' => self::STATUSES,
+            'statusFilter' => $statusFilter,
+            'watchlistPagination' => $result + [
+                'previousUrl' => $this->publicWatchlistPath($id, $result['page'] - 1, $statusFilter),
+                'nextUrl' => $this->publicWatchlistPath($id, $result['page'] + 1, $statusFilter),
+            ],
+        ]);
+    }
+
+    private function publicWatchlistPath(int $id, int $page, string $status): string
+    {
+        $parameters = [];
+        if ($status !== '') {
+            $parameters['status'] = $status;
+        }
+        if ($page > 1) {
+            $parameters['page'] = $page;
+        }
+
+        return '/users/' . $id . ($parameters === [] ? '' : '?' . http_build_query($parameters));
+    }
+
     public function theme(): void
     {
         $this->requireLogin();

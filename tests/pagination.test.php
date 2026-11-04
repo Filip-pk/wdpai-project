@@ -168,6 +168,9 @@ try {
         $page = $watchlists->findPageForUser(303, PHP_INT_MAX);
         $assert($page['entries'] === [] && $page['page'] === 1 && $page['totalPages'] === 1);
         $assert($page['total'] === 0 && $page['watchlistTotal'] === 0 && $page['completedCount'] === 0);
+        $assert($watchlists->statisticsForUser(303) === [
+            'watchlistTotal' => 0, 'completedCount' => 0, 'watchingCount' => 0, 'watchedEpisodes' => 0,
+        ]);
     });
 
     $run('Watchlista dzieli 60 tytułów na strony 24, 24 i 12 bez duplikatów', static function () use (
@@ -313,6 +316,69 @@ try {
         }
         $html = $render([$profile, 'watchlist'], '/watchlist', ['page' => (string) PHP_INT_MAX]);
         $assert($watchlistIds($html) === range(49, 60));
+    });
+
+    $run('Gość widzi publiczny profil i watchlistę bez prywatnych danych i akcji zapisu', static function () use (
+        $seedWatchlist, $connection, $render, $profile, $watchlistIds, $assert,
+    ): void {
+        $seedWatchlist();
+        $connection->exec(
+            'INSERT INTO pg_temp.user_anime_ratings (user_id, anime_id, rating) VALUES (101, 1, 9), (202, 1, 4)'
+        );
+        $html = $render(static fn () => $profile->show(101), '/users/101', userId: 0);
+        $assert(str_contains($html, 'data-profile-user-id="101"'));
+        $assert(!str_contains($html, 'data-account-id='));
+        $assert($watchlistIds($html) === range(1, 24));
+        $assert(str_contains($html, 'data-watchlist-count="60"'));
+        $assert(str_contains($html, 'data-completed-count="6"'));
+        $assert(str_contains($html, 'data-watching-count="30"'));
+        $assert(str_contains($html, 'data-watched-episodes="202"'));
+        $assert(!str_contains($html, 'pagination-first@example.test'));
+        $assert(!str_contains($html, 'pagination-second@example.test'));
+        $assert(!str_contains($html, 'data-user-rating='));
+        $assert(!str_contains($html, 'action="/watchlist"'));
+        $assert(!str_contains($html, 'action="/watchlist/remove"'));
+        $assert(!str_contains($html, 'action="/profile"'));
+        $assert(!str_contains($html, 'name="currentPassword"'));
+    });
+
+    $run('Cudzy publiczny profil zachowuje konto odwiedzającego oraz filtr i pełne statystyki', static function () use (
+        $seedWatchlist, $render, $profile, $watchlistIds, $assert,
+    ): void {
+        $seedWatchlist();
+        $html = $render(
+            static fn () => $profile->show(101), '/users/101', ['page' => '2', 'status' => 'watching'], userId: 202,
+        );
+        $assert(str_contains($html, 'data-profile-user-id="101"'));
+        $assert(str_contains($html, '<h1>Pierwszy</h1>'));
+        $assert(str_contains($html, 'data-account-id="202"'));
+        $assert(str_contains($html, '<a href="/users/202" class="account-user" aria-label="Profil: Drugi">'));
+        $assert($watchlistIds($html) === range(25, 30));
+        $assert(str_contains($html, 'Strona 2 z 2'));
+        $assert(str_contains($html, 'href="/users/101?status=watching"'));
+        $assert(str_contains($html, 'action="/users/101" method="get"'));
+        $assert(str_contains($html, 'data-watchlist-count="60"'));
+        $assert(str_contains($html, 'data-completed-count="6"'));
+        $assert(str_contains($html, 'data-watching-count="30"'));
+        $assert(str_contains($html, 'data-watched-episodes="202"'));
+        $assert(!str_contains($html, 'pagination-first@example.test'));
+        $assert(!str_contains($html, 'action="/watchlist"'));
+        $assert(!str_contains($html, 'data-user-rating='));
+    });
+
+    $run('Tablicowe filtry publicznej watchlisty nie wywołują ostrzeżeń ani nie zmieniają profilu', static function () use (
+        $seedWatchlist, $render, $profile, $watchlistIds, $assert,
+    ): void {
+        $seedWatchlist();
+        foreach ([
+            [['page' => ['2'], 'status' => ['watching']], range(1, 24)],
+            [['page' => '2', 'status' => ['watching']], range(25, 48)],
+        ] as [$query, $expectedIds]) {
+            $html = $render(static fn () => $profile->show(101), '/users/101', $query, userId: 0);
+            $assert(str_contains($html, 'data-profile-user-id="101"'));
+            $assert($watchlistIds($html) === $expectedIds);
+            $assert(str_contains($html, 'data-watchlist-count="60"'));
+        }
     });
 
     $run('Błędy zapisu na drugiej stronie profilu zachowują filtr i dane formularza', static function () use (

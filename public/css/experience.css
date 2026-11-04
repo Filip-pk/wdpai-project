@@ -241,6 +241,14 @@
     align-items: center;
     gap: var(--space-3);
     min-width: 0;
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.ranking-user:hover .ranking-user-name {
+    color: var(--color-brand);
+    text-decoration: underline;
 }
 
 .ranking-avatar {

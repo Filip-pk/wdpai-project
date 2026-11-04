@@ -67,6 +67,27 @@ final class WatchlistRepository
         ];
     }
 
+    /** @return array{watchlistTotal: int, completedCount: int, watchingCount: int, watchedEpisodes: int} */
+    public function statisticsForUser(int $userId): array
+    {
+        $statement = $this->database->prepare(
+            "SELECT count(*) AS watchlist_total,
+                    count(*) FILTER (WHERE status = 'completed') AS completed_count,
+                    count(*) FILTER (WHERE status = 'watching') AS watching_count,
+                    COALESCE(SUM(watched::BIGINT), 0) AS watched_episodes
+             FROM user_watchlist WHERE user_id = :user_id"
+        );
+        $statement->execute(['user_id' => $userId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'watchlistTotal' => (int) $row['watchlist_total'],
+            'completedCount' => (int) $row['completed_count'],
+            'watchingCount' => (int) $row['watching_count'],
+            'watchedEpisodes' => (int) $row['watched_episodes'],
+        ];
+    }
+
     /** @param list<int> $animeIds @return list<array{animeId: int, status: string, watched: int}> */
     public function findByAnimeIdsForUser(int $userId, array $animeIds): array
     {

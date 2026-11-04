@@ -56,6 +56,28 @@ final class UserRepository
         return $user;
     }
 
+    /** @return array{id: int, name: string, interests: string, created_at: string, avatar_url: ?string}|null */
+    public function findPublicById(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+
+        $statement = $this->database->prepare(
+            'SELECT id, name, interests, created_at, avatar_version FROM users WHERE id = :id'
+        );
+        $statement->execute(['id' => $id]);
+        $user = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return $user === false ? null : [
+            'id' => (int) $user['id'],
+            'name' => (string) $user['name'],
+            'interests' => (string) $user['interests'],
+            'created_at' => (string) $user['created_at'],
+            'avatar_url' => $this->avatarUrl($user),
+        ];
+    }
+
     public function updateAvatar(int $userId, string $contents, string $version): void
     {
         $statement = $this->database->prepare(

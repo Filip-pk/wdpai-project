@@ -27,6 +27,7 @@ $isProjectsPage = $currentPath === '/projects'
     || str_starts_with((string) $currentPath, '/projects/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
 $isImportPage = str_starts_with((string) $currentPath, '/profile/import');
+$isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
 ?>
 
 <!doctype html>
@@ -79,23 +80,26 @@ $isImportPage = str_starts_with((string) $currentPath, '/profile/import');
         <link rel="stylesheet" href="<?= $assetUrl('/css/projects.css') ?>">
     <?php endif; ?>
 
-    <?php if ($isImportPage || $isCollectionsPage || str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
+    <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/catalog.css') ?>">
         <script src="<?= $assetUrl('/js/catalog.js') ?>" defer></script>
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
-    <?php if ($isImportPage || $isCollectionsPage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
+    <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
     <?php endif; ?>
     <?php if ($isCollectionsPage || str_starts_with((string) $currentPath, '/anime/')): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/collections.css') ?>">
     <?php endif; ?>
-    <?php if (in_array($currentPath, ['/ranking', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
+    <?php if ($isUserProfilePage || in_array($currentPath, ['/ranking', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/experience.css') ?>">
     <?php endif; ?>
     <?php if ($isImportPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/import.css') ?>">
+    <?php endif; ?>
+    <?php if ($isUserProfilePage): ?>
+        <script src="<?= $assetUrl('/js/user-profile.js') ?>" defer></script>
     <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">

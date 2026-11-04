@@ -11,12 +11,15 @@ AI i rozmowy z postaciami.
   zakresach liczby odcinków, oceny i roku premiery.
 - Sortowanie oceną, tytułem, odcinkami i rokiem w obu kierunkach;
   domyślnie najlepiej oceniane anime. Paginacja zachowuje wybrane kryteria.
-- Rejestracja, logowanie i prywatna watchlista: dodawanie i usuwanie anime,
+- Rejestracja, logowanie i własna watchlista: dodawanie i usuwanie anime,
   statusy „Planowane”, „Oglądam”, „Ukończone”, „Wstrzymane” i „Porzucone”
   oraz zapis obejrzanych odcinków.
 - Import własnej listy MyAnimeList z XML/XML.GZ: podgląd i zatwierdzenie,
   zachowanie istniejących danych lub jawna aktualizacja oraz raport i EXP.
 - Edycja profilu, zainteresowania i zdjęcie profilowe JPG/PNG do 4 MB.
+- Publiczne profile otwierane przez nazwę lub avatar: poziom, EXP, statystyki
+  i watchlista do przeglądania. Przycisk „Napisz wiadomość” otwiera podgląd
+  formularza; wysyłanie prywatnych wiadomości nie jest jeszcze dostępne.
 - Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
   należeć do kilku kolekcji niezależnie od statusu i postępu na watchliście.
 - Prywatne oceny anime w skali 1–10: zapis, zmiana i usuwanie, z podglądem

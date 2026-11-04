@@ -76,6 +76,23 @@ try {
         $assert($connection->query('SELECT created_at FROM users')->fetchColumn() !== null);
     });
 
+    $run('Profil publiczny nie udostępnia e-maila, hasha ani ustawień konta', static function () use (
+        $repository, $assert, $hash,
+    ): void {
+        $id = $repository->create('Łucja <svg>', 'private@example.test', $hash);
+        $repository->updateProfile($id, 'Łucja <svg>', 'private@example.test', 'Mecha & fantasy', 'dark');
+        $repository->updateAvatar($id, 'test-image', str_repeat('b', 32));
+        $user = $repository->findPublicById($id);
+
+        $assert($user !== null && array_keys($user) === ['id', 'name', 'interests', 'created_at', 'avatar_url']);
+        $assert($user['id'] === $id && $user['name'] === 'Łucja <svg>');
+        $assert($user['interests'] === 'Mecha & fantasy' && $user['created_at'] !== '');
+        $assert($user['avatar_url'] === '/avatars/' . $id . '?v=' . str_repeat('b', 32));
+        $assert($repository->findPublicById(0) === null);
+        $assert($repository->findPublicById(-1) === null);
+        $assert($repository->findPublicById(PHP_INT_MAX) === null);
+    });
+
     $run('Wyszukiwanie e-maila pomija wielkość liter', static function () use ($repository, $assert, $hash): void {
         $id = $repository->create('Użytkownik', 'User@Example.com', $hash);
         $assert($repository->findByEmail('user@example.com')['id'] === $id);

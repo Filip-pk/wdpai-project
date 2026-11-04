@@ -32,7 +32,7 @@ $navigation = $isWelcome
         <?php endforeach; ?>
         <?php if ($isLoggedIn ?? false): ?>
             <li class="account-menu">
-                <a href="/profile" class="account-user" aria-label="<?= $escape('Profil: ' . $currentUserName) ?>">
+                <a href="/users/<?= $escape($accountId) ?>" class="account-user" aria-label="<?= $escape('Profil: ' . $currentUserName) ?>">
                     <span class="account-avatar" aria-hidden="true">
                         <?php if (!empty($currentUserAvatarUrl)): ?>
                             <img src="<?= $escape($currentUserAvatarUrl) ?>" alt="" width="32" height="32" decoding="async">

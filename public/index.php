@@ -146,6 +146,7 @@ $routing->post('/register', AuthController::class, 'register');
 $routing->post('/logout', AuthController::class, 'logout');
 $routing->get('/dashboard', DashboardController::class, 'index');
 $routing->get('/ranking', RankingController::class, 'index');
+$routing->get('/users/{id}', ProfileController::class, 'show');
 
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');

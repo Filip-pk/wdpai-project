@@ -1,4 +1,4 @@
-# Profile, ustawienia i prywatne watchlisty
+# Profile użytkowników, ustawienia i watchlisty
 
 Profil i pulpit używają konta z `users`, odczytanego po ID z sesji.
 Nie pobierają już przykładowego użytkownika z `DemoData`.
@@ -33,7 +33,26 @@ Przykładów Kacpra nie przenosimy do kont użytkowników.
 
 Właściciel zawsze pochodzi z sesji. Pola `userId` i `user_id` przesłane przez
 przeglądarkę nie wyznaczają konta. Zapis wymaga CSRF i parametryzowanego SQL.
-Gość otwierający profil lub watchlistę jest przekierowywany do logowania.
+Gość otwierający `/profile` lub `/watchlist` jest przekierowywany do logowania.
+
+## Publiczne profile użytkowników
+
+Kliknięcie nazwy lub avatara w rankingu albo przy nazwie własnego konta
+otwiera `/users/{id}`. Profil jest dostępny również bez logowania i pokazuje
+nazwę, avatar, datę dołączenia, zainteresowania, poziom i EXP oraz watchlistę
+tylko do odczytu. Nie udostępnia e-maila, ustawień, prywatnych ocen ani kolekcji.
+Własny publiczny profil zawiera odnośnik „Edytuj profil” do `/profile`.
+
+Statystyki pokazują liczbę tytułów, ukończonych i oglądanych serii oraz sumę
+obejrzanych odcinków z całej aktualnej watchlisty. Filtr statusu i paginacja
+po 24 tytuły nie zmieniają tych liczników. EXP nadal uwzględnia zachowane
+postępy tytułów usuniętych z listy. Nieistniejący użytkownik zwraca 404.
+Odczyt profilu innego konta nie zmienia właściciela prywatnych formularzy.
+
+Przycisk „Napisz wiadomość” otwiera demonstracyjny formularz z odbiorcą.
+Wysyłanie jest wyłączone, a treść nie jest zapisywana. Bez JavaScript dostępna
+jest rozwijana informacja o niedostępnej wysyłce. Prywatne wiadomości wymagają
+osobnego wdrożenia; przycisk nie korzysta z e-maila użytkownika ani czatu AI.
 
 ## Zdjęcie profilowe
 
@@ -80,6 +99,7 @@ przy zmianie e-maila oraz adres zajęty przez drugie konto.
 
 ```cmd
 node --test tests/profile-http.test.cjs
+node --test tests/user-profiles-http.test.cjs
 node --test tests/avatar-http.test.cjs
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs
 docker compose exec php php tests/user-repository.test.php
@@ -90,6 +110,8 @@ docker compose exec -T php php tests/pagination.test.php
 Test paginacji działa na tabelach tymczasowych i nie zostawia kont w bazie.
 
 Test profili tworzy dwa losowe konta w lokalnej bazie i zachowuje je.
+Test publicznych profili również tworzy konta testowe; sprawdza publiczny
+odczyt, prywatność, statystyki, filtrowanie, paginację i izolację zmian.
 Test zdjęć tworzy kolejne dwa konta oraz sprawdza walidację plików,
 izolację kont, wyświetlanie, trwałość i zastępowanie zdjęcia.
 Do kontroli układu sprawdź jasny i ciemny motyw przy szerokościach

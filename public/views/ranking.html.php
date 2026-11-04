@@ -46,7 +46,7 @@
                     <?php $isOwnRow = $ownRanking !== null && $leader['userId'] === $ownRanking['userId']; ?>
                     <li class="ranking-row<?= $isOwnRow ? ' ranking-row-own' : '' ?>" value="<?= $escape($leader['rank']) ?>" data-ranking-user-id="<?= $escape($leader['userId']) ?>" data-ranking-position="<?= $escape($leader['rank']) ?>" data-total-exp="<?= $escape($leader['totalExp']) ?>" data-user-level="<?= $escape($leader['level']) ?>">
                         <span class="ranking-position" aria-label="<?= $escape('Miejsce ' . $leader['rank']) ?>">#<?= $escape($leader['rank']) ?></span>
-                        <div class="ranking-user">
+                        <a class="ranking-user" href="/users/<?= $escape($leader['userId']) ?>" aria-label="<?= $escape('Profil: ' . $leader['name']) ?>">
                             <span class="ranking-avatar" aria-hidden="true">
                                 <?php if ($leader['avatarUrl'] !== null): ?>
                                     <img src="<?= $escape($leader['avatarUrl']) ?>" alt="" width="44" height="44" loading="lazy" decoding="async">
@@ -55,7 +55,7 @@
                                 <?php endif; ?>
                             </span>
                             <span class="ranking-user-name"><?= $escape($leader['name']) ?><?php if ($isOwnRow): ?> <span class="ranking-you">Ty</span><?php endif; ?></span>
-                        </div>
+                        </a>
                         <dl class="ranking-values">
                             <div><dt>Poziom</dt><dd><?= $escape($leader['level']) ?></dd></div>
                             <div><dt>EXP</dt><dd><?= $escape(number_format($leader['totalExp'], 0, ',', ' ')) ?></dd></div>

@@ -90,6 +90,7 @@
     font-size: 1.8rem;
     font-weight: 800;
     line-height: 1;
+    text-decoration: none;
 }
 
 .profile-avatar img {
@@ -453,5 +454,140 @@
     .profile-actions button[type="submit"] {
         width: auto;
         padding-inline: var(--space-6);
+    }
+}
+
+.user-profile-back {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-weight: 700;
+}
+
+.user-profile-identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.user-profile-identity .profile-avatar {
+    flex: 0 0 4.5rem;
+}
+
+.user-profile-identity .profile-heading {
+    flex: 1 1 12rem;
+    overflow-wrap: anywhere;
+}
+
+.user-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.user-profile-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
+    color: var(--color-button-text);
+    background-image: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.user-profile-action:hover {
+    color: var(--color-button-text);
+    box-shadow: var(--shadow-accent);
+}
+
+.user-profile-statistics > p {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+}
+
+.profile-message-fallback {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+}
+
+.profile-message-fallback summary {
+    min-height: 2.75rem;
+    padding-block: var(--space-2);
+    color: var(--color-brand);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-message-fallback summary:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+}
+
+.profile-message-dialog {
+    width: min(calc(100% - var(--space-6)), 36rem);
+    max-height: calc(100% - var(--space-6));
+    margin: auto;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+}
+
+.profile-message-dialog::backdrop {
+    background-color: rgb(0 0 0 / 65%);
+}
+
+.profile-page .profile-message-form {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+}
+
+.profile-message-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.profile-message-form label {
+    font-weight: 700;
+}
+
+.profile-message-form textarea {
+    min-width: 0;
+    width: 100%;
+    min-height: 9rem;
+    background-color: var(--color-input-background);
+}
+
+.profile-message-button[hidden],
+.profile-message-fallback[hidden],
+.profile-message-dialog[hidden] {
+    display: none;
+}
+
+@media (min-width: 48rem) {
+    .user-profile-statistics .profile-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .profile-message-dialog {
+        padding: var(--space-6);
     }
 }

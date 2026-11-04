@@ -26,15 +26,15 @@
     <?php if (!$watchlistOnly): ?>
         <div class="profile-grid">
             <section class="profile-summary" aria-labelledby="profile-title">
-                <div class="profile-avatar" aria-hidden="true">
+                <a class="profile-avatar" href="/users/<?= $escape($user['id']) ?>" aria-label="<?= $escape('Zobacz profil: ' . $user['name']) ?>">
                     <?php if (!empty($user['avatar_url'])): ?>
                         <img src="<?= $escape($user['avatar_url']) ?>" alt="" width="72" height="72" decoding="async">
                     <?php else: ?>
                         ✦
                     <?php endif; ?>
-                </div>
+                </a>
                 <div class="profile-identity">
-                    <h2 id="profile-title"><?= $escape($user['name']) ?></h2>
+                    <h2 id="profile-title"><a href="/users/<?= $escape($user['id']) ?>"><?= $escape($user['name']) ?></a></h2>
                     <p class="profile-email"><?= $escape($user['email']) ?></p>
                 </div>
                 <p class="profile-interests"><?= $escape($user['interests'] === '' ? 'Dodaj zainteresowania, aby opowiedzieć o swoim anime klimacie.' : $user['interests']) ?></p>

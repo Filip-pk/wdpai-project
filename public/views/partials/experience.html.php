@@ -3,7 +3,7 @@
         <div class="experience-identity">
             <span class="experience-symbol" aria-hidden="true">✦</span>
             <div>
-                <h2 id="experience-title">Twój poziom</h2>
+                <h2 id="experience-title"><?= $escape($experienceTitle ?? 'Twój poziom') ?></h2>
                 <p class="experience-level">Poziom <?= $escape($experience['level']) ?></p>
             </div>
         </div>
