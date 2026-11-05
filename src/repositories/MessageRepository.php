@@ -8,7 +8,6 @@ use App\Service\MessageService;
 use InvalidArgumentException;
 use PDO;
 use PDOException;
-use RuntimeException;
 
 final class MessageRepository
 {
@@ -39,21 +38,30 @@ final class MessageRepository
 
         $statement = $this->database->prepare(
             'SELECT conversations.id, recipient.id AS recipient_id, recipient.name AS recipient_name,
-                    recipient.avatar_version, LEFT(latest.body, 160) AS last_message_preview,
-                    latest.sender_id AS last_message_sender_id, latest.created_at AS last_message_at
+                    recipient.avatar_version,
+                    CASE WHEN latest.moderated_at IS NOT NULL THEN \'Wiadomość ukryta przez moderację.\'
+                        ELSE LEFT(latest.body, 160) END AS last_message_preview,
+                    latest.sender_id AS last_message_sender_id, latest.created_at AS last_message_at,
+                    (SELECT count(*) FROM private_messages AS unread
+                     WHERE unread.conversation_id = conversations.id AND unread.sender_id <> :unread_viewer_id
+                       AND unread.id > COALESCE(reads.last_read_message_id, 0)) AS unread_count
              FROM private_conversations AS conversations
              INNER JOIN users AS recipient
                 ON recipient.id = CASE WHEN conversations.first_user_id = :viewer_id
                     THEN conversations.second_user_id ELSE conversations.first_user_id END
              LEFT JOIN LATERAL (
-                 SELECT id, body, sender_id, created_at FROM private_messages
+                 SELECT id, body, sender_id, created_at, moderated_at FROM private_messages
                  WHERE conversation_id = conversations.id ORDER BY id DESC LIMIT 1
              ) AS latest ON TRUE
+             LEFT JOIN private_message_reads AS reads
+                ON reads.conversation_id = conversations.id AND reads.user_id = :read_viewer_id
              WHERE conversations.first_user_id = :first_participant
                 OR conversations.second_user_id = :second_participant
              ORDER BY latest.id DESC NULLS LAST, conversations.id DESC LIMIT :limit OFFSET :offset'
         );
         $statement->bindValue('viewer_id', $userId, PDO::PARAM_INT);
+        $statement->bindValue('unread_viewer_id', $userId, PDO::PARAM_INT);
+        $statement->bindValue('read_viewer_id', $userId, PDO::PARAM_INT);
         $statement->bindValue('first_participant', $userId, PDO::PARAM_INT);
         $statement->bindValue('second_participant', $userId, PDO::PARAM_INT);
         $statement->bindValue('limit', $perPage, PDO::PARAM_INT);
@@ -69,6 +77,7 @@ final class MessageRepository
                 'lastMessagePreview' => $row['last_message_preview'] === null ? null : (string) $row['last_message_preview'],
                 'lastMessageSenderId' => $row['last_message_sender_id'] === null ? null : (int) $row['last_message_sender_id'],
                 'lastMessageAt' => $row['last_message_at'] === null ? null : (string) $row['last_message_at'],
+                'unreadCount' => (int) $row['unread_count'],
             ], $statement->fetchAll(PDO::FETCH_ASSOC)),
             'page' => $page,
             'total' => $total,
@@ -135,6 +144,11 @@ final class MessageRepository
                  SELECT first_user.id, second_user.id FROM users AS first_user
                  CROSS JOIN users AS second_user
                  WHERE first_user.id = :first_user_id AND second_user.id = :second_user_id
+                   AND NOT EXISTS (
+                       SELECT 1 FROM user_blocks
+                       WHERE (blocker_id = first_user.id AND blocked_id = second_user.id)
+                          OR (blocker_id = second_user.id AND blocked_id = first_user.id)
+                   )
                  ON CONFLICT (first_user_id, second_user_id)
                  DO UPDATE SET first_user_id = EXCLUDED.first_user_id RETURNING id'
             );
@@ -146,7 +160,7 @@ final class MessageRepository
                 return null;
             }
             if ($this->sendForUser($userId, (int) $conversationId, $body) === null) {
-                throw new RuntimeException('Nie udało się zapisać wiadomości w rozmowie uczestnika.');
+                return null;
             }
 
             if ($ownsTransaction) {
@@ -180,9 +194,14 @@ final class MessageRepository
         $this->validateBody($body);
         $statement = $this->database->prepare(
             'INSERT INTO private_messages (conversation_id, sender_id, body)
-             SELECT id, :sender_id, :body FROM private_conversations
-             WHERE id = :conversation_id
-               AND (first_user_id = :first_participant OR second_user_id = :second_participant)
+             SELECT conversations.id, :sender_id, :body FROM private_conversations AS conversations
+             WHERE conversations.id = :conversation_id
+               AND (conversations.first_user_id = :first_participant OR conversations.second_user_id = :second_participant)
+               AND NOT EXISTS (
+                   SELECT 1 FROM user_blocks
+                   WHERE (blocker_id = conversations.first_user_id AND blocked_id = conversations.second_user_id)
+                      OR (blocker_id = conversations.second_user_id AND blocked_id = conversations.first_user_id)
+               )
              RETURNING id'
         );
         $statement->execute([
@@ -194,7 +213,7 @@ final class MessageRepository
         return $id === false ? null : (int) $id;
     }
 
-    /** @return array{entries: list<array{id: int, senderId: int, body: string, createdAt: string}>, page: int, total: int, totalPages: int}|null */
+    /** @return array{entries: list<array{id: int, senderId: int, body: string, createdAt: string, isRemoved: bool}>, page: int, total: int, totalPages: int}|null */
     public function findMessagesPageForUser(int $userId, int $conversationId, ?int $page = null, int $perPage = 30): ?array
     {
         if ($this->findForUser($userId, $conversationId) === null) {
@@ -213,7 +232,9 @@ final class MessageRepository
         [$page, $perPage, $totalPages] = $this->pagination($total, $page, $perPage);
 
         $statement = $this->database->prepare(
-            'SELECT messages.id, messages.sender_id, messages.body, messages.created_at FROM private_messages AS messages
+            'SELECT messages.id, messages.sender_id, messages.created_at, messages.moderated_at,
+                    CASE WHEN messages.moderated_at IS NULL THEN messages.body ELSE \'\' END AS body
+             FROM private_messages AS messages
              INNER JOIN private_conversations AS conversations ON conversations.id = messages.conversation_id
              WHERE conversations.id = :conversation_id
                AND (conversations.first_user_id = :first_participant OR conversations.second_user_id = :second_participant)
@@ -230,6 +251,7 @@ final class MessageRepository
             'entries' => array_map(static fn (array $row): array => [
                 'id' => (int) $row['id'], 'senderId' => (int) $row['sender_id'],
                 'body' => (string) $row['body'], 'createdAt' => (string) $row['created_at'],
+                'isRemoved' => $row['moderated_at'] !== null,
             ], $statement->fetchAll(PDO::FETCH_ASSOC)),
             'page' => $page, 'total' => $total, 'totalPages' => $totalPages,
         ];

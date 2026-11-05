@@ -6,6 +6,7 @@ $conversationId = $conversation['id'] ?? null;
 $recipientId = $isComposing ? $recipient['id'] : ($conversation['recipientId'] ?? null);
 $recipientName = $isComposing ? $recipient['name'] : ($conversation['recipientName'] ?? '');
 $recipientAvatarUrl = $isComposing ? $recipient['avatar_url'] : ($conversation['recipientAvatarUrl'] ?? null);
+$lastVisibleMessageId = $messagePage['entries'] === [] ? null : max(array_column($messagePage['entries'], 'id'));
 $messageDate = static fn (string $value): DateTimeImmutable =>
     (new DateTimeImmutable($value))->setTimezone(new DateTimeZone('Europe/Warsaw'));
 ?>
@@ -15,10 +16,14 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
         <p class="eyebrow">Prywatne rozmowy</p>
         <h1>Wiadomości</h1>
         <p>Rozmawiaj z innymi fanami anime. Dostęp do rozmowy mają tylko jej uczestnicy.</p>
+        <a class="messages-back" href="/messages/blocked">Zablokowani użytkownicy</a>
     </header>
 
     <?php if ($sent): ?>
         <p class="messages-notice" data-kind="success" role="status">Wiadomość została wysłana.</p>
+    <?php endif; ?>
+    <?php if (($_GET['reportSaved'] ?? null) === '1'): ?>
+        <p class="messages-notice" data-kind="success" role="status">Zgłoszenie zostało przekazane do moderacji.</p>
     <?php endif; ?>
     <?php if ($errors !== []): ?>
         <div id="message-errors" class="messages-notice" data-kind="error" role="alert">
@@ -56,7 +61,10 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                                     <?php endif; ?>
                                 </span>
                                 <span class="conversation-copy">
-                                    <span class="conversation-name"><?= $escape($listedConversation['recipientName']) ?></span>
+                                    <span class="conversation-title-row">
+                                        <span class="conversation-name"><?= $escape($listedConversation['recipientName']) ?></span>
+                                        <span class="conversation-unread" data-conversation-unread="<?= $escape($listedConversation['id']) ?>" aria-label="<?= $escape('Nieprzeczytane wiadomości: ' . $listedConversation['unreadCount']) ?>"<?= $listedConversation['unreadCount'] === 0 ? ' hidden' : '' ?>><?= $escape($listedConversation['unreadCount']) ?></span>
+                                    </span>
                                     <span class="conversation-preview"><?php if ($listedConversation['lastMessageSenderId'] === $accountId): ?>Ty: <?php endif; ?><?= $escape($listedConversation['lastMessagePreview'] ?? 'Rozpocznij rozmowę') ?></span>
                                     <?php if ($listedConversation['lastMessageAt'] !== null): ?>
                                         <?php $lastMessageDate = $messageDate($listedConversation['lastMessageAt']); ?>
@@ -98,10 +106,21 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                             <h2 id="conversation-title"><?= $escape($recipientName) ?></h2>
                         </div>
                     </a>
-                    <?php if (!$isComposing): ?>
-                        <a class="messages-refresh" href="/messages/<?= $escape($conversationId) ?>#message-history">Odśwież rozmowę <span aria-hidden="true">↻</span></a>
-                    <?php endif; ?>
+                    <div class="messages-thread-actions">
+                        <?php if (!$isComposing): ?>
+                            <a class="messages-refresh" href="/messages/<?= $escape($conversationId) ?>#message-history">Odśwież rozmowę <span aria-hidden="true">↻</span></a>
+                        <?php endif; ?>
+                        <form action="/users/<?= $escape($recipientId) ?>/<?= $isBlockedByMe ? 'unblock' : 'block' ?>" method="post">
+                            <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                            <?php if ($conversationId !== null): ?><input type="hidden" name="conversationId" value="<?= $escape($conversationId) ?>"><?php endif; ?>
+                            <button class="messages-secondary-button" type="submit"><?= $isBlockedByMe ? 'Odblokuj użytkownika' : 'Zablokuj użytkownika' ?></button>
+                        </form>
+                    </div>
                 </header>
+
+                <?php if (!$canSend): ?>
+                    <p class="messages-notice" role="status">Wysyłanie wiadomości w tej rozmowie jest niedostępne z powodu blokady użytkownika.</p>
+                <?php endif; ?>
 
                 <section id="message-history" class="message-history" aria-labelledby="message-history-title">
                     <h3 id="message-history-title">Historia rozmowy</h3>
@@ -120,11 +139,27 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                                         <span><?= $isOwnMessage ? 'Ty' : $escape($recipientName) ?></span>
                                         <time datetime="<?= $escape($createdDate->format(DATE_ATOM)) ?>"><?= $escape($createdDate->format('d.m.Y H:i')) ?></time>
                                     </header>
-                                    <p class="message-body"><?= $escape($message['body']) ?></p>
+                                    <?php if ($message['isRemoved']): ?>
+                                        <p class="message-removed">Wiadomość ukryta przez moderację.</p>
+                                    <?php else: ?>
+                                        <p class="message-body"><?= $escape($message['body']) ?></p>
+                                        <?php if (!$isOwnMessage): ?>
+                                            <a class="message-report" href="/reports/message/<?= $escape($message['id']) ?>?page=<?= $escape($messagePage['page']) ?>" aria-label="Zgłoś wiadomość">Zgłoś</a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </article>
                             </li>
                         <?php endforeach; ?>
                     </ol>
+
+                    <?php if ($conversationId !== null && $lastVisibleMessageId !== null): ?>
+                        <form class="message-read-form" data-mark-conversation-read action="/messages/<?= $escape($conversationId) ?>/read" method="post">
+                            <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                            <input type="hidden" name="lastMessageId" value="<?= $escape($lastVisibleMessageId) ?>">
+                            <input type="hidden" name="page" value="<?= $escape($messagePage['page']) ?>">
+                            <button class="messages-secondary-button" type="submit">Oznacz jako przeczytane</button>
+                        </form>
+                    <?php endif; ?>
 
                     <?php if ($messagePage['totalPages'] > 1): ?>
                         <nav class="messages-pagination" aria-label="Strony historii rozmowy">
@@ -139,16 +174,18 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                     <?php endif; ?>
                 </section>
 
-                <form id="message-composer" class="message-form" action="<?= $isComposing ? '/messages/new/' . $escape($recipientId) : '/messages/' . $escape($conversationId) ?>" method="post" aria-labelledby="message-form-title">
-                    <h3 id="message-form-title"><?= $isComposing ? 'Rozpocznij rozmowę' : 'Napisz wiadomość' ?></h3>
-                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                    <label for="message-body">Treść wiadomości</label>
-                    <textarea id="message-body" name="body" rows="4" maxlength="4000" aria-describedby="message-help<?= $errors !== [] ? ' message-errors' : '' ?>"<?= $errors !== [] ? ' aria-invalid="true"' : '' ?> required><?= $escape($body) ?></textarea>
-                    <p id="message-help">Zwykły tekst, do 4000 znaków. Wiadomości widzicie tylko Ty i rozmówca.</p>
-                    <div class="message-form-actions">
-                        <button type="submit">Wyślij wiadomość</button>
-                    </div>
-                </form>
+                <?php if ($canSend): ?>
+                    <form id="message-composer" class="message-form" action="<?= $isComposing ? '/messages/new/' . $escape($recipientId) : '/messages/' . $escape($conversationId) ?>" method="post" aria-labelledby="message-form-title">
+                        <h3 id="message-form-title"><?= $isComposing ? 'Rozpocznij rozmowę' : 'Napisz wiadomość' ?></h3>
+                        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                        <label for="message-body">Treść wiadomości</label>
+                        <textarea id="message-body" name="body" rows="4" maxlength="4000" aria-describedby="message-help<?= $errors !== [] ? ' message-errors' : '' ?>"<?= $errors !== [] ? ' aria-invalid="true"' : '' ?> required><?= $escape($body) ?></textarea>
+                        <p id="message-help">Zwykły tekst, do 4000 znaków. Zgłoszoną wiadomość może sprawdzić moderator.</p>
+                        <div class="message-form-actions">
+                            <button type="submit">Wyślij wiadomość</button>
+                        </div>
+                    </form>
+                <?php endif; ?>
             </section>
         <?php else: ?>
             <section class="messages-welcome" aria-labelledby="messages-welcome-title">

@@ -11,7 +11,9 @@ use PDO;
 final class CommentRepository
 {
     private const SELECT_COMMENTS = '
-        SELECT comments.id, comments.anime_id, comments.user_id, comments.body,
+        SELECT comments.id, comments.anime_id, comments.user_id,
+               CASE WHEN comments.moderated_at IS NULL THEN comments.body END AS body,
+               comments.moderated_at IS NOT NULL AS is_removed,
                comments.created_at, comments.updated_at, users.name AS author_name, users.avatar_version
         FROM anime_comments AS comments
         INNER JOIN users ON users.id = comments.user_id';
@@ -77,7 +79,7 @@ final class CommentRepository
         $this->validateBody($body);
         $statement = $this->database->prepare(
             'UPDATE anime_comments SET body = :body, updated_at = CURRENT_TIMESTAMP
-             WHERE id = :id AND user_id = :user_id AND anime_id = :anime_id'
+             WHERE id = :id AND user_id = :user_id AND anime_id = :anime_id AND moderated_at IS NULL'
         );
         $statement->execute(['body' => $body, 'id' => $commentId, 'user_id' => $userId, 'anime_id' => $animeId]);
 
@@ -102,7 +104,7 @@ final class CommentRepository
         }
     }
 
-    /** @return array{id: int, animeId: int, userId: int, authorName: string, avatarUrl: ?string, body: string, createdAt: string, updatedAt: ?string} */
+    /** @return array{id: int, animeId: int, userId: int, authorName: string, avatarUrl: ?string, body: string, createdAt: string, updatedAt: ?string, isRemoved: bool} */
     private function mapComment(array $row): array
     {
         $version = $row['avatar_version'];
@@ -117,6 +119,7 @@ final class CommentRepository
             'body' => (string) $row['body'],
             'createdAt' => (string) $row['created_at'],
             'updatedAt' => $row['updated_at'] === null ? null : (string) $row['updated_at'],
+            'isRemoved' => in_array($row['is_removed'], [true, 1, '1', 't'], true),
         ];
     }
 }

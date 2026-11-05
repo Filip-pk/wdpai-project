@@ -54,6 +54,13 @@ z wybranym użytkownikiem. Jeśli rozmowa już istnieje, otwiera ten sam wątek.
 Pierwsza wiadomość tworzy rozmowę; sam podgląd formularza nie zapisuje danych.
 Gość najpierw przechodzi do logowania. Wysyłanie działa bez JavaScript.
 
+Na profilu innej osoby zalogowany użytkownik może ją zablokować lub
+odblokować. Dopóki choć jedna strona utrzymuje blokadę, wysyłanie wiadomości
+między tą parą jest niedostępne. Wcześniejsza historia pozostaje dostępna
+uczestnikom. Własne blokady można przeglądać i usuwać również pod
+`/messages/blocked`. Szczegóły opisuje
+[dokumentacja moderacji](community-moderation.md).
+
 ## Zdjęcie profilowe
 
 Na istniejącej bazie zastosuj raz migrację dodającą zdjęcia (Windows CMD):

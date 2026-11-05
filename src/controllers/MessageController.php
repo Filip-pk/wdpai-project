@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Repository\CommunityRepository;
 use App\Repository\MessageRepository;
 use App\Repository\UserRepository;
+use App\Service\CommunityService;
 use App\Service\MessageService;
+use App\Service\RateLimitException;
+use App\Service\UserBlockedException;
 use Closure;
 
 final class MessageController extends AppController
@@ -14,6 +18,7 @@ final class MessageController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private MessageRepository|Closure $messages,
+        private CommunityRepository|Closure $community,
     ) {
     }
 
@@ -50,7 +55,17 @@ final class MessageController extends AppController
             return;
         }
 
-        $conversationId = $this->messages()->startWithMessageForUser($user['id'], $id, $body);
+        try {
+            $conversationId = (new CommunityService($this->community()))->runLimited(
+                $user['id'], 'message', $body,
+                fn (): ?int => $this->messages()->startWithMessageForUser($user['id'], $id, $body),
+                $id,
+            );
+        } catch (RateLimitException|UserBlockedException $exception) {
+            $this->setWriteErrorStatus($exception);
+            $this->renderMessages($user, recipient: $recipient, errors: [$exception->getMessage()], body: $body);
+            return;
+        }
         if ($conversationId === null) {
             $this->notFound();
             return;
@@ -78,7 +93,17 @@ final class MessageController extends AppController
                 return;
             }
 
-            $messageId = $this->messages()->sendForUser($user['id'], $id, $body);
+            try {
+                $messageId = (new CommunityService($this->community()))->runLimited(
+                    $user['id'], 'message', $body,
+                    fn (): ?int => $this->messages()->sendForUser($user['id'], $id, $body),
+                    $conversation['recipientId'],
+                );
+            } catch (RateLimitException|UserBlockedException $exception) {
+                $this->setWriteErrorStatus($exception);
+                $this->renderMessages($user, $conversation, errors: [$exception->getMessage()], body: $body);
+                return;
+            }
             if ($messageId === null) {
                 $this->notFound();
                 return;
@@ -139,6 +164,10 @@ final class MessageController extends AppController
             ];
         }
 
+        $blockState = $conversation === null
+            ? ['blockedByMe' => false, 'blockedEitherWay' => false]
+            : $this->community()->blockStateForUser($user['id'], $conversation['recipientId']);
+
         $this->render('messages', [
             'pageTitle' => ($conversation === null ? 'Wiadomości' : 'Rozmowa: ' . $conversation['recipientName']) . ' — AniVibe',
             'conversationList' => $conversationList + [
@@ -151,6 +180,8 @@ final class MessageController extends AppController
             'messagePage' => $messagePage,
             'errors' => $errors,
             'body' => $body,
+            'canSend' => !$blockState['blockedEitherWay'],
+            'isBlockedByMe' => $blockState['blockedByMe'],
             'sent' => !$this->isPost() && ($_GET['sent'] ?? null) === '1',
         ]);
     }
@@ -165,6 +196,23 @@ final class MessageController extends AppController
     {
         http_response_code(404);
         $this->render('not-found', ['pageTitle' => 'Nie znaleziono rozmowy lub użytkownika — AniVibe']);
+    }
+
+    private function setWriteErrorStatus(RateLimitException|UserBlockedException $exception): void
+    {
+        http_response_code($exception instanceof RateLimitException ? 429 : 403);
+        if ($exception instanceof RateLimitException) {
+            header('Retry-After: ' . $exception->retryAfter);
+        }
+    }
+
+    private function community(): CommunityRepository
+    {
+        if ($this->community instanceof Closure) {
+            $this->community = ($this->community)();
+        }
+
+        return $this->community;
     }
 
     private function users(): UserRepository

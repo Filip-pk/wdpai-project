@@ -9,10 +9,10 @@ aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 Nowa, pusta baza otrzymuje schemat automatycznie przy pierwszym uruchomieniu
 PostgreSQL. Docker Compose montuje katalog `database` jako
 `/docker-entrypoint-initdb.d` tylko do odczytu; PostgreSQL wykonuje skrypty
-`01`–`12` w kolejności nazw.
+`01`–`15` w kolejności nazw.
 
 Jeśli baza była już uruchomiona, ale nie ma jeszcze tabel aplikacji,
-z katalogu projektu w Windows CMD wykonaj raz wszystkie dwanaście skryptów:
+z katalogu projektu w Windows CMD wykonaj raz wszystkie piętnaście skryptów:
 
 ```cmd
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\01-create-projects.sql
@@ -27,6 +27,9 @@ docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB e
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\10-user-anime-ratings.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\11-user-experience.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\12-watchlist-import.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\13-anime-comments.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\14-private-messages.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\15-community-moderation.sql
 ```
 
 Skrypty tworzą projekty, konta, pola profilu, watchlisty i zdjęcia. Nie uruchamiaj
@@ -44,6 +47,9 @@ Migracja `11` dodaje [EXP, poziomy i ranking TOP 100](user-experience.md)
 oraz uwzględnia dotychczasowe postępy na watchlistach.
 Migracja `12` dodaje statusy „Wstrzymane” i „Porzucone” potrzebne do
 [importu listy MyAnimeList](mal-watchlist-import.md).
+Migracja `13` dodaje [komentarze](anime-comments.md), `14`
+[prywatne wiadomości](private-messages.md), a `15`
+[powiadomienia, blokady, zgłoszenia i rolę moderatora](community-moderation.md).
 
 Rejestracja i logowanie wymagają również kolumn `interests` i `theme`
 z trzeciego skryptu oraz `avatar_version` z czwartego. Samo działające
@@ -79,10 +85,12 @@ Katalog i rozmowy demonstracyjne pozostają dostępne. Profil i watchlista
 wymagają zalogowania; dane i ustawienia są przypisane do konta. Szczegóły
 opisuje [dokumentacja profili](user-profiles.md).
 
-To uwierzytelnianie i kontrola dostępu do strony dla zalogowanych. Projekty
-są wspólne; model nie zawiera właściciela ani ról. Uprawnienia do edycji
-konkretnych zasobów, reset hasła i ograniczanie prób logowania to
-osobne etapy. Laboratorium nie podłącza AI.
+Projekty są wspólne; ich model nie zawiera właściciela. Profil, watchlisty,
+kolekcje, oceny i komentarze sprawdzają właściciela, a prywatne rozmowy
+uczestników. Rola moderatora daje dostęp do zgłoszonych fragmentów treści
+oraz ich ukrywania, bez dostępu do pozostałej historii cudzych rozmów.
+Reset hasła i ograniczanie prób logowania to osobne etapy. Laboratorium
+nie podłącza AI.
 
 ## Weryfikacja
 

@@ -21,6 +21,10 @@ AI i rozmowy z postaciami.
   i watchlista do przeglądania. Przycisk „Napisz wiadomość” otwiera prywatną rozmowę.
 - Zakładka „Wiadomości”: własne rozmowy i wysyłanie tekstu, jedna rozmowa na parę
   użytkowników oraz dostęp wyłącznie dla uczestników. Lista i historia mają paginację.
+- Licznik nieprzeczytanych wiadomości, blokowanie i odblokowywanie użytkowników,
+  zgłaszanie komentarzy i wiadomości oraz panel moderatora do rozpatrywania zgłoszeń.
+- Ograniczenia częstotliwości wysyłania wiadomości, dodawania i edycji komentarzy
+  oraz zgłoszeń, z ochroną przed szybkim powtarzaniem tej samej treści.
 - Komentarze pod anime: publiczna lista z paginacją, dodawanie po zalogowaniu,
   edycja i usuwanie własnych wpisów oraz przejście do profilu autora.
 - Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
@@ -116,7 +120,7 @@ i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
 uruchomił się już podczas budowania obrazu.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-`database/01`–`14`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
+`database/01`–`15`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
 ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
 dołączane do repozytorium.
 
@@ -237,6 +241,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Prywatne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
 - [Komentarze pod anime i migracja istniejącej bazy](docs/anime-comments.md)
 - [Prywatne wiadomości i migracja istniejącej bazy](docs/private-messages.md)
+- [Powiadomienia, blokady, zgłoszenia i rola moderatora](docs/community-moderation.md)
 - [Poziomy, EXP i ranking TOP 100](docs/user-experience.md)
 - [Import listy MyAnimeList z XML/XML.GZ](docs/mal-watchlist-import.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)

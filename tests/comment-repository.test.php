@@ -106,7 +106,7 @@ try {
         $body = "Łódź & <script>alert(1)</script>\nO'Reilly; SELECT 999; --";
         $id = $comments->createForUser(101, 1, $body);
         $comment = $comments->findPageForAnime(1)['entries'][0];
-        $assert(array_keys($comment) === ['id', 'animeId', 'userId', 'authorName', 'avatarUrl', 'body', 'createdAt', 'updatedAt']);
+        $assert(array_keys($comment) === ['id', 'animeId', 'userId', 'authorName', 'avatarUrl', 'body', 'createdAt', 'updatedAt', 'isRemoved']);
         $assert($comment['id'] === $id && $comment['body'] === $body && $comment['authorName'] === 'Łucja <svg>');
         $assert($comment['avatarUrl'] === '/avatars/101?v=' . str_repeat('a', 32));
         $assert($comment['createdAt'] !== '' && $comment['updatedAt'] === null);

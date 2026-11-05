@@ -86,6 +86,10 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
+    <?php if ($isLoggedIn): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/community.css') ?>">
+        <script src="<?= $assetUrl('/js/notifications.js') ?>" defer></script>
+    <?php endif; ?>
     <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
     <?php endif; ?>

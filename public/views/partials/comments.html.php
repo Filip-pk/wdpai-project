@@ -68,10 +68,15 @@
                                 <?php endif; ?>
                             </div>
                         </header>
-                        <p class="comment-body"><?= $escape($comment['body']) ?></p>
+                        <p class="comment-body"><?= $comment['isRemoved'] ? 'Komentarz ukryty przez moderację.' : $escape($comment['body']) ?></p>
+                        <?php if ($isLoggedIn && !$isOwnComment && !$comment['isRemoved']): ?>
+                            <a class="community-report-link" href="/reports/comment/<?= $escape($comment['id']) ?>?page=<?= $escape($comments['page']) ?>">Zgłoś komentarz</a>
+                        <?php endif; ?>
                         <?php if ($isOwnComment): ?>
                             <footer class="comment-owner-actions">
-                                <a class="comment-edit" href="/anime/<?= $escape($animeId) ?>?commentsPage=<?= $escape($comments['page']) ?>&amp;editComment=<?= $escape($comment['id']) ?>#comments">Edytuj</a>
+                                <?php if (!$comment['isRemoved']): ?>
+                                    <a class="comment-edit" href="/anime/<?= $escape($animeId) ?>?commentsPage=<?= $escape($comments['page']) ?>&amp;editComment=<?= $escape($comment['id']) ?>#comments">Edytuj</a>
+                                <?php endif; ?>
                                 <details class="comment-delete">
                                     <summary>Usuń</summary>
                                     <form action="/anime/<?= $escape($animeId) ?>/comments/<?= $escape($comment['id']) ?>/delete" method="post" class="comment-delete-form">

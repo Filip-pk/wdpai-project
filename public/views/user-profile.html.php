@@ -2,6 +2,9 @@
 
 <div class="profile-page user-profile-page" data-profile-user-id="<?= $escape($profileUser['id']) ?>">
     <a class="user-profile-back" href="/ranking">← Ranking użytkowników</a>
+    <?php if ($blockNotice !== null): ?>
+        <p class="profile-notice" role="status"><?= $escape($blockNotice) ?></p>
+    <?php endif; ?>
 
     <header class="profile-summary user-profile-summary">
         <div class="user-profile-identity">
@@ -26,7 +29,17 @@
             <?php if ($isOwnProfile): ?>
                 <a class="user-profile-action" href="/profile">Edytuj profil</a>
             <?php else: ?>
-                <a class="user-profile-action" href="<?= $isLoggedIn ? '/messages/new/' . $escape($profileUser['id']) : '/login' ?>">Napisz wiadomość</a>
+                <?php if (!$blockState['blockedEitherWay']): ?>
+                    <a class="user-profile-action" href="<?= $isLoggedIn ? '/messages/new/' . $escape($profileUser['id']) : '/login' ?>">Napisz wiadomość</a>
+                <?php else: ?>
+                    <p>Wysyłanie wiadomości do tego konta jest niedostępne.</p>
+                <?php endif; ?>
+                <?php if ($isLoggedIn): ?>
+                    <form class="community-inline-form" action="/users/<?= $escape($profileUser['id']) ?>/<?= $blockState['blockedByMe'] ? 'unblock' : 'block' ?>" method="post">
+                        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                        <button type="submit" data-block-user-id="<?= $escape($profileUser['id']) ?>"><?= $blockState['blockedByMe'] ? 'Odblokuj użytkownika' : 'Zablokuj użytkownika' ?></button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
 

@@ -1,0 +1,262 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Repository\CommunityRepository;
+use App\Repository\MessageRepository;
+use App\Repository\UserRepository;
+use App\Service\CommunityService;
+use App\Service\RateLimitException;
+use Closure;
+
+final class CommunityController extends AppController
+{
+    public function __construct(
+        private UserRepository|Closure $users,
+        private CommunityRepository|Closure $community,
+        private MessageRepository|Closure $messages,
+    ) {
+    }
+
+    public function notifications(): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $this->json(['unreadCount' => $this->community()->unreadCountForUser($user['id'])]);
+    }
+
+    public function read(int $id): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            return;
+        }
+        $lastMessageId = filter_var($this->postString('lastMessageId'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($lastMessageId === false || !$this->community()->markReadForUser($user['id'], $id, $lastMessageId)) {
+            $this->fail(404, 'Nie znaleziono wiadomości w Twojej rozmowie.');
+            return;
+        }
+        if ($this->wantsJson()) {
+            $this->json([
+                'unreadCount' => $this->community()->unreadCountForUser($user['id']),
+                'conversationId' => $id,
+                'conversationUnreadCount' => $this->community()->conversationUnreadCountForUser($user['id'], $id),
+            ]);
+            return;
+        }
+        $this->redirect('/messages/' . $id . '?page=' . $this->page($_POST['page'] ?? '1') . '#message-history');
+    }
+
+    public function block(int $id): void
+    {
+        $this->changeBlock($id, true);
+    }
+
+    public function unblock(int $id): void
+    {
+        $this->changeBlock($id, false);
+    }
+
+    private function changeBlock(int $id, bool $block): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            return;
+        }
+        if ($id <= 0 || $id === $user['id'] || $this->users()->findPublicById($id) === null) {
+            $this->fail(404, 'Nie znaleziono użytkownika.');
+            return;
+        }
+        $changed = $block ? $this->community()->blockForUser($user['id'], $id)
+            : $this->community()->unblockForUser($user['id'], $id);
+        if (!$changed) {
+            $this->fail(404, 'Nie znaleziono użytkownika.');
+            return;
+        }
+        $notice = $block ? 'blocked=1' : 'unblocked=1';
+        if ($this->postString('returnTo') === 'blocked') {
+            $this->redirect('/messages/blocked?' . $notice);
+        }
+        $conversationId = filter_var($this->postString('conversationId'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($conversationId !== false) {
+            $conversation = $this->messages()->findForUser($user['id'], $conversationId);
+            if ($conversation !== null && $conversation['recipientId'] === $id) {
+                $this->redirect('/messages/' . $conversationId . '?' . $notice);
+            }
+        }
+        $this->redirect('/users/' . $id . '?' . $notice);
+    }
+
+    public function blocked(): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $blocked = $this->community()->blockedPageForUser($user['id'], $this->page($_GET['page'] ?? '1'));
+        $this->render('blocked-users', [
+            'pageTitle' => 'Zablokowani użytkownicy — AniVibe',
+            'blocked' => $blocked + [
+                'previousUrl' => $blocked['page'] > 1 ? '/messages/blocked?page=' . ($blocked['page'] - 1) : null,
+                'nextUrl' => $blocked['page'] < $blocked['totalPages'] ? '/messages/blocked?page=' . ($blocked['page'] + 1) : null,
+            ],
+            'errors' => [],
+            'notice' => ($_GET['unblocked'] ?? null) === '1' ? 'Użytkownik został odblokowany.' : null,
+        ]);
+    }
+
+    public function reportComment(int $id): void
+    {
+        $this->report('comment', $id);
+    }
+
+    public function reportMessage(int $id): void
+    {
+        $this->report('message', $id);
+    }
+
+    private function report(string $type, int $id): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $target = $id > 0 ? $this->community()->reportTargetForUser($user['id'], $type, $id) : null;
+        if ($target === null) {
+            $this->fail(404, 'Nie znaleziono treści, którą możesz zgłosić.');
+            return;
+        }
+        $page = $this->page($_POST['returnPage'] ?? $_GET['page'] ?? '1');
+        $backUrl = $type === 'comment'
+            ? '/anime/' . $target['animeId'] . '?commentsPage=' . $page . '#comments'
+            : '/messages/' . $target['conversationId'] . '?page=' . $page . '#message-history';
+        $reason = $this->isPost() ? CommunityService::normalizeReason($this->postString('reason')) : '';
+        $errors = [];
+        if ($this->isPost()) {
+            if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+                http_response_code(403);
+                $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+            } else {
+                $errors = CommunityService::validateReason($reason);
+                if ($errors !== []) {
+                    http_response_code(422);
+                }
+            }
+            if ($errors === []) {
+                try {
+                    $reportId = (new CommunityService($this->community()))->report($user['id'], $type, $id, $reason);
+                    if ($reportId === null) {
+                        $this->fail(404, 'Nie znaleziono treści, którą możesz zgłosić.');
+                        return;
+                    }
+                    $this->redirect(str_replace('#', '&reportSaved=1#', $backUrl));
+                } catch (RateLimitException $exception) {
+                    http_response_code(429);
+                    header('Retry-After: ' . $exception->retryAfter);
+                    $errors[] = $exception->getMessage();
+                }
+            }
+        }
+        $this->render('report', [
+            'pageTitle' => 'Zgłoś treść — AniVibe', 'target' => $target,
+            'reason' => $reason, 'errors' => $errors, 'returnPage' => $page, 'backUrl' => $backUrl,
+        ]);
+    }
+
+    public function moderation(): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $reports = $this->community()->reportsPageForModerator($user['id'], $this->page($_GET['page'] ?? '1'));
+        if ($reports === null) {
+            $this->fail(403, 'Ta sekcja jest dostępna wyłącznie dla moderatorów.');
+            return;
+        }
+        $this->render('moderation', [
+            'pageTitle' => 'Moderacja — AniVibe',
+            'reports' => $reports + [
+                'previousUrl' => $reports['page'] > 1 ? '/moderation?page=' . ($reports['page'] - 1) : null,
+                'nextUrl' => $reports['page'] < $reports['totalPages'] ? '/moderation?page=' . ($reports['page'] + 1) : null,
+            ],
+            'errors' => [],
+            'notice' => ($_GET['resolved'] ?? null) === '1' ? 'Zgłoszenie zostało rozpatrzone.' : null,
+        ]);
+    }
+
+    public function resolve(int $id): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        if (!$this->community()->navigationStateForUser($user['id'])['isModerator']) {
+            $this->fail(403, 'Ta operacja jest dostępna wyłącznie dla moderatorów.');
+            return;
+        }
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            return;
+        }
+        $action = $this->postString('action');
+        if (!in_array($action, ['remove', 'dismiss'], true)) {
+            $this->fail(422, 'Wybierz ukrycie treści lub odrzucenie zgłoszenia.');
+            return;
+        }
+        if (!$this->community()->resolveReportForModerator($user['id'], $id, $action)) {
+            $this->fail(404, 'Nie znaleziono otwartego zgłoszenia.');
+            return;
+        }
+        $this->redirect('/moderation?page=' . $this->page($_POST['page'] ?? '1') . '&resolved=1');
+    }
+
+    private function fail(int $status, string $message): void
+    {
+        http_response_code($status);
+        if ($this->wantsJson()) {
+            $this->json(['error' => $message]);
+            return;
+        }
+        $this->render('community-error', ['pageTitle' => 'Nie można wykonać operacji — AniVibe', 'message' => $message]);
+    }
+
+    private function wantsJson(): bool
+    {
+        return str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json');
+    }
+
+    private function json(array $data): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode($data, JSON_THROW_ON_ERROR);
+    }
+
+    private function page(mixed $value): int
+    {
+        $page = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        return $page === false ? 1 : $page;
+    }
+
+    private function users(): UserRepository
+    {
+        if ($this->users instanceof Closure) {
+            $this->users = ($this->users)();
+        }
+        return $this->users;
+    }
+
+    private function community(): CommunityRepository
+    {
+        if ($this->community instanceof Closure) {
+            $this->community = ($this->community)();
+        }
+        return $this->community;
+    }
+
+    private function messages(): MessageRepository
+    {
+        if ($this->messages instanceof Closure) {
+            $this->messages = ($this->messages)();
+        }
+        return $this->messages;
+    }
+}

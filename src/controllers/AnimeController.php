@@ -8,10 +8,13 @@ use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
+use App\Repository\CommunityRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Service\CollectionService;
 use App\Service\CommentService;
+use App\Service\CommunityService;
+use App\Service\RateLimitException;
 use Closure;
 
 final class AnimeController extends AppController
@@ -22,6 +25,7 @@ final class AnimeController extends AppController
         private UserRepository|Closure $users,
         private RatingRepository|Closure $ratings,
         private CommentRepository|Closure $comments,
+        private CommunityRepository|Closure $community,
     ) {
     }
 
@@ -184,7 +188,7 @@ final class AnimeController extends AppController
         }
 
         $comment = $commentId === null ? null : $this->comments()->findByIdForUser($user['id'], $id, $commentId);
-        if ($action !== 'create' && $comment === null) {
+        if ($action !== 'create' && ($comment === null || ($action === 'edit' && $comment['isRemoved']))) {
             $this->commentNotFound();
             return;
         }
@@ -213,14 +217,29 @@ final class AnimeController extends AppController
             return;
         }
 
-        if ($action === 'create') {
-            $this->comments()->createForUser($user['id'], $id, $body);
-            $this->redirect($this->commentsPath($id, 1, 'commentSaved'));
+        try {
+            if ($action === 'create') {
+                (new CommunityService($this->community()))->runLimited(
+                    $user['id'], 'comment', $body,
+                    fn (): int => $this->comments()->createForUser($user['id'], $id, $body),
+                );
+                $this->redirect($this->commentsPath($id, 1, 'commentSaved'));
+            }
+            $changed = $action === 'edit'
+                ? (new CommunityService($this->community()))->runLimited(
+                    $user['id'], 'comment', $body,
+                    fn (): bool => $this->comments()->updateForUser($user['id'], $id, $commentId, $body),
+                )
+                : $this->comments()->removeForUser($user['id'], $id, $commentId);
+        } catch (RateLimitException $exception) {
+            http_response_code(429);
+            header('Retry-After: ' . $exception->retryAfter);
+            $this->renderAnime(
+                $id, commentErrors: [$exception->getMessage()], commentBody: $body,
+                editingComment: $action === 'edit' ? $comment : null, commentsPage: $page,
+            );
+            return;
         }
-
-        $changed = $action === 'edit'
-            ? $this->comments()->updateForUser($user['id'], $id, $commentId, $body)
-            : $this->comments()->removeForUser($user['id'], $id, $commentId);
         if (!$changed) {
             $this->commentNotFound();
             return;
@@ -332,7 +351,7 @@ final class AnimeController extends AppController
             $commentId = filter_var($_GET['editComment'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             $editingComment = $commentId === false ? null
                 : $this->comments()->findByIdForUser($_SESSION['user_id'], $id, $commentId);
-            if ($editingComment === null) {
+            if ($editingComment === null || $editingComment['isRemoved']) {
                 $this->commentNotFound();
                 return;
             }
@@ -373,6 +392,7 @@ final class AnimeController extends AppController
                 ($_GET['commentSaved'] ?? null) === '1' => 'Komentarz został dodany.',
                 ($_GET['commentUpdated'] ?? null) === '1' => 'Komentarz został zaktualizowany.',
                 ($_GET['commentRemoved'] ?? null) === '1' => 'Komentarz został usunięty.',
+                ($_GET['reportSaved'] ?? null) === '1' => 'Zgłoszenie zostało zapisane.',
                 default => null,
             } : null,
         ]);
@@ -427,6 +447,14 @@ final class AnimeController extends AppController
             $this->ratings = ($this->ratings)();
         }
         return $this->ratings;
+    }
+
+    private function community(): CommunityRepository
+    {
+        if ($this->community instanceof Closure) {
+            $this->community = ($this->community)();
+        }
+        return $this->community;
     }
 
     private function comments(): CommentRepository

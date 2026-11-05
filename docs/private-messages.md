@@ -38,9 +38,10 @@ Dockera pozostają bez zmian.
   rozmówcy prowadzą do jego profilu.
 
 Formularze działają bez JavaScript. Przycisk „Odśwież rozmowę” pobiera nowe
-wiadomości; ten etap korzysta z ręcznego odświeżania. Edycja i usuwanie
-wysłanych wiadomości nie są dostępne. Liczniki nieprzeczytanych, blokowanie,
-zgłoszenia i ograniczenia spamu należą do kolejnego etapu.
+wiadomości; historia korzysta z ręcznego odświeżania. Edycja i usuwanie
+wysłanych wiadomości przez autora nie są dostępne. Licznik nieprzeczytanych,
+blokowanie, zgłaszanie i ograniczenia spamu opisuje
+[dokumentacja powiadomień i moderacji](community-moderation.md).
 
 ## Dostęp i ochrona danych
 

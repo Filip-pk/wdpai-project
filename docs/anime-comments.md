@@ -34,6 +34,14 @@ Konfiguracja Dockera i zależności pozostają bez zmian.
 Dodanie komentarza przekierowuje na pierwszą stronę. Linki paginacji i zmiany
 wracają do sekcji `#comments`. Formularze i potwierdzenie działają bez JavaScript.
 
+Zalogowany użytkownik może zgłosić cudzy komentarz, podając powód. Moderator
+może odrzucić zgłoszenie lub ukryć wpis; wówczas zamiast treści pojawia się
+informacja o usunięciu przez moderację. Autor może nadal usunąć własny wpis,
+ale nie może przywrócić jego treści edycją. Dodawanie i edycja wspólnie
+podlegają limitowi 15 zapisów na 60 sekund oraz blokadzie duplikatów przez
+30 sekund. Szczegóły i migrację `15` opisuje
+[dokumentacja powiadomień i moderacji](community-moderation.md).
+
 ## Ochrona danych
 
 Zapis jest obsługiwany wyłącznie przez POST i wymaga tokenu CSRF.

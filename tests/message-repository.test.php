@@ -18,7 +18,7 @@ $assert = static function (bool $condition, string $message = 'Warunek testu nie
 };
 
 $prepare = static function (PDO $database, bool $dropOnCommit = true) use ($assert): void {
-    foreach (['users', 'private_conversations', 'private_messages'] as $table) {
+    foreach (['users', 'private_conversations', 'private_messages', 'user_blocks', 'private_message_reads'] as $table) {
         $database->exec(
             'CREATE TEMP TABLE ' . $table . ' (LIKE public.' . $table . ' INCLUDING ALL) ON COMMIT '
             . ($dropOnCommit ? 'DROP' : 'PRESERVE ROWS')
@@ -47,7 +47,13 @@ $prepare = static function (PDO $database, bool $dropOnCommit = true) use ($asse
              ADD FOREIGN KEY (second_user_id) REFERENCES pg_temp.users (id) ON DELETE CASCADE;
          ALTER TABLE pg_temp.private_messages
              ADD FOREIGN KEY (conversation_id) REFERENCES pg_temp.private_conversations (id) ON DELETE CASCADE,
-             ADD FOREIGN KEY (sender_id) REFERENCES pg_temp.users (id) ON DELETE CASCADE'
+             ADD FOREIGN KEY (sender_id) REFERENCES pg_temp.users (id) ON DELETE CASCADE;
+         ALTER TABLE pg_temp.user_blocks
+             ADD FOREIGN KEY (blocker_id) REFERENCES pg_temp.users (id) ON DELETE CASCADE,
+             ADD FOREIGN KEY (blocked_id) REFERENCES pg_temp.users (id) ON DELETE CASCADE;
+         ALTER TABLE pg_temp.private_message_reads
+             ADD FOREIGN KEY (user_id) REFERENCES pg_temp.users (id) ON DELETE CASCADE,
+             ADD FOREIGN KEY (conversation_id) REFERENCES pg_temp.private_conversations (id) ON DELETE CASCADE'
     );
     $database->exec(
         "INSERT INTO pg_temp.users (id, name, email, password_hash)
@@ -152,10 +158,59 @@ try {
         $assert(array_keys($conversation) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'createdAt']);
         $assert($conversation['recipientAvatarUrl'] === '/avatars/202?v=' . str_repeat('a', 32));
         $entry = $messages->findPageForUser(101)['entries'][0];
-        $assert(array_keys($entry) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'lastMessagePreview', 'lastMessageSenderId', 'lastMessageAt']);
+        $assert(array_keys($entry) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'lastMessagePreview', 'lastMessageSenderId', 'lastMessageAt', 'unreadCount']);
         $assert($entry['lastMessagePreview'] === str_repeat('ż', 160));
         $assert($entry['lastMessageSenderId'] === 101 && $entry['lastMessageAt'] !== null);
-        $assert(array_keys($messages->findMessagesPageForUser(101, $id)['entries'][0]) === ['id', 'senderId', 'body', 'createdAt']);
+        $assert($entry['unreadCount'] === 0);
+        $assert(array_keys($messages->findMessagesPageForUser(101, $id)['entries'][0]) === ['id', 'senderId', 'body', 'createdAt', 'isRemoved']);
+    });
+
+    $run('Liczniki obejmują wyłącznie otrzymane wiadomości po kursorze danej osoby', static function () use ($messages, $connection, $assert): void {
+        $id = $messages->startWithMessageForUser(101, 202, 'Pierwsza do odbiorcy');
+        $firstMessageId = $messages->findMessagesPageForUser(202, $id)['entries'][0]['id'];
+        $messages->sendForUser(202, $id, 'Odpowiedź nadawcy');
+        $messages->sendForUser(101, $id, 'Druga do odbiorcy');
+        $assert($messages->findPageForUser(101)['entries'][0]['unreadCount'] === 1);
+        $assert($messages->findPageForUser(202)['entries'][0]['unreadCount'] === 2);
+        $statement = $connection->prepare(
+            'INSERT INTO private_message_reads (user_id, conversation_id, last_read_message_id) VALUES (202, :conversation_id, :last_read_id)'
+        );
+        $statement->execute(['conversation_id' => $id, 'last_read_id' => $firstMessageId]);
+        $assert($messages->findPageForUser(202)['entries'][0]['unreadCount'] === 1);
+        $assert($messages->findPageForUser(101)['entries'][0]['unreadCount'] === 1);
+        $assert($messages->findPageForUser(303)['entries'] === []);
+        $assert($messages->findMessagesPageForUser(202, $id)['total'] === 3);
+        $assert($messages->findPageForUser(202)['entries'][0]['unreadCount'] === 1, 'Odczyt repozytorium nie zmienia kursora.');
+    });
+
+    $run('Blokada zatrzymuje zapis w obu kierunkach, zachowuje historię i nie tworzy pustych rozmów', static function () use ($messages, $connection, $assert): void {
+        $id = $messages->startWithMessageForUser(101, 202, 'Historia sprzed blokady');
+        $connection->exec('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (202, 101), (101, 303)');
+        foreach ([[101, 202], [202, 101], [101, 303], [303, 101]] as [$sender, $recipient]) {
+            $assert($messages->startWithMessageForUser($sender, $recipient, 'Zablokowany start') === null);
+        }
+        $assert($messages->sendForUser(101, $id, 'Zablokowany zapis') === null);
+        $assert($messages->sendForUser(202, $id, 'Zablokowana odpowiedź') === null);
+        $assert($messages->findMessagesPageForUser(101, $id)['total'] === 1);
+        $assert($messages->findMessagesPageForUser(202, $id)['entries'][0]['body'] === 'Historia sprzed blokady');
+        $assert($messages->findBetweenUsers(101, 303) === null);
+        $assert((int) $connection->query('SELECT count(*) FROM private_conversations')->fetchColumn() === 1);
+        $assert($connection->inTransaction());
+        $connection->exec('DELETE FROM user_blocks WHERE blocker_id = 202 AND blocked_id = 101');
+        $assert($messages->sendForUser(101, $id, 'Odblokowana wiadomość') !== null);
+    });
+
+    $run('Moderacja usuwa treść z projekcji historii i podglądu bez zmiany paginacji', static function () use ($messages, $connection, $assert): void {
+        $id = $messages->startWithMessageForUser(101, 202, 'Treść ukryta przez moderatora');
+        $statement = $connection->prepare('UPDATE private_messages SET moderated_at = CURRENT_TIMESTAMP WHERE conversation_id = :id');
+        $statement->execute(['id' => $id]);
+        foreach ([101, 202] as $viewer) {
+            $history = $messages->findMessagesPageForUser($viewer, $id);
+            $assert($history['total'] === 1 && $history['totalPages'] === 1);
+            $assert($history['entries'][0]['body'] === '' && $history['entries'][0]['isRemoved']);
+            $assert($messages->findPageForUser($viewer)['entries'][0]['lastMessagePreview'] === 'Wiadomość ukryta przez moderację.');
+        }
+        $assert($messages->findPageForUser(202)['entries'][0]['unreadCount'] === 1);
     });
 
     $run('Skrzynka dzieli 25 rozmów na strony 20/5 i sortuje według ostatniej aktywności', static function () use ($messages, $connection, $assert): void {
