@@ -175,4 +175,6 @@
     </section>
 </article>
 
+<?php require __DIR__ . '/partials/comments.html.php'; ?>
+
 <?php require __DIR__ . '/partials/footer.html.php'; ?>

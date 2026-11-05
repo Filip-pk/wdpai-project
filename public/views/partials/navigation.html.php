@@ -8,11 +8,18 @@ $navigation = $isWelcome
         '/dashboard' => 'Pulpit',
         '/anime' => 'Odkrywaj',
         '/chat' => 'Czat AI',
+        '/messages' => 'Wiadomości',
         '/watchlist' => 'Ulubione',
         '/profile' => 'Profil',
         '/ranking' => 'Ranking',
         '/projects' => 'Projekty',
     ];
+if ($isWelcome && $isLoggedIn) {
+    $navigation['/messages'] = 'Wiadomości';
+}
+if ($isModerator) {
+    $navigation['/moderation'] = 'Moderacja';
+}
 ?>
 
 <nav class="site-navigation" aria-label="Nawigacja główna">
@@ -21,12 +28,18 @@ $navigation = $isWelcome
             <li>
                 <a
                     href="<?= $escape($url) ?>"
+                    <?php if ($url === '/messages' && $isLoggedIn): ?> data-notifications-link aria-label="<?= $escape('Wiadomości. Nieprzeczytane: ' . $unreadMessageCount) ?>"<?php endif; ?>
                     <?= $currentPath === $url
                         || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
                         || ($url === '/profile' && str_starts_with((string) $currentPath, '/profile/'))
+                        || ($url === '/messages' && str_starts_with((string) $currentPath, '/messages/'))
+                        || ($url === '/moderation' && str_starts_with((string) $currentPath, '/moderation/'))
                         ? 'aria-current="page"' : '' ?>
                 >
                     <?= $escape($label) ?>
+                    <?php if ($url === '/messages' && $isLoggedIn): ?>
+                        <span class="community-unread" data-unread-message-count aria-live="polite"<?= $unreadMessageCount === 0 ? ' hidden' : '' ?>><?= $escape($unreadMessageCount) ?></span>
+                    <?php endif; ?>
                 </a>
             </li>
         <?php endforeach; ?>

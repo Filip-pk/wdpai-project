@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Repository\CommunityRepository;
 use App\Repository\UserRepository;
+use Closure;
 
 abstract class AppController
 {
+    private CommunityRepository|Closure|null $communityRepository = null;
+
+    public function setCommunityRepository(CommunityRepository|Closure $repository): void
+    {
+        $this->communityRepository = $repository;
+    }
+
     protected function currentUser(UserRepository $users): array
     {
         $this->requireLogin();
@@ -79,6 +88,16 @@ abstract class AppController
         $accountId = $isLoggedIn ? $_SESSION['user_id'] : null;
         $accountTheme = $isLoggedIn ? ($_SESSION['user_theme'] ?? 'system') : null;
         $csrfToken = $this->csrfToken();
+        $unreadMessageCount = 0;
+        $isModerator = false;
+        if ($isLoggedIn && $this->communityRepository !== null) {
+            if ($this->communityRepository instanceof Closure) {
+                $this->communityRepository = ($this->communityRepository)();
+            }
+            $communityState = $this->communityRepository->navigationStateForUser($accountId);
+            $unreadMessageCount = $communityState['unreadCount'];
+            $isModerator = $communityState['isModerator'];
+        }
 
         extract($variables, EXTR_SKIP);
         require $templatePath;

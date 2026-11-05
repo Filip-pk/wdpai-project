@@ -8,17 +8,22 @@ use App\Controller\AppController;
 use App\Controller\AuthController;
 use App\Controller\ChatController;
 use App\Controller\CollectionController;
+use App\Controller\CommunityController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
 use App\Controller\MalImportController;
+use App\Controller\MessageController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Controller\RankingController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
+use App\Repository\CommentRepository;
+use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\MalImportRepository;
+use App\Repository\MessageRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
@@ -45,7 +50,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 header('Cache-Control: no-store');
 
-$routing = new Routing(static function (string $controllerClass): AppController {
+$createController = static function (string $controllerClass): AppController {
     if ($controllerClass === AnimeController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -57,6 +62,8 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): CollectionRepository => new CollectionRepository($connect()),
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): RatingRepository => new RatingRepository($connect()),
+            static fn (): CommentRepository => new CommentRepository($connect()),
+            static fn (): CommunityRepository => new CommunityRepository($connect()),
         );
     }
 
@@ -74,6 +81,31 @@ $routing = new Routing(static function (string $controllerClass): AppController 
         );
     }
 
+    if ($controllerClass === MessageController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+
+        return new MessageController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): MessageRepository => new MessageRepository($connect()),
+            static fn (): CommunityRepository => new CommunityRepository($connect()),
+        );
+    }
+
+    if ($controllerClass === CommunityController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        return new CommunityController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): CommunityRepository => new CommunityRepository($connect()),
+            static fn (): MessageRepository => new MessageRepository($connect()),
+        );
+    }
+
     if ($controllerClass === ProfileController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -86,6 +118,7 @@ $routing = new Routing(static function (string $controllerClass): AppController 
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): RatingRepository => new RatingRepository($connect()),
             static fn (): ExperienceRepository => new ExperienceRepository($connect()),
+            static fn (): CommunityRepository => new CommunityRepository($connect()),
         );
     }
 
@@ -136,6 +169,14 @@ $routing = new Routing(static function (string $controllerClass): AppController 
     }
 
     return new $controllerClass();
+};
+
+$routing = new Routing(static function (string $controllerClass) use ($createController): AppController {
+    $controller = $createController($controllerClass);
+    $controller->setCommunityRepository(
+        static fn (): CommunityRepository => new CommunityRepository((new Database())->connect()),
+    );
+    return $controller;
 });
 
 $routing->get('/', DefaultController::class, 'index');
@@ -150,6 +191,9 @@ $routing->get('/users/{id}', ProfileController::class, 'show');
 
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');
+$routing->post('/anime/{id}/comments', AnimeController::class, 'createComment');
+$routing->post('/anime/{id}/comments/{commentId}/edit', AnimeController::class, 'updateComment');
+$routing->post('/anime/{id}/comments/{commentId}/delete', AnimeController::class, 'deleteComment');
 $routing->post('/anime/{id}/rating', AnimeController::class, 'saveRating');
 $routing->post('/anime/{id}/rating/remove', AnimeController::class, 'removeRating');
 $routing->post('/anime/{id}/collections', AnimeController::class, 'addToCollections');
@@ -157,6 +201,23 @@ $routing->post('/anime/{id}/collections/create', AnimeController::class, 'create
 
 $routing->get('/chat', ChatController::class, 'index');
 $routing->get('/chat/{id}', ChatController::class, 'show');
+
+$routing->get('/messages', MessageController::class, 'index');
+$routing->get('/messages/blocked', CommunityController::class, 'blocked');
+$routing->get('/messages/new/{id}', MessageController::class, 'compose');
+$routing->post('/messages/new/{id}', MessageController::class, 'compose');
+$routing->get('/messages/{id}', MessageController::class, 'show');
+$routing->post('/messages/{id}', MessageController::class, 'show');
+$routing->post('/messages/{id}/read', CommunityController::class, 'read');
+$routing->get('/notifications', CommunityController::class, 'notifications');
+$routing->post('/users/{id}/block', CommunityController::class, 'block');
+$routing->post('/users/{id}/unblock', CommunityController::class, 'unblock');
+$routing->get('/reports/comment/{id}', CommunityController::class, 'reportComment');
+$routing->post('/reports/comment/{id}', CommunityController::class, 'reportComment');
+$routing->get('/reports/message/{id}', CommunityController::class, 'reportMessage');
+$routing->post('/reports/message/{id}', CommunityController::class, 'reportMessage');
+$routing->get('/moderation', CommunityController::class, 'moderation');
+$routing->post('/moderation/reports/{id}/resolve', CommunityController::class, 'resolve');
 
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->post('/profile', ProfileController::class, 'index');

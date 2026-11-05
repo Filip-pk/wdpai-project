@@ -86,11 +86,18 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
+    <?php if ($isLoggedIn): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/community.css') ?>">
+        <script src="<?= $assetUrl('/js/notifications.js') ?>" defer></script>
+    <?php endif; ?>
     <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
     <?php endif; ?>
     <?php if ($isCollectionsPage || str_starts_with((string) $currentPath, '/anime/')): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/collections.css') ?>">
+    <?php endif; ?>
+    <?php if (str_starts_with((string) $currentPath, '/anime/')): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/comments.css') ?>">
     <?php endif; ?>
     <?php if ($isUserProfilePage || in_array($currentPath, ['/ranking', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/experience.css') ?>">
@@ -98,8 +105,8 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isImportPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/import.css') ?>">
     <?php endif; ?>
-    <?php if ($isUserProfilePage): ?>
-        <script src="<?= $assetUrl('/js/user-profile.js') ?>" defer></script>
+    <?php if ($currentPath === '/messages' || str_starts_with((string) $currentPath, '/messages/')): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/messages.css') ?>">
     <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">

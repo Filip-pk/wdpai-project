@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\AnimeRepository;
+use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
@@ -30,6 +31,7 @@ final class ProfileController extends AppController
         private AnimeRepository|Closure $animes,
         private RatingRepository|Closure $ratings,
         private ExperienceRepository|Closure $experience,
+        private CommunityRepository|Closure|null $community = null,
     ) {
     }
 
@@ -94,6 +96,15 @@ final class ProfileController extends AppController
             'profileUser' => $profileUser,
             'profilePath' => '/users/' . $id,
             'isOwnProfile' => ($_SESSION['user_id'] ?? null) === $id,
+            'blockState' => is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] !== $id
+                ? ($this->community()?->blockStateForUser($_SESSION['user_id'], $id)
+                    ?? ['blockedByMe' => false, 'blockedEitherWay' => false])
+                : ['blockedByMe' => false, 'blockedEitherWay' => false],
+            'blockNotice' => match (true) {
+                ($_GET['blocked'] ?? null) === '1' => 'Użytkownik został zablokowany.',
+                ($_GET['unblocked'] ?? null) === '1' => 'Użytkownik został odblokowany.',
+                default => null,
+            },
             'experience' => ExperienceService::progress($this->experience()->totalForUser($id)),
             'statistics' => $this->watchlists()->statisticsForUser($id),
             'animes' => $this->animes()->findByIds(array_column($result['entries'], 'animeId')),
@@ -303,6 +314,14 @@ final class ProfileController extends AppController
 
         return ($watchlistOnly ? '/watchlist' : '/profile')
             . ($parameters === [] ? '' : '?' . http_build_query($parameters));
+    }
+
+    private function community(): ?CommunityRepository
+    {
+        if ($this->community instanceof Closure) {
+            $this->community = ($this->community)();
+        }
+        return $this->community;
     }
 
     private function users(): UserRepository
