@@ -19,7 +19,7 @@ final class CommunityRepository
     {
     }
 
-    /** @return array{unreadCount: int, isModerator: bool} */
+    /** @return array{unreadCount: int, unreadReplyCount: int, isModerator: bool} */
     public function navigationStateForUser(int $userId): array
     {
         $statement = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
@@ -27,6 +27,7 @@ final class CommunityRepository
 
         return [
             'unreadCount' => $this->unreadCountForUser($userId),
+            'unreadReplyCount' => (new ReplyNotificationRepository($this->connection))->unreadCountForUser($userId),
             'isModerator' => $this->toBool($statement->fetchColumn()),
         ];
     }
@@ -348,7 +349,7 @@ final class CommunityRepository
             $retryAfter = max(1, (int) $state['window_retry']);
         }
 
-        if ($state['duplicate_retry'] !== null) {
+        if ($action !== 'reaction' && $state['duplicate_retry'] !== null) {
             $retryAfter = max($retryAfter, 1, (int) $state['duplicate_retry']);
         }
 
@@ -395,12 +396,12 @@ final class CommunityRepository
         }
 
         if ($type === 'comment') {
-            $sql = 'SELECT t.id, t.user_id AS author_id, u.name AS author_name, t.body, t.anime_id, NULL AS conversation_id
+            $sql = 'SELECT t.id, t.user_id AS author_id, u.name AS author_name, t.body, t.anime_id, NULL AS conversation_id, t.parent_id
                     FROM anime_comments t JOIN users u ON u.id = t.user_id
-                    WHERE t.id = :target AND t.user_id <> :actor AND t.moderated_at IS NULL';
+                    WHERE t.id = :target AND t.user_id <> :actor AND t.moderated_at IS NULL AND t.deleted_at IS NULL';
             $parameters = ['target' => $targetId, 'actor' => $userId];
         } elseif ($type === 'message') {
-            $sql = 'SELECT t.id, t.sender_id AS author_id, u.name AS author_name, t.body, NULL AS anime_id, t.conversation_id
+            $sql = 'SELECT t.id, t.sender_id AS author_id, u.name AS author_name, t.body, NULL AS anime_id, t.conversation_id, NULL AS parent_id
                     FROM private_messages t JOIN users u ON u.id = t.sender_id
                     JOIN private_conversations c ON c.id = t.conversation_id
                     WHERE t.id = :target AND t.sender_id <> :actor AND t.moderated_at IS NULL
@@ -423,6 +424,7 @@ final class CommunityRepository
             'authorName' => $row['author_name'], 'body' => $row['body'],
             'animeId' => $row['anime_id'] === null ? null : (int) $row['anime_id'],
             'conversationId' => $row['conversation_id'] === null ? null : (int) $row['conversation_id'],
+            'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
         ];
     }
 
@@ -463,6 +465,7 @@ final class CommunityRepository
             'message' => [40, 60],
             'comment' => [15, 60],
             'report' => [5, 600],
+            'reaction' => [60, 60],
             default => throw new InvalidArgumentException('Nieprawidłowy rodzaj aktywności.'),
         };
     }

@@ -17,6 +17,9 @@ $navigation = $isWelcome
 if ($isWelcome && $isLoggedIn) {
     $navigation['/messages'] = 'Wiadomości';
 }
+if ($isLoggedIn) {
+    $navigation['/notifications/comments'] = 'Powiadomienia';
+}
 if ($isModerator) {
     $navigation['/moderation'] = 'Moderacja';
 }
@@ -29,6 +32,7 @@ if ($isModerator) {
                 <a
                     href="<?= $escape($url) ?>"
                     <?php if ($url === '/messages' && $isLoggedIn): ?> data-notifications-link aria-label="<?= $escape('Wiadomości. Nieprzeczytane: ' . $unreadMessageCount) ?>"<?php endif; ?>
+                    <?php if ($url === '/notifications/comments' && $isLoggedIn): ?> data-notifications-comment-link aria-label="<?= $escape('Powiadomienia. Nieprzeczytane: ' . ($unreadReplyCount ?? 0)) ?>"<?php endif; ?>
                     <?= $currentPath === $url
                         || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
                         || ($url === '/profile' && str_starts_with((string) $currentPath, '/profile/'))
@@ -39,6 +43,9 @@ if ($isModerator) {
                     <?= $escape($label) ?>
                     <?php if ($url === '/messages' && $isLoggedIn): ?>
                         <span class="community-unread" data-unread-message-count aria-live="polite"<?= $unreadMessageCount === 0 ? ' hidden' : '' ?>><?= $escape($unreadMessageCount) ?></span>
+                    <?php endif; ?>
+                    <?php if ($url === '/notifications/comments' && $isLoggedIn): ?>
+                        <span class="community-unread" data-unread-reply-count aria-live="polite"<?= ($unreadReplyCount ?? 0) === 0 ? ' hidden' : '' ?>><?= $escape($unreadReplyCount ?? 0) ?></span>
                     <?php endif; ?>
                 </a>
             </li>

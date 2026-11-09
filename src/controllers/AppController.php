@@ -89,6 +89,7 @@ abstract class AppController
         $accountTheme = $isLoggedIn ? ($_SESSION['user_theme'] ?? 'system') : null;
         $csrfToken = $this->csrfToken();
         $unreadMessageCount = 0;
+        $unreadReplyCount = 0;
         $isModerator = false;
         if ($isLoggedIn && $this->communityRepository !== null) {
             if ($this->communityRepository instanceof Closure) {
@@ -96,6 +97,7 @@ abstract class AppController
             }
             $communityState = $this->communityRepository->navigationStateForUser($accountId);
             $unreadMessageCount = $communityState['unreadCount'];
+            $unreadReplyCount = $communityState['unreadReplyCount'];
             $isModerator = $communityState['isModerator'];
         }
 

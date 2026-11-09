@@ -2,7 +2,7 @@
 
 Komentarze są zapisywane w PostgreSQL i widoczne na stronie anime również
 bez logowania. Zalogowany użytkownik może dodać wpis oraz edytować i usuwać
-wyłącznie własne komentarze. Avatar i nazwa autora otwierają `/users/{id}`.
+wyłącznie własne komentarze i odpowiedzi. Avatar i nazwa autora otwierają `/users/{id}`.
 
 ## Istniejąca baza
 
@@ -24,20 +24,49 @@ Konfiguracja Dockera i zależności pozostają bez zmian.
   znaków ani niedozwolonych znaków sterujących. Nowe linie są zachowywane;
   skrajne spacje i nowe linie są usuwane przed zapisem.
 - Komentarze są zwykłym tekstem. Znaczniki HTML są wyświetlane jako tekst.
-- Lista pokazuje 10 wpisów na stronę, od najnowszych; przy tej samej dacie
+- Lista pokazuje 10 głównych komentarzy na stronę, od najnowszych; przy tej samej dacie
   decyduje malejące ID. Edycja nie zmienia pozycji komentarza na liście.
 - „Edytuj” otwiera formularz z dotychczasową treścią. „Anuluj edycję” wraca
   do listy. Zapis zachowuje stronę; błędy zachowują wpisaną treść.
 - „Usuń” rozwija potwierdzenie, które trzeba zatwierdzić osobnym przyciskiem.
-  Po usunięciu ostatniego wpisu ze strony aplikacja wraca na istniejącą stronę.
+  Komentarz bez odpowiedzi jest usuwany; jeśli ma odpowiedzi, pozostaje
+  informacja o usunięciu, zachowująca cudze wpisy. Po usunięciu ostatniego
+  wpisu ze strony aplikacja wraca na istniejącą stronę.
 
 Dodanie komentarza przekierowuje na pierwszą stronę. Linki paginacji i zmiany
 wracają do sekcji `#comments`. Formularze i potwierdzenie działają bez JavaScript.
 
+## Odpowiedzi i wątki
+
+Przycisk „Odpowiedz” otwiera `/anime/{id}/comments/{commentId}`. Dyskusja ma
+jeden poziom odpowiedzi, po 10 na stronę od najstarszych. Odpowiedzi nie
+zajmują miejsc na głównej liście komentarzy. Ich autor może je edytować
+i usuwać, a inni zalogowani użytkownicy mogą je zgłaszać.
+
+Nie można dopisać odpowiedzi do innej odpowiedzi ani do komentarza usuniętego
+lub ukrytego przez moderatora. Istniejące odpowiedzi pozostają dostępne.
+Po usunięciu ostatniej odpowiedzi do usuniętego komentarza znika również
+pozostawiony przez niego pusty wątek.
+
+Autor głównego komentarza otrzymuje powiadomienie o cudzej odpowiedzi;
+odpowiedź na własny wpis nie tworzy powiadomienia. Wymaganą migrację `16`,
+odczyt i paginację powiadomień opisuje
+[dokumentacja odpowiedzi na komentarze](comment-replies.md).
+
+## Like i dislike
+
+Komentarze i odpowiedzi mają publiczne liczniki reakcji. Zalogowany użytkownik
+może oddać jeden głos na cudzy aktywny wpis, zmienić go albo cofnąć. Własne,
+usunięte i ukryte wpisy nie przyjmują głosów. Reakcje mają oddzielny limit
+60 faktycznych zmian na 60 sekund; ponowienie tego samego głosu nie zwiększa
+licznika ani nie zużywa limitu. Migrację `17` i zasady opisuje
+[dokumentacja reakcji na komentarze](comment-reactions.md).
+
 Zalogowany użytkownik może zgłosić cudzy komentarz, podając powód. Moderator
 może odrzucić zgłoszenie lub ukryć wpis; wówczas zamiast treści pojawia się
 informacja o usunięciu przez moderację. Autor może nadal usunąć własny wpis,
-ale nie może przywrócić jego treści edycją. Dodawanie i edycja wspólnie
+ale nie może przywrócić jego treści edycją. Dodawanie komentarzy, odpowiedzi
+i edycja obu rodzajów wpisów wspólnie
 podlegają limitowi 15 zapisów na 60 sekund oraz blokadzie duplikatów przez
 30 sekund. Szczegóły i migrację `15` opisuje
 [dokumentacja powiadomień i moderacji](community-moderation.md).

@@ -8,8 +8,10 @@ use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
+use App\Repository\CommentReactionRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\RatingRepository;
+use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
 use App\Service\CollectionService;
 use App\Service\CommentService;
@@ -26,6 +28,8 @@ final class AnimeController extends AppController
         private RatingRepository|Closure $ratings,
         private CommentRepository|Closure $comments,
         private CommunityRepository|Closure $community,
+        private ReplyNotificationRepository|Closure $replyNotifications,
+        private CommentReactionRepository|Closure $reactions,
     ) {
     }
 
@@ -167,6 +171,63 @@ final class AnimeController extends AppController
         $this->changeComment($id, 'create');
     }
 
+    public function showCommentThread(int $id, int $commentId): void
+    {
+        $this->renderCommentThread($id, $commentId);
+    }
+
+    public function replyComment(int $id, int $commentId): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $parent = $this->comments()->findByIdForAnime($id, $commentId);
+        if ($parent === null || $parent['parentId'] !== null || $parent['isRemoved'] || $parent['isDeleted']) {
+            $this->commentNotFound();
+            return;
+        }
+        $body = trim(str_replace(["\r\n", "\r"], "\n", $this->postString('body')), " \t\n\r");
+        $errors = [];
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+        } else {
+            $errors = CommentService::validate($body);
+            if ($errors !== []) {
+                http_response_code(422);
+            }
+        }
+        if ($errors === []) {
+            try {
+                $replyId = (new CommunityService($this->community()))->runLimited(
+                    $user['id'], 'comment', $body,
+                    function () use ($user, $id, $commentId, $body): ?int {
+                        $replyId = $this->comments()->createReplyForUser($user['id'], $id, $commentId, $body);
+                        if ($replyId !== null) {
+                            $this->replyNotifications()->createForReply($replyId);
+                        }
+                        return $replyId;
+                    },
+                    $parent['userId'],
+                );
+                if ($replyId === null) {
+                    $this->commentNotFound();
+                    return;
+                }
+                $savedReplies = $this->comments()->findRepliesPageForAnime($id, $commentId, PHP_INT_MAX);
+                if ($savedReplies === null) {
+                    $this->redirect($this->commentsPath($id, 1));
+                }
+                $lastPage = $savedReplies['page'];
+                $this->redirect($this->threadPath($id, $commentId, $lastPage, 'replySaved', 'comment-' . $replyId));
+            } catch (RateLimitException $exception) {
+                http_response_code(429);
+                header('Retry-After: ' . $exception->retryAfter);
+                $errors[] = $exception->getMessage();
+            }
+        }
+        $this->renderCommentThread($id, $commentId, $errors, $body);
+    }
+
     public function updateComment(int $id, int $commentId): void
     {
         $this->changeComment($id, 'edit', $commentId);
@@ -188,12 +249,15 @@ final class AnimeController extends AppController
         }
 
         $comment = $commentId === null ? null : $this->comments()->findByIdForUser($user['id'], $id, $commentId);
-        if ($action !== 'create' && ($comment === null || ($action === 'edit' && $comment['isRemoved']))) {
+        if ($action !== 'create' && ($comment === null || $comment['isDeleted'] || ($action === 'edit' && $comment['isRemoved']))) {
             $this->commentNotFound();
             return;
         }
 
         $page = $this->commentPage($_POST['commentsPage'] ?? '1');
+        $threadId = $comment['parentId'] ?? (
+            $comment !== null && $this->postString('returnThread') === (string) $comment['id'] ? $comment['id'] : null
+        );
         $body = trim(str_replace(["\r\n", "\r"], "\n", $this->postString('body')), " \t\n\r");
         $errors = [];
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
@@ -207,6 +271,10 @@ final class AnimeController extends AppController
         }
 
         if ($errors !== []) {
+            if ($threadId !== null) {
+                $this->renderCommentThread($id, $threadId, $errors, $body, $action === 'edit' ? $comment : null);
+                return;
+            }
             $this->renderAnime(
                 $id,
                 commentErrors: $errors,
@@ -234,6 +302,10 @@ final class AnimeController extends AppController
         } catch (RateLimitException $exception) {
             http_response_code(429);
             header('Retry-After: ' . $exception->retryAfter);
+            if ($threadId !== null) {
+                $this->renderCommentThread($id, $threadId, [$exception->getMessage()], $body, $action === 'edit' ? $comment : null);
+                return;
+            }
             $this->renderAnime(
                 $id, commentErrors: [$exception->getMessage()], commentBody: $body,
                 editingComment: $action === 'edit' ? $comment : null, commentsPage: $page,
@@ -245,8 +317,85 @@ final class AnimeController extends AppController
             return;
         }
 
+        if ($threadId !== null && $this->comments()->findByIdForAnime($id, $threadId) !== null) {
+            $savedReplies = $this->comments()->findRepliesPageForAnime($id, $threadId, $this->commentPage($_POST['repliesPage'] ?? '1'));
+            if ($savedReplies !== null) {
+                $this->redirect($this->threadPath($id, $threadId, $savedReplies['page'], $action === 'edit' ? 'commentUpdated' : 'commentRemoved'));
+            }
+        }
+
         $page = $this->comments()->findPageForAnime($id, $page)['page'];
         $this->redirect($this->commentsPath($id, $page, $action === 'edit' ? 'commentUpdated' : 'commentRemoved'));
+    }
+
+    private function renderCommentThread(
+        int $animeId,
+        int $rootId,
+        array $errors = [],
+        string $body = '',
+        ?array $editingComment = null,
+    ): void {
+        $anime = $this->animes()->findById($animeId);
+        $thread = $this->comments()->findByIdForAnime($animeId, $rootId);
+        if ($anime === null || $thread === null || $thread['parentId'] !== null) {
+            $this->commentNotFound();
+            return;
+        }
+        $replies = $this->comments()->findRepliesPageForAnime(
+            $animeId, $rootId, $this->commentPage($_POST['repliesPage'] ?? $_GET['repliesPage'] ?? '1'),
+        );
+        if ($replies === null) {
+            $this->commentNotFound();
+            return;
+        }
+        if (!$this->isPost() && array_key_exists('editComment', $_GET)) {
+            $this->requireLogin();
+            $user = $this->currentUser($this->users());
+            $editingId = filter_var($_GET['editComment'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $editingComment = $editingId === false ? null : $this->comments()->findByIdForUser($user['id'], $animeId, $editingId);
+            if ($editingComment === null || $editingComment['isRemoved'] || $editingComment['isDeleted']
+                || ($editingComment['id'] !== $rootId && $editingComment['parentId'] !== $rootId)) {
+                $this->commentNotFound();
+                return;
+            }
+            $body = $editingComment['body'];
+        }
+        $mainPage = $this->commentPage($_POST['commentsPage'] ?? $_GET['commentsPage'] ?? '1');
+        $this->render('comment-thread', [
+            'pageTitle' => 'Dyskusja: ' . $anime['title'] . ' — AniVibe',
+            'anime' => $anime, 'animeId' => $animeId, 'thread' => $thread, 'threadMode' => true,
+            'threadPath' => '/anime/' . $animeId . '/comments/' . $rootId,
+            'reactionCounts' => $this->reactions()->countsForComments(
+                [$rootId, ...array_column($replies['entries'], 'id')],
+                is_int($_SESSION['user_id'] ?? null) ? $_SESSION['user_id'] : null,
+            ),
+            'replies' => $replies + [
+                'previousUrl' => $replies['page'] > 1 ? $this->threadPath($animeId, $rootId, $replies['page'] - 1) : null,
+                'nextUrl' => $replies['page'] < $replies['totalPages'] ? $this->threadPath($animeId, $rootId, $replies['page'] + 1) : null,
+            ],
+            'commentFormPage' => $mainPage, 'commentBody' => $body, 'commentErrors' => $errors,
+            'editingComment' => $editingComment,
+            'commentNotice' => !$this->isPost() ? match (true) {
+                ($_GET['replySaved'] ?? null) === '1' => 'Odpowiedź została dodana.',
+                ($_GET['commentUpdated'] ?? null) === '1' => 'Wpis został zaktualizowany.',
+                ($_GET['commentRemoved'] ?? null) === '1' => 'Wpis został usunięty.',
+                ($_GET['reportSaved'] ?? null) === '1' => 'Zgłoszenie zostało zapisane.',
+                default => null,
+            } : null,
+        ]);
+    }
+
+    private function threadPath(int $animeId, int $rootId, int $page = 1, string $notice = '', string $anchor = 'replies'): string
+    {
+        $parameters = ['repliesPage' => $page];
+        $mainPage = $this->commentPage($_POST['commentsPage'] ?? $_GET['commentsPage'] ?? '1');
+        if ($mainPage > 1) {
+            $parameters['commentsPage'] = $mainPage;
+        }
+        if ($notice !== '') {
+            $parameters[$notice] = '1';
+        }
+        return '/anime/' . $animeId . '/comments/' . $rootId . '?' . http_build_query($parameters) . '#' . $anchor;
     }
 
     private function commentPage(mixed $value): int
@@ -351,9 +500,12 @@ final class AnimeController extends AppController
             $commentId = filter_var($_GET['editComment'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             $editingComment = $commentId === false ? null
                 : $this->comments()->findByIdForUser($_SESSION['user_id'], $id, $commentId);
-            if ($editingComment === null || $editingComment['isRemoved']) {
+            if ($editingComment === null || $editingComment['isRemoved'] || $editingComment['isDeleted']) {
                 $this->commentNotFound();
                 return;
+            }
+            if ($editingComment['parentId'] !== null) {
+                $this->redirect('/anime/' . $id . '/comments/' . $editingComment['parentId'] . '?editComment=' . $editingComment['id'] . '#reply-form');
             }
             $commentBody = $editingComment['body'];
         }
@@ -384,6 +536,10 @@ final class AnimeController extends AppController
                 'previousUrl' => $this->commentsPath($id, $comments['page'] - 1),
                 'nextUrl' => $this->commentsPath($id, $comments['page'] + 1),
             ],
+            'reactionCounts' => $this->reactions()->countsForComments(
+                array_column($comments['entries'], 'id'),
+                is_int($_SESSION['user_id'] ?? null) ? $_SESSION['user_id'] : null,
+            ),
             'commentErrors' => $commentErrors,
             'commentBody' => $commentBody,
             'editingComment' => $editingComment,
@@ -455,6 +611,22 @@ final class AnimeController extends AppController
             $this->community = ($this->community)();
         }
         return $this->community;
+    }
+
+    private function reactions(): CommentReactionRepository
+    {
+        if ($this->reactions instanceof Closure) {
+            $this->reactions = ($this->reactions)();
+        }
+        return $this->reactions;
+    }
+
+    private function replyNotifications(): ReplyNotificationRepository
+    {
+        if ($this->replyNotifications instanceof Closure) {
+            $this->replyNotifications = ($this->replyNotifications)();
+        }
+        return $this->replyNotifications;
     }
 
     private function comments(): CommentRepository

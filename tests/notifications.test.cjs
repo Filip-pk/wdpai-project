@@ -26,8 +26,10 @@ function response(data, options = {}) {
 }
 
 function createPage(options = {}) {
-    const badges = [element(options.count ?? 8), element(options.count ?? 8)];
+    const badges = options.messageBadges === false ? [] : [element(options.count ?? 8), element(options.count ?? 8)];
     const links = [element(0)];
+    const replyBadges = [element(options.replyCount ?? 6)];
+    const replyLinks = [element(0)];
     const conversations = new Map([['17', [element(4)]], ['99', [element(4)]]]);
     const form = {
         action: options.action ?? 'http://anivibe.test/messages/17/read',
@@ -49,6 +51,8 @@ function createPage(options = {}) {
         querySelectorAll(selector) {
             if (selector === '[data-unread-message-count]') return badges;
             if (selector === '[data-notifications-link]') return links;
+            if (selector === '[data-unread-reply-count]') return replyBadges;
+            if (selector === '[data-notifications-comment-link]') return replyLinks;
             if (selector === 'form[data-mark-conversation-read]') return forms;
             const match = selector.match(/^\[data-conversation-unread="(\d+)"\]$/);
             return match ? conversations.get(match[1]) ?? [] : [];
@@ -87,7 +91,7 @@ function createPage(options = {}) {
     vm.runInNewContext(source, { document, window, fetch, FormData, URL, URLSearchParams });
 
     return {
-        badges, links, conversations, form, calls, timers,
+        badges, links, replyBadges, replyLinks, conversations, form, calls, timers,
         async settle() { await new Promise(setImmediate); },
         async visibility(value) {
             document.visibilityState = value;
@@ -215,6 +219,48 @@ test('the read endpoint must belong to this origin and a conversation read route
             await page.settle();
             assert.deepEqual(page.calls.map(call => call.method), ['GET']);
             assert.equal(page.form.hidden, false);
+        });
+    }
+});
+
+test('reply counters update independently while a read acknowledges only a private conversation', async () => {
+    const page = createPage({ fetch: call => response({ unreadCount: 0, unreadReplyCount: call.method === 'POST' ? 3 : 4,
+        ...(call.method === 'POST' ? { conversationId: 17, conversationUnreadCount: 0 } : {}) }) });
+    await page.settle();
+    assert.equal(page.form.hidden, true);
+    assert.equal(page.badges[0].hidden, true);
+    assert.equal(page.replyBadges[0].hidden, false);
+    assert.equal(page.replyBadges[0].textContent, '4');
+    assert.equal(page.replyLinks[0].attributes.get('aria-label'), 'Powiadomienia. Nieprzeczytane: 4');
+    assert.deepEqual(page.calls.map(call => call.url), ['http://anivibe.test/messages/17/read', '/notifications']);
+});
+
+test('reply polling works on a page with only the reply badge and never marks replies read', async () => {
+    let count = 2;
+    const page = createPage({ form: false, messageBadges: false, fetch: () => response({ unreadCount: 0, unreadReplyCount: count }) });
+    await page.settle();
+    assert.equal(page.replyBadges[0].textContent, '2');
+    count = 0;
+    await page.poll();
+    assert.equal(page.replyBadges[0].hidden, true);
+    assert.ok(page.calls.every(call => call.method === 'GET' && call.url === '/notifications'));
+});
+
+test('older read responses without a reply counter preserve the existing reply badge', async () => {
+    const page = createPage();
+    await page.settle();
+    assert.equal(page.replyBadges[0].textContent, '6');
+    assert.equal(page.replyBadges[0].hidden, false);
+});
+
+test('invalid reply counters cannot clear existing reply notifications', async t => {
+    for (const unreadReplyCount of [null, false, '', '3', -1, 1.5, NaN, Infinity]) {
+        await t.test(String(unreadReplyCount), async () => {
+            const page = createPage({ form: false, fetch: () => response({ unreadCount: 4, unreadReplyCount }) });
+            await page.settle();
+            assert.equal(page.badges[0].textContent, '4');
+            assert.equal(page.replyBadges[0].textContent, '6');
+            assert.equal(page.replyBadges[0].hidden, false);
         });
     }
 });

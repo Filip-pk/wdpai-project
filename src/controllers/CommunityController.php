@@ -24,7 +24,8 @@ final class CommunityController extends AppController
     {
         $this->requireLogin();
         $user = $this->currentUser($this->users());
-        $this->json(['unreadCount' => $this->community()->unreadCountForUser($user['id'])]);
+        $state = $this->community()->navigationStateForUser($user['id']);
+        $this->json(['unreadCount' => $state['unreadCount'], 'unreadReplyCount' => $state['unreadReplyCount']]);
     }
 
     public function read(int $id): void
@@ -129,8 +130,15 @@ final class CommunityController extends AppController
             return;
         }
         $page = $this->page($_POST['returnPage'] ?? $_GET['page'] ?? '1');
+        $requestedThread = filter_var($_POST['returnThread'] ?? $_GET['thread'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $returnThread = $target['parentId'] ?? ($type === 'comment' && $requestedThread === $id ? $id : null);
+        $mainCommentsPage = $this->page($_POST['commentsPage'] ?? $_GET['commentsPage'] ?? ($target['parentId'] === null ? $page : '1'));
+        $repliesPage = $target['parentId'] === null
+            ? $this->page($_POST['repliesPage'] ?? $_GET['repliesPage'] ?? '1') : $page;
         $backUrl = $type === 'comment'
-            ? '/anime/' . $target['animeId'] . '?commentsPage=' . $page . '#comments'
+            ? ($returnThread === null
+                ? '/anime/' . $target['animeId'] . '?commentsPage=' . $page . '#comments'
+                : '/anime/' . $target['animeId'] . '/comments/' . $returnThread . '?repliesPage=' . $repliesPage . '&commentsPage=' . $mainCommentsPage . '#comment-' . $id)
             : '/messages/' . $target['conversationId'] . '?page=' . $page . '#message-history';
         $reason = $this->isPost() ? CommunityService::normalizeReason($this->postString('reason')) : '';
         $errors = [];
@@ -162,6 +170,7 @@ final class CommunityController extends AppController
         $this->render('report', [
             'pageTitle' => 'Zgłoś treść — AniVibe', 'target' => $target,
             'reason' => $reason, 'errors' => $errors, 'returnPage' => $page, 'backUrl' => $backUrl,
+            'returnThread' => $returnThread, 'mainCommentsPage' => $mainCommentsPage, 'repliesPage' => $repliesPage,
         ]);
     }
 

@@ -8,6 +8,7 @@ use App\Controller\AppController;
 use App\Controller\AuthController;
 use App\Controller\ChatController;
 use App\Controller\CollectionController;
+use App\Controller\CommentReactionController;
 use App\Controller\CommunityController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
@@ -16,16 +17,19 @@ use App\Controller\MessageController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Controller\RankingController;
+use App\Controller\ReplyNotificationController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
+use App\Repository\CommentReactionRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\MalImportRepository;
 use App\Repository\MessageRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
+use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
@@ -64,6 +68,8 @@ $createController = static function (string $controllerClass): AppController {
             static fn (): RatingRepository => new RatingRepository($connect()),
             static fn (): CommentRepository => new CommentRepository($connect()),
             static fn (): CommunityRepository => new CommunityRepository($connect()),
+            static fn (): ReplyNotificationRepository => new ReplyNotificationRepository($connect()),
+            static fn (): CommentReactionRepository => new CommentReactionRepository($connect()),
         );
     }
 
@@ -103,6 +109,30 @@ $createController = static function (string $controllerClass): AppController {
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): CommunityRepository => new CommunityRepository($connect()),
             static fn (): MessageRepository => new MessageRepository($connect()),
+        );
+    }
+
+    if ($controllerClass === CommentReactionController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        return new CommentReactionController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): CommentRepository => new CommentRepository($connect()),
+            static fn (): CommunityRepository => new CommunityRepository($connect()),
+            static fn (): CommentReactionRepository => new CommentReactionRepository($connect()),
+        );
+    }
+
+    if ($controllerClass === ReplyNotificationController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        return new ReplyNotificationController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): ReplyNotificationRepository => new ReplyNotificationRepository($connect()),
         );
     }
 
@@ -192,6 +222,9 @@ $routing->get('/users/{id}', ProfileController::class, 'show');
 $routing->get('/anime', AnimeController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');
 $routing->post('/anime/{id}/comments', AnimeController::class, 'createComment');
+$routing->get('/anime/{id}/comments/{commentId}', AnimeController::class, 'showCommentThread');
+$routing->post('/anime/{id}/comments/{commentId}/replies', AnimeController::class, 'replyComment');
+$routing->post('/anime/{id}/comments/{commentId}/reaction', CommentReactionController::class, 'react');
 $routing->post('/anime/{id}/comments/{commentId}/edit', AnimeController::class, 'updateComment');
 $routing->post('/anime/{id}/comments/{commentId}/delete', AnimeController::class, 'deleteComment');
 $routing->post('/anime/{id}/rating', AnimeController::class, 'saveRating');
@@ -210,6 +243,9 @@ $routing->get('/messages/{id}', MessageController::class, 'show');
 $routing->post('/messages/{id}', MessageController::class, 'show');
 $routing->post('/messages/{id}/read', CommunityController::class, 'read');
 $routing->get('/notifications', CommunityController::class, 'notifications');
+$routing->get('/notifications/comments', ReplyNotificationController::class, 'index');
+$routing->post('/notifications/comments/{id}/read', ReplyNotificationController::class, 'read');
+$routing->post('/notifications/comments/read-all', ReplyNotificationController::class, 'readAll');
 $routing->post('/users/{id}/block', CommunityController::class, 'block');
 $routing->post('/users/{id}/unblock', CommunityController::class, 'unblock');
 $routing->get('/reports/comment/{id}', CommunityController::class, 'reportComment');
