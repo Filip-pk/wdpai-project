@@ -8,6 +8,7 @@ use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
+use App\Repository\CommentReactionRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\RatingRepository;
 use App\Repository\ReplyNotificationRepository;
@@ -28,6 +29,7 @@ final class AnimeController extends AppController
         private CommentRepository|Closure $comments,
         private CommunityRepository|Closure $community,
         private ReplyNotificationRepository|Closure $replyNotifications,
+        private CommentReactionRepository|Closure $reactions,
     ) {
     }
 
@@ -363,6 +365,10 @@ final class AnimeController extends AppController
             'pageTitle' => 'Dyskusja: ' . $anime['title'] . ' — AniVibe',
             'anime' => $anime, 'animeId' => $animeId, 'thread' => $thread, 'threadMode' => true,
             'threadPath' => '/anime/' . $animeId . '/comments/' . $rootId,
+            'reactionCounts' => $this->reactions()->countsForComments(
+                [$rootId, ...array_column($replies['entries'], 'id')],
+                is_int($_SESSION['user_id'] ?? null) ? $_SESSION['user_id'] : null,
+            ),
             'replies' => $replies + [
                 'previousUrl' => $replies['page'] > 1 ? $this->threadPath($animeId, $rootId, $replies['page'] - 1) : null,
                 'nextUrl' => $replies['page'] < $replies['totalPages'] ? $this->threadPath($animeId, $rootId, $replies['page'] + 1) : null,
@@ -530,6 +536,10 @@ final class AnimeController extends AppController
                 'previousUrl' => $this->commentsPath($id, $comments['page'] - 1),
                 'nextUrl' => $this->commentsPath($id, $comments['page'] + 1),
             ],
+            'reactionCounts' => $this->reactions()->countsForComments(
+                array_column($comments['entries'], 'id'),
+                is_int($_SESSION['user_id'] ?? null) ? $_SESSION['user_id'] : null,
+            ),
             'commentErrors' => $commentErrors,
             'commentBody' => $commentBody,
             'editingComment' => $editingComment,
@@ -601,6 +611,14 @@ final class AnimeController extends AppController
             $this->community = ($this->community)();
         }
         return $this->community;
+    }
+
+    private function reactions(): CommentReactionRepository
+    {
+        if ($this->reactions instanceof Closure) {
+            $this->reactions = ($this->reactions)();
+        }
+        return $this->reactions;
     }
 
     private function replyNotifications(): ReplyNotificationRepository

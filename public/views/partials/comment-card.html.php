@@ -37,6 +37,9 @@ $reportUrl = '/reports/comment/' . $comment['id'] . '?page=' . ($isReplyComment 
         </div>
     </header>
     <p class="comment-body"><?= $isDeletedComment ? 'Komentarz usunięty przez autora.' : ($comment['isRemoved'] ? 'Komentarz ukryty przez moderację.' : $escape($comment['body'])) ?></p>
+    <?php if (!$isDeletedComment && !$comment['isRemoved']): ?>
+        <?php require __DIR__ . '/comment-reactions.html.php'; ?>
+    <?php endif; ?>
     <footer class="comment-owner-actions comment-card-actions">
         <?php if (!$isReplyComment && !$isThreadView): ?>
             <a class="comment-thread-link" href="<?= $escape($threadUrl) ?>#replies">Odpowiedzi: <?= $escape($comment['replyCount'] ?? 0) ?></a>

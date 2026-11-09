@@ -36,6 +36,12 @@ go ponownie na tej samej bazie.
   Błędy zachowują wpisany tekst. Formularze, potwierdzenia i paginacja
   działają bez JavaScript.
 
+Aktywne cudze odpowiedzi przyjmują również like i dislike. Można zmienić
+lub cofnąć własny głos, także gdy główny komentarz został usunięty, ale
+odpowiedzi zachowano. Reakcje mają własny limit, niezależny od limitu zapisu
+komentarzy. Szczegóły i migrację `17` opisuje
+[dokumentacja reakcji](comment-reactions.md).
+
 Dodanie komentarza, dodanie odpowiedzi i edycje obu rodzajów wpisów korzystają
 ze wspólnego limitu konta: 15 zapisów na 60 sekund. Identycznej treści nie
 można powtórzyć w tym rodzaju aktywności przez 30 sekund. Nieudany zapis nie

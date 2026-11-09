@@ -120,12 +120,18 @@ Limity dotyczą konta i obowiązują we wszystkich jego sesjach:
 | Wysłanie wiadomości, łącznie do wszystkich odbiorców | 40 w ciągu 60 sekund |
 | Dodanie komentarza lub odpowiedzi oraz edycja obu rodzajów wpisów, liczone razem | 15 w ciągu 60 sekund |
 | Nowe zgłoszenie | 5 w ciągu 600 sekund |
-| Ponowienie identycznej treści w danym rodzaju aktywności | 30 sekund odstępu |
+| Zmiana lub cofnięcie reakcji na komentarz lub odpowiedź | 60 faktycznych zmian w ciągu 60 sekund |
+| Ponowienie identycznej treści komentarza, wiadomości lub zgłoszenia | 30 sekund odstępu |
 
 Nieudane zapisy nie zużywają limitu. Przekroczenie zwraca HTTP `429`
 z nagłówkiem `Retry-After` i informacją, po ilu sekundach można spróbować
 ponownie. Formularz zachowuje wpisaną treść. Usuwanie własnego komentarza,
 blokowanie i rozpatrywanie zgłoszeń nie podlegają tym limitom.
+
+Reakcje wymagają migracji `17`. Ponowienie tego samego głosu jest idempotentne
+i nie zużywa limitu. Zmiana like na dislike lub cofnięcie głosu działa od razu;
+do reakcji nie stosuje się blokady duplikatów przez 30 sekund.
+Szczegóły opisuje [dokumentacja reakcji](comment-reactions.md).
 
 Walidacja, CSRF, uprawnienia uczestników i blokady są sprawdzane po stronie
 serwera. Zapis treści i zajęcie limitu są jedną transakcją. Blokady wierszy

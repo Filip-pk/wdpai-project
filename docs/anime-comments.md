@@ -53,6 +53,15 @@ odpowiedź na własny wpis nie tworzy powiadomienia. Wymaganą migrację `16`,
 odczyt i paginację powiadomień opisuje
 [dokumentacja odpowiedzi na komentarze](comment-replies.md).
 
+## Like i dislike
+
+Komentarze i odpowiedzi mają publiczne liczniki reakcji. Zalogowany użytkownik
+może oddać jeden głos na cudzy aktywny wpis, zmienić go albo cofnąć. Własne,
+usunięte i ukryte wpisy nie przyjmują głosów. Reakcje mają oddzielny limit
+60 faktycznych zmian na 60 sekund; ponowienie tego samego głosu nie zwiększa
+licznika ani nie zużywa limitu. Migrację `17` i zasady opisuje
+[dokumentacja reakcji na komentarze](comment-reactions.md).
+
 Zalogowany użytkownik może zgłosić cudzy komentarz, podając powód. Moderator
 może odrzucić zgłoszenie lub ukryć wpis; wówczas zamiast treści pojawia się
 informacja o usunięciu przez moderację. Autor może nadal usunąć własny wpis,

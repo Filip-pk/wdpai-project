@@ -349,7 +349,7 @@ final class CommunityRepository
             $retryAfter = max(1, (int) $state['window_retry']);
         }
 
-        if ($state['duplicate_retry'] !== null) {
+        if ($action !== 'reaction' && $state['duplicate_retry'] !== null) {
             $retryAfter = max($retryAfter, 1, (int) $state['duplicate_retry']);
         }
 
@@ -465,6 +465,7 @@ final class CommunityRepository
             'message' => [40, 60],
             'comment' => [15, 60],
             'report' => [5, 600],
+            'reaction' => [60, 60],
             default => throw new InvalidArgumentException('Nieprawidłowy rodzaj aktywności.'),
         };
     }
