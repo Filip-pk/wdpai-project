@@ -3,6 +3,8 @@
 
     const badges = document.querySelectorAll('[data-unread-message-count]');
     const links = document.querySelectorAll('[data-notifications-link]');
+    const replyBadges = document.querySelectorAll('[data-unread-reply-count]');
+    const replyLinks = document.querySelectorAll('[data-notifications-comment-link]');
     const readForms = Array.from(document.querySelectorAll('form[data-mark-conversation-read]'));
     const acknowledgedForms = new WeakSet();
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -10,7 +12,7 @@
     let stopped = false;
     let refreshing = false;
 
-    if (badges.length === 0 && readForms.length === 0) {
+    if (badges.length === 0 && replyBadges.length === 0 && readForms.length === 0) {
         return;
     }
 
@@ -39,6 +41,20 @@
     function stopPolling() {
         stopped = true;
         window.clearTimeout(timer);
+    }
+
+    function updateReplyCount(value) {
+        if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+            return;
+        }
+
+        replyBadges.forEach(function (badge) {
+            badge.textContent = String(value);
+            badge.hidden = value === 0;
+        });
+        replyLinks.forEach(function (link) {
+            link.setAttribute('aria-label', 'Powiadomienia. Nieprzeczytane: ' + value);
+        });
     }
 
     function updateConversationCount(conversationId, value) {
@@ -83,6 +99,7 @@
         }
 
         updateConversationCount(result.conversationId, result.conversationUnreadCount);
+        updateReplyCount(result.unreadReplyCount);
         return result;
     }
 

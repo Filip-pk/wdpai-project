@@ -223,7 +223,8 @@
     color: var(--color-success);
 }
 
-[data-unread-message-count] {
+[data-unread-message-count],
+[data-unread-reply-count] {
     display: inline-grid;
     min-width: 1.5rem;
     min-height: 1.5rem;
@@ -238,6 +239,7 @@
 }
 
 [data-unread-message-count][hidden],
+[data-unread-reply-count][hidden],
 [data-conversation-unread][hidden],
 [data-mark-conversation-read][hidden] {
     display: none !important;

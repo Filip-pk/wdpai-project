@@ -28,6 +28,11 @@
     <form class="community-panel community-form" method="post" action="/reports/<?= $escape($target['targetType']) ?>/<?= $escape($target['targetId']) ?>">
         <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
         <input type="hidden" name="returnPage" value="<?= $escape($returnPage) ?>">
+        <?php if ($returnThread !== null): ?>
+            <input type="hidden" name="returnThread" value="<?= $escape($returnThread) ?>">
+            <input type="hidden" name="commentsPage" value="<?= $escape($mainCommentsPage) ?>">
+            <input type="hidden" name="repliesPage" value="<?= $escape($repliesPage) ?>">
+        <?php endif; ?>
         <div class="community-field">
             <label for="report-reason">Powód zgłoszenia</label>
             <p id="report-reason-help">Opisz naruszenie zasad. Maksymalnie 1000 znaków.</p>

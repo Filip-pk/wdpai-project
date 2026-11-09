@@ -41,54 +41,8 @@
     <?php else: ?>
         <ol class="comments-list" aria-label="Komentarze użytkowników">
             <?php foreach ($comments['entries'] as $comment): ?>
-                <?php
-                $createdDate = (new DateTimeImmutable($comment['createdAt']))->setTimezone(new DateTimeZone('Europe/Warsaw'));
-                $updatedDate = $comment['updatedAt'] !== null
-                    ? (new DateTimeImmutable($comment['updatedAt']))->setTimezone(new DateTimeZone('Europe/Warsaw'))
-                    : null;
-                $isOwnComment = $isLoggedIn && $accountId === $comment['userId'];
-                ?>
                 <li>
-                    <article id="comment-<?= $escape($comment['id']) ?>" class="comment-card" aria-labelledby="comment-author-<?= $escape($comment['id']) ?>" data-comment-id="<?= $escape($comment['id']) ?>" data-comment-user-id="<?= $escape($comment['userId']) ?>">
-                        <header class="comment-header">
-                            <a id="comment-author-<?= $escape($comment['id']) ?>" class="comment-author" href="/users/<?= $escape($comment['userId']) ?>" aria-label="<?= $escape('Profil autora: ' . $comment['authorName']) ?>">
-                                <span class="comment-avatar" aria-hidden="true">
-                                    <?php if ($comment['avatarUrl'] !== null): ?>
-                                        <img src="<?= $escape($comment['avatarUrl']) ?>" alt="" width="48" height="48" loading="lazy" decoding="async">
-                                    <?php else: ?>
-                                        ✦
-                                    <?php endif; ?>
-                                </span>
-                                <span class="comment-author-name"><?= $escape($comment['authorName']) ?></span>
-                            </a>
-                            <div class="comment-dates">
-                                <time datetime="<?= $escape($createdDate->format(DATE_ATOM)) ?>"><?= $escape($createdDate->format('d.m.Y H:i')) ?></time>
-                                <?php if ($updatedDate !== null): ?>
-                                    <span>Edytowano: <time datetime="<?= $escape($updatedDate->format(DATE_ATOM)) ?>"><?= $escape($updatedDate->format('d.m.Y H:i')) ?></time></span>
-                                <?php endif; ?>
-                            </div>
-                        </header>
-                        <p class="comment-body"><?= $comment['isRemoved'] ? 'Komentarz ukryty przez moderację.' : $escape($comment['body']) ?></p>
-                        <?php if ($isLoggedIn && !$isOwnComment && !$comment['isRemoved']): ?>
-                            <a class="community-report-link" href="/reports/comment/<?= $escape($comment['id']) ?>?page=<?= $escape($comments['page']) ?>">Zgłoś komentarz</a>
-                        <?php endif; ?>
-                        <?php if ($isOwnComment): ?>
-                            <footer class="comment-owner-actions">
-                                <?php if (!$comment['isRemoved']): ?>
-                                    <a class="comment-edit" href="/anime/<?= $escape($animeId) ?>?commentsPage=<?= $escape($comments['page']) ?>&amp;editComment=<?= $escape($comment['id']) ?>#comments">Edytuj</a>
-                                <?php endif; ?>
-                                <details class="comment-delete">
-                                    <summary>Usuń</summary>
-                                    <form action="/anime/<?= $escape($animeId) ?>/comments/<?= $escape($comment['id']) ?>/delete" method="post" class="comment-delete-form">
-                                        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                                        <input type="hidden" name="commentsPage" value="<?= $escape($comments['page']) ?>">
-                                        <p>Usunąć ten komentarz?</p>
-                                        <button type="submit">Potwierdź usunięcie</button>
-                                    </form>
-                                </details>
-                            </footer>
-                        <?php endif; ?>
-                    </article>
+                    <?php require __DIR__ . '/comment-card.html.php'; ?>
                 </li>
             <?php endforeach; ?>
         </ol>

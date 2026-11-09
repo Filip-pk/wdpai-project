@@ -40,6 +40,23 @@ automatycznie. Nie uruchamiaj migracji ponownie na tej samej bazie.
 Nieuczestnik nie może potwierdzić odczytu cudzej rozmowy ani jej odczytać.
 Potwierdzenie sprawdza również, czy wskazana wiadomość należy do tej rozmowy.
 
+## Powiadomienia o odpowiedziach na komentarze
+
+Po migracji `16` zakładka „Powiadomienia” (`/notifications/comments`) pokazuje
+odpowiedzi innych użytkowników na własne główne komentarze. Ma osobny licznik,
+niezależny od prywatnych wiadomości. Oba liczniki są odświeżane co 15 sekund
+przez `GET /notifications`, gdy karta jest widoczna.
+
+Pobranie listy nie oznacza powiadomień jako przeczytanych. „Otwórz odpowiedź”
+wykonuje POST z CSRF i przechodzi do właściwej strony wątku. „Oznacz wszystkie
+jako przeczytane” potwierdza własną migawkę ID z formularza, pozostawiając
+późniejsze powiadomienia nieprzeczytane. Lista ma 20 pozycji na stronę,
+a formularze działają bez JavaScript. Ukryta lub usunięta odpowiedź nie
+pojawia się na liście ani w liczniku. Powiadomienia nie zawierają kopii treści.
+
+Szczegóły, migrację i zasady zachowania wątków opisuje
+[dokumentacja odpowiedzi na komentarze](comment-replies.md).
+
 ## Blokowanie użytkowników
 
 Przycisk blokady jest dostępny na cudzym profilu i w nagłówku rozmowy.
@@ -55,7 +72,7 @@ i nie dotyczy rozmów z pozostałymi osobami.
 
 ## Zgłoszenia i panel moderatora
 
-„Zgłoś komentarz” jest dostępne przy cudzym komentarzu. W rozmowie można
+„Zgłoś komentarz” jest dostępne przy cudzym komentarzu lub odpowiedzi. W rozmowie można
 zgłosić wyłącznie otrzymaną wiadomość. Formularz wymaga powodu od 1 do
 1000 znaków; puste, niepoprawne UTF-8 i niedozwolone znaki sterujące są
 odrzucane. Jedna osoba może zgłosić dany wpis raz. Ponowienie tego samego
@@ -101,7 +118,7 @@ Limity dotyczą konta i obowiązują we wszystkich jego sesjach:
 | Operacja | Limit |
 | --- | --- |
 | Wysłanie wiadomości, łącznie do wszystkich odbiorców | 40 w ciągu 60 sekund |
-| Dodanie lub edycja komentarza, liczone razem | 15 w ciągu 60 sekund |
+| Dodanie komentarza lub odpowiedzi oraz edycja obu rodzajów wpisów, liczone razem | 15 w ciągu 60 sekund |
 | Nowe zgłoszenie | 5 w ciągu 600 sekund |
 | Ponowienie identycznej treści w danym rodzaju aktywności | 30 sekund odstępu |
 

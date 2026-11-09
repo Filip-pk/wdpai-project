@@ -9,10 +9,10 @@ aplikacja wysyła [wiadomość powitalną przez Mailpit](welcome-email.md).
 Nowa, pusta baza otrzymuje schemat automatycznie przy pierwszym uruchomieniu
 PostgreSQL. Docker Compose montuje katalog `database` jako
 `/docker-entrypoint-initdb.d` tylko do odczytu; PostgreSQL wykonuje skrypty
-`01`–`15` w kolejności nazw.
+`01`–`16` w kolejności nazw.
 
 Jeśli baza była już uruchomiona, ale nie ma jeszcze tabel aplikacji,
-z katalogu projektu w Windows CMD wykonaj raz wszystkie piętnaście skryptów:
+z katalogu projektu w Windows CMD wykonaj raz wszystkie szesnaście skryptów:
 
 ```cmd
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\01-create-projects.sql
@@ -30,6 +30,7 @@ docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB e
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\13-anime-comments.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\14-private-messages.sql
 docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\15-community-moderation.sql
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\16-comment-replies.sql
 ```
 
 Skrypty tworzą projekty, konta, pola profilu, watchlisty i zdjęcia. Nie uruchamiaj
@@ -50,6 +51,7 @@ Migracja `12` dodaje statusy „Wstrzymane” i „Porzucone” potrzebne do
 Migracja `13` dodaje [komentarze](anime-comments.md), `14`
 [prywatne wiadomości](private-messages.md), a `15`
 [powiadomienia, blokady, zgłoszenia i rolę moderatora](community-moderation.md).
+Migracja `16` dodaje [odpowiedzi na komentarze i powiadomienia autora](comment-replies.md).
 
 Rejestracja i logowanie wymagają również kolumn `interests` i `theme`
 z trzeciego skryptu oraz `avatar_version` z czwartego. Samo działające

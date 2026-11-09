@@ -27,6 +27,9 @@ AI i rozmowy z postaciami.
   oraz zgłoszeń, z ochroną przed szybkim powtarzaniem tej samej treści.
 - Komentarze pod anime: publiczna lista z paginacją, dodawanie po zalogowaniu,
   edycja i usuwanie własnych wpisów oraz przejście do profilu autora.
+- Odpowiedzi na komentarze w osobnych wątkach, z paginacją i zachowaniem
+  cudzych odpowiedzi po usunięciu komentarza otwierającego dyskusję.
+  Zakładka „Powiadomienia” informuje autora komentarza o nowych odpowiedziach.
 - Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
   należeć do kilku kolekcji niezależnie od statusu i postępu na watchliście.
 - Prywatne oceny anime w skali 1–10: zapis, zmiana i usuwanie, z podglądem
@@ -120,7 +123,7 @@ i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
 uruchomił się już podczas budowania obrazu.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-`database/01`–`15`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
+`database/01`–`16`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
 ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
 dołączane do repozytorium.
 
@@ -240,6 +243,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
 - [Prywatne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
 - [Komentarze pod anime i migracja istniejącej bazy](docs/anime-comments.md)
+- [Odpowiedzi na komentarze i powiadomienia o odpowiedziach](docs/comment-replies.md)
 - [Prywatne wiadomości i migracja istniejącej bazy](docs/private-messages.md)
 - [Powiadomienia, blokady, zgłoszenia i rola moderatora](docs/community-moderation.md)
 - [Poziomy, EXP i ranking TOP 100](docs/user-experience.md)
