@@ -462,31 +462,15 @@
     display: inline-flex;
     align-items: center;
     min-height: 2.75rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
     font-weight: 700;
-}
-
-.user-profile-identity {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-5);
-    min-width: 0;
-}
-
-.user-profile-identity .profile-avatar {
-    flex: 0 0 4.5rem;
-}
-
-.user-profile-identity .profile-heading {
-    flex: 1 1 12rem;
-    overflow-wrap: anywhere;
+    text-decoration: none;
 }
 
 .user-profile-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-4);
+    display: grid;
+    gap: var(--space-3);
 }
 
 .user-profile-action {
@@ -499,6 +483,7 @@
     border-radius: var(--radius-small);
     color: var(--color-button-text);
     background-image: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+    font-size: 0.875rem;
     font-weight: 800;
     text-decoration: none;
 }
@@ -513,8 +498,8 @@
     font-size: 0.8rem;
 }
 
-/* Ustawienia własnego konta — pozostałe sekcje zachowują swój układ. */
-.profile-account {
+/* Wspólne karty ustawień konta i profilu publicznego. */
+.profile-overview {
     gap: var(--space-5);
 }
 
@@ -563,7 +548,7 @@
     background-color: var(--color-surface-raised);
 }
 
-.profile-account .profile-grid {
+.profile-overview .profile-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-5);
 }
@@ -574,13 +559,13 @@
     min-width: 0;
 }
 
-.profile-account :where(.profile-summary, .profile-editor, .profile-watchlist, .profile-empty, .experience-panel) {
+.profile-overview :where(.profile-summary, .profile-editor, .profile-watchlist, .profile-empty, .experience-panel) {
     padding: var(--space-5);
     border-radius: var(--radius-medium);
     box-shadow: none;
 }
 
-.profile-account .profile-summary {
+.profile-overview .profile-summary {
     background-image: radial-gradient(ellipse at top right, var(--color-glow-violet), transparent 70%);
 }
 
@@ -592,7 +577,7 @@
     gap: var(--space-3);
 }
 
-.profile-account .profile-avatar {
+.profile-overview .profile-avatar {
     width: 5rem;
     height: 5rem;
     border: 3px solid var(--color-surface);
@@ -602,7 +587,7 @@
     box-shadow: 0 0 1.5rem var(--color-glow-violet);
 }
 
-.profile-account .profile-avatar:focus-visible {
+.profile-overview .profile-avatar:focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 5px;
 }
@@ -625,7 +610,7 @@
     color: var(--color-brand);
 }
 
-.profile-account p.profile-card-label {
+.profile-overview p.profile-card-label {
     color: var(--color-brand);
     font-size: 0.6875rem;
     font-weight: 700;
@@ -633,7 +618,7 @@
     text-transform: uppercase;
 }
 
-.profile-account .profile-identity h2 {
+.profile-overview .profile-identity :is(h1, h2) {
     font-size: 1.4rem;
     overflow-wrap: anywhere;
 }
@@ -648,12 +633,12 @@
     text-decoration: underline;
 }
 
-.profile-account .profile-stats > div {
+.profile-overview .profile-stats > div {
     padding: var(--space-3);
     border: 0;
 }
 
-.profile-account .profile-stats dd {
+.profile-overview .profile-stats dd {
     order: -1;
     margin: 0;
     color: var(--color-accent);
@@ -672,21 +657,21 @@
     text-decoration: none;
 }
 
-.profile-account .experience-panel {
+.profile-overview .experience-panel {
     background-image: linear-gradient(135deg, var(--color-glow-violet), transparent);
 }
 
-.profile-account .experience-heading {
+.profile-overview .experience-heading {
     align-items: start;
 }
 
-.profile-account .experience-symbol {
+.profile-overview .experience-symbol {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1.25rem;
 }
 
-.profile-account .experience-level {
+.profile-overview .experience-level {
     font-size: 1.3rem;
 }
 
@@ -716,11 +701,11 @@
     font-size: 1.4rem;
 }
 
-.profile-account .profile-editor-heading h2 {
+.profile-overview .profile-editor-heading h2 {
     font-size: 1.1rem;
 }
 
-.profile-account .profile-editor-heading p {
+.profile-overview .profile-editor-heading p {
     font-size: 0.8rem;
 }
 
@@ -751,7 +736,7 @@
 }
 
 @media (min-width: 64rem) {
-    .profile-account .profile-grid {
+    .profile-overview .profile-grid {
         grid-template-columns: minmax(15rem, 0.75fr) minmax(0, 1.4fr);
         gap: var(--space-6);
     }
@@ -770,9 +755,57 @@
     }
 }
 
-@media (min-width: 48rem) {
+.user-profile-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.user-profile-content {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.user-profile-badge {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.user-profile-joined {
+    font-size: 0.8rem;
+}
+
+.user-profile-actions .community-inline-form {
+    margin: 0;
+}
+
+.user-profile-actions .community-inline-form button {
+    width: 100%;
+    min-height: 2.75rem;
+    padding-inline: var(--space-2);
+    color: var(--color-muted);
+    background: transparent;
+    font-size: 0.75rem;
+}
+
+.user-profile-page .profile-watchlist .anime-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.user-profile-page #watchlist-title {
+    scroll-margin-top: var(--space-5);
+}
+
+@media (min-width: 80rem) {
     .user-profile-statistics .profile-stats {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
-
 }

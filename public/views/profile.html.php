@@ -1,6 +1,6 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<div class="profile-page<?= !$watchlistOnly ? ' profile-account' : '' ?>">
+<div class="profile-page<?= !$watchlistOnly ? ' profile-account profile-overview' : '' ?>">
     <?php if ($watchlistOnly): ?>
         <?php require __DIR__ . '/partials/profile-tabs.html.php'; ?>
     <?php endif; ?>
