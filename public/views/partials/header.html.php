@@ -23,6 +23,11 @@ $currentPath = parse_url(
 );
 
 $isWelcome = $currentPath === '/';
+$isAuthPage = in_array($currentPath, ['/login', '/register'], true);
+$isWorkspace = !$isWelcome && !$isAuthPage;
+$isRedesignPage = $isWelcome || $isAuthPage
+    || in_array($currentPath, ['/profile', '/profile/avatar'], true)
+    || str_starts_with((string) $currentPath, '/users/');
 $isProjectsPage = $currentPath === '/projects'
     || str_starts_with((string) $currentPath, '/projects/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
@@ -71,6 +76,8 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     </script>
 
     <link rel="stylesheet" href="<?= $assetUrl('/css/style.css') ?>">
+    <link rel="stylesheet" href="<?= $assetUrl('/css/navigation.css') ?>">
+    <script src="<?= $assetUrl('/js/navigation.js') ?>" defer></script>
 
     <?php if (in_array($currentPath, ['/login', '/register'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
@@ -116,7 +123,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
         <link rel="stylesheet" href="<?= $assetUrl('/css/messages.css') ?>">
     <?php endif; ?>
 </head>
-<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?>">
+<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?>">
     <a href="#main-content" class="skip-link">
         Przejdź do treści
     </a>
@@ -169,18 +176,11 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
                     <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
                 </svg>
             </button>
-            <button class="theme-system" type="button" disabled>
-                Motyw systemowy
+            <button class="theme-system" type="button" aria-label="Motyw systemowy" disabled>
+                Auto
             </button>
             <p class="theme-save-status" role="status" hidden></p>
         </div>
     </header>
-
-    <aside class="prototype-notice" aria-label="Informacja o prototypie">
-        <p>
-            <strong>Wersja demonstracyjna.</strong>
-            Konta, profile, watchlisty i prywatne kolekcje są zapisywane. Rozmowy AI pozostają demonstracyjne.
-        </p>
-    </aside>
 
     <main id="main-content" class="page-content" tabindex="-1">
