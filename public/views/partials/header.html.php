@@ -86,6 +86,9 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
+    <?php if ($currentPath === '/anime/ranking'): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/anime-ranking.css') ?>">
+    <?php endif; ?>
     <?php if ($isLoggedIn): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/community.css') ?>">
         <script src="<?= $assetUrl('/js/notifications.js') ?>" defer></script>

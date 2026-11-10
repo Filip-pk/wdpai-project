@@ -132,6 +132,9 @@
                                 </a>
                                 <div class="collection-anime-copy">
                                     <h3><a href="/anime/<?= $escape($collectionAnimeId) ?>"><?= $escape($collectionAnime['title']) ?></a></h3>
+                                    <dl class="collection-community-rating">
+                                        <?php $animeId = $collectionAnimeId; require __DIR__ . '/partials/community-anime-rating.html.php'; ?>
+                                    </dl>
                                     <?php $entry = $collectionWatchlist[$collectionAnimeId] ?? null; ?>
                                     <?php if ($entry !== null): ?>
                                         <p class="collection-watchlist-status"><?= $escape(['planned' => 'Planowane', 'watching' => 'Oglądam', 'completed' => 'Ukończone', 'on_hold' => 'Wstrzymane', 'dropped' => 'Porzucone'][$entry['status']] ?? $entry['status']) ?></p>

@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
+use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Service\CollectionService;
@@ -18,6 +19,7 @@ final class CollectionController extends AppController
         private CollectionRepository|Closure $collections,
         private AnimeRepository|Closure $animes,
         private WatchlistRepository|Closure $watchlists,
+        private RatingRepository|Closure $ratings,
     ) {
     }
 
@@ -169,6 +171,7 @@ final class CollectionController extends AppController
             'collectionsPagination' => $collectionPage,
             'selectedCollection' => $collection,
             'collectionAnimes' => $this->animes()->findByIds($result['animeIds']),
+            'communityRatings' => $this->ratings()->communityForAnimeIds($result['animeIds']),
             'collectionWatchlist' => $watchlist,
             'pagination' => $result,
             'collectionForm' => $collectionForm + ['name' => '', 'description' => ''],
@@ -225,6 +228,14 @@ final class CollectionController extends AppController
             $this->animes = ($this->animes)();
         }
         return $this->animes;
+    }
+
+    private function ratings(): RatingRepository
+    {
+        if ($this->ratings instanceof Closure) {
+            $this->ratings = ($this->ratings)();
+        }
+        return $this->ratings;
     }
 
     private function watchlists(): WatchlistRepository

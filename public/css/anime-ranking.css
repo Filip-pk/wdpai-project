@@ -1,0 +1,249 @@
+.anime-ranking-page,
+.anime-ranking-heading,
+.anime-ranking-results,
+.anime-ranking-field,
+.anime-ranking-empty {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.anime-ranking-page {
+    gap: var(--space-5);
+}
+
+.page-standard .page-content .anime-ranking-page > *,
+.page-standard .page-content .anime-ranking-page :where(header, section, form) > * {
+    margin: 0;
+}
+
+.anime-ranking-heading h1,
+.anime-ranking-results h2,
+.anime-ranking-description,
+.anime-ranking-empty,
+.anime-ranking-results-heading p {
+    overflow-wrap: anywhere;
+}
+
+.anime-ranking-heading p,
+.anime-ranking-description,
+.anime-ranking-results-heading p,
+.anime-ranking-field > p,
+.anime-ranking-watchers {
+    color: var(--color-muted);
+}
+
+.anime-ranking-related,
+.anime-ranking-tabs,
+.anime-ranking-filter-actions,
+.anime-ranking-pagination,
+.anime-ranking-position,
+.anime-ranking-results-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.anime-ranking-related a,
+.anime-ranking-filter-actions a,
+.anime-ranking-empty a,
+.anime-ranking-pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.anime-ranking-tabs a {
+    display: flex;
+    flex: 1 1 12rem;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    overflow-wrap: anywhere;
+    text-align: center;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.anime-ranking-tabs a:hover,
+.anime-ranking-tabs a[aria-current="page"] {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.anime-ranking-filters {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+}
+
+.anime-ranking-field {
+    align-content: start;
+    gap: var(--space-2);
+}
+
+.anime-ranking-field label {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.anime-ranking-field > p {
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.anime-ranking-field input,
+.anime-ranking-field select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    background-color: var(--color-input-background);
+    font: inherit;
+}
+
+.anime-ranking-field input:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.anime-ranking-filter-actions {
+    grid-column: 1 / -1;
+}
+
+.anime-ranking-filter-actions button {
+    width: 100%;
+    min-height: 2.75rem;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.anime-ranking-errors,
+.anime-ranking-empty {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+}
+
+.page-standard .page-content .anime-ranking-errors {
+    color: var(--color-danger);
+    border-color: currentColor;
+    overflow-wrap: anywhere;
+}
+
+.anime-ranking-errors ul {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+}
+
+.anime-ranking-results-heading {
+    justify-content: space-between;
+}
+
+.anime-ranking-results h2 {
+    font-size: 1.2rem;
+}
+
+.anime-ranking-page .anime-ranking-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.anime-ranking-item {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.anime-ranking-page .anime-card {
+    min-width: 0;
+    margin: 0;
+}
+
+.anime-ranking-position {
+    justify-content: space-between;
+}
+
+.anime-ranking-rank {
+    color: var(--color-brand);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.anime-ranking-watchers {
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.anime-ranking-pagination {
+    justify-content: center;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
+.anime-ranking-pagination a {
+    padding-inline: var(--space-2);
+}
+
+.anime-ranking-page :where(a, button, input, select):focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+}
+
+@media (min-width: 40rem) {
+    .anime-ranking-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: var(--space-5);
+    }
+
+    .anime-ranking-filter-actions button {
+        width: auto;
+        padding-inline: var(--space-5);
+    }
+
+    .anime-ranking-page .anime-ranking-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 64rem) {
+    .anime-ranking-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .anime-ranking-page .anime-ranking-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

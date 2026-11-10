@@ -41,7 +41,8 @@
             <div><dt>Studio</dt><dd><?= $escape($anime['studio'] === '' ? 'Nieznane' : $anime['studio']) ?></dd></div>
             <div><dt>Rok premiery</dt><dd><?= isset($anime['year']) ? $escape($anime['year']) : 'Nieznany' ?></dd></div>
             <div><dt>Liczba odcinków</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznana' ?></dd></div>
-            <div><dt>Ocena</dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+            <div><dt>Ocena źródłowa</dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+            <?php require __DIR__ . '/partials/community-anime-rating.html.php'; ?>
         </dl>
         <?php if (!empty($anime['sourceUrl']) && str_starts_with($anime['sourceUrl'], 'https://')): ?>
             <p class="anime-source">Dane o anime: <a href="<?= $escape($anime['sourceUrl']) ?>" rel="external noreferrer"><?= $escape($anime['sourceLabel']) ?></a>.</p>
@@ -128,7 +129,7 @@
             <h3 id="anime-rating-title">Twoja ocena</h3>
             <?php if ($isLoggedIn): ?>
                 <p class="anime-rating-current"><?= $userRating !== null ? 'Twoja ocena: ' . $escape($userRating) . ' / 10' : 'To anime czeka na Twoją ocenę.' ?></p>
-                <p class="anime-rating-help" id="anime-rating-help">Ocena jest prywatna. Możesz ją zmienić lub usunąć. Ocena katalogowa i postęp oglądania pozostają niezależne.</p>
+                <p class="anime-rating-help" id="anime-rating-help">Twój indywidualny wybór jest widoczny dla Ciebie i wpływa na średnią społeczności AniVibe. Nie publikujemy listy osób głosujących ani ich ocen. Możesz zmienić lub usunąć swoją ocenę. Ocena źródłowa i postęp oglądania pozostają niezależne.</p>
                 <?php if ($ratingNotice !== null): ?>
                     <p class="anime-rating-notice" data-kind="success" role="status"><?= $escape($ratingNotice) ?></p>
                 <?php endif; ?>

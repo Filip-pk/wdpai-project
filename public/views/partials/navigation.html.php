@@ -3,15 +3,17 @@
 $navigation = $isWelcome
     ? [
         '/anime' => 'Odkryj anime',
+        '/anime/ranking' => 'Ranking anime',
     ]
     : [
         '/dashboard' => 'Pulpit',
         '/anime' => 'Odkrywaj',
+        '/anime/ranking' => 'Ranking anime',
         '/chat' => 'Czat AI',
         '/messages' => 'Wiadomości',
         '/watchlist' => 'Ulubione',
         '/profile' => 'Profil',
-        '/ranking' => 'Ranking',
+        '/ranking' => 'Ranking użytkowników',
         '/projects' => 'Projekty',
     ];
 if ($isWelcome && $isLoggedIn) {

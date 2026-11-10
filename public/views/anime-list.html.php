@@ -6,6 +6,7 @@
         <h1>Odkrywaj anime</h1>
         <p>Przeglądaj tytuły, poznawaj historie i wybieraj serie do swojej watchlisty.</p>
         <p class="catalog-size"><strong data-catalog-count="<?= $escape($catalogTotal) ?>"><?= $escape($catalogTotal) ?></strong> anime w katalogu</p>
+        <a class="catalog-ranking-link" href="/anime/ranking">Rankingi anime społeczności <span aria-hidden="true">→</span></a>
     </header>
 
     <?php if (!empty($searchError)): ?>
@@ -66,7 +67,7 @@
             </fieldset>
 
             <fieldset class="catalog-filter-group">
-                <legend>Ocena</legend>
+                <legend>Ocena źródłowa</legend>
                 <div class="catalog-range">
                     <div class="catalog-field">
                         <label for="anime-score-min">Od</label>
