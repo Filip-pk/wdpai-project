@@ -34,8 +34,11 @@ AI i rozmowy z postaciami.
   własny głos na wpis, z możliwością zmiany lub cofnięcia.
 - Prywatne kolekcje anime: własne nazwy, opisy i miniatury; jeden tytuł może
   należeć do kilku kolekcji niezależnie od statusu i postępu na watchliście.
-- Prywatne oceny anime w skali 1–10: zapis, zmiana i usuwanie, z podglądem
+- Własne oceny anime w skali 1–10: zapis, zmiana i usuwanie, z podglądem
   na stronie anime, w profilu i na watchliście, niezależnie od ocen katalogowych.
+- Oceny społeczności AniVibe: publiczna średnia i liczba ocen na kartach
+  anime oraz w szczegółach. Lista głosujących i ich indywidualne oceny
+  nie są publikowane; własną ocenę widzi właściciel konta.
 - Poziomy i EXP: 5 punktów za odcinek oraz 100 za ukończony tytuł;
   rosnące progi poziomów i aktualny ranking TOP 100 użytkowników.
 - Jasny, ciemny i systemowy motyw oraz układ dostosowany do telefonu i komputera.
@@ -243,7 +246,8 @@ docker compose exec php php scripts/check-postgres.php
 - [Konta i logowanie](docs/authentication.md)
 - [Profile, zdjęcia i watchlisty](docs/user-profiles.md)
 - [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
-- [Prywatne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
+- [Własne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
+- [Oceny społeczności AniVibe](docs/community-ratings.md)
 - [Komentarze pod anime i migracja istniejącej bazy](docs/anime-comments.md)
 - [Odpowiedzi na komentarze i powiadomienia o odpowiedziach](docs/comment-replies.md)
 - [Like i dislike komentarzy oraz odpowiedzi](docs/comment-reactions.md)

@@ -66,7 +66,7 @@
             </fieldset>
 
             <fieldset class="catalog-filter-group">
-                <legend>Ocena</legend>
+                <legend>Ocena źródłowa</legend>
                 <div class="catalog-range">
                     <div class="catalog-field">
                         <label for="anime-score-min">Od</label>

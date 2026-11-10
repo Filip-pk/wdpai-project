@@ -64,7 +64,7 @@ try {
     $ratings = new RatingRepository($connection);
     $experience = new ExperienceRepository($connection);
     $profile = new ProfileController($users, $watchlists, $animes, $ratings, $experience);
-    $collectionController = new CollectionController($users, $collections, $animes, $watchlists);
+    $collectionController = new CollectionController($users, $collections, $animes, $watchlists, $ratings);
     $seedWatchlist = static function () use ($connection): void {
         $connection->exec(
             "INSERT INTO pg_temp.user_watchlist (user_id, anime_id, status, watched)

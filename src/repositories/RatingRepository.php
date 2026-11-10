@@ -56,6 +56,43 @@ final class RatingRepository
         return $ratings;
     }
 
+    /** @param list<int> $animeIds @return array<int, array{average: ?float, count: int}> */
+    public function communityForAnimeIds(array $animeIds): array
+    {
+        if ($animeIds === []) {
+            return [];
+        }
+        foreach ($animeIds as $animeId) {
+            if (!is_int($animeId) || $animeId <= 0) {
+                throw new InvalidArgumentException('Identyfikatory anime muszą być dodatnimi liczbami całkowitymi.');
+            }
+        }
+        $animeIds = array_values(array_unique($animeIds));
+        $summaries = array_fill_keys($animeIds, ['average' => null, 'count' => 0]);
+        $placeholders = [];
+        foreach ($animeIds as $index => $animeId) {
+            $placeholders[] = ':anime_' . $index;
+        }
+        $statement = $this->database->prepare(
+            'SELECT anime_id, AVG(rating) AS average_rating, COUNT(*) AS rating_count
+             FROM user_anime_ratings
+             WHERE anime_id IN (' . implode(', ', $placeholders) . ')
+             GROUP BY anime_id'
+        );
+        foreach ($animeIds as $index => $animeId) {
+            $statement->bindValue('anime_' . $index, $animeId, PDO::PARAM_INT);
+        }
+        $statement->execute();
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $summaries[(int) $row['anime_id']] = [
+                'average' => (float) $row['average_rating'],
+                'count' => (int) $row['rating_count'],
+            ];
+        }
+
+        return $summaries;
+    }
+
     public function saveForUser(int $userId, int $animeId, int $rating): void
     {
         if ($rating < 1 || $rating > 10) {

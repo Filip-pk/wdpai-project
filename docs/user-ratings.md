@@ -1,9 +1,15 @@
-# Prywatne oceny anime
+# Własne oceny anime
 
 Zalogowane konto może wystawić każdemu anime własną ocenę od 1 do 10,
-zmienić ją albo usunąć. Oceny są prywatne i zapisane w PostgreSQL.
+zmienić ją albo usunąć. Oceny są zapisane w PostgreSQL. Wartość przypisana
+do danego konta jest wyświetlana wyłącznie jego właścicielowi.
 Na stronie anime i watchliście są oznaczone jako „Twoja ocena”, oddzielnie
 od importowanej oceny katalogowej.
+
+Zapisane oceny współtworzą też publiczną średnią społeczności AniVibe
+i liczbę ocen. Aplikacja nie publikuje listy głosujących ani poszczególnych
+ocen przypisanych do kont. Zasady agregacji opisuje
+[dokumentacja ocen społeczności](community-ratings.md).
 
 Wystawienie oceny nie wymaga dodawania anime do watchlisty ani kolekcji.
 Zapis, zmiana i usunięcie oceny nie zmieniają statusu, postępu oglądania,
@@ -32,10 +38,13 @@ automatycznie wraz z pozostałymi skryptami inicjalizacji bazy.
 - Wartość musi być liczbą całkowitą od 1 do 10; nieprawidłowy formularz
   nie zastępuje wcześniejszej oceny.
 - Klucz `(user_id, anime_id)` pozwala zapisać jedną ocenę na konto i tytuł.
-- Parametryzowany SQL filtruje właściciela przy każdym odczycie i zapisie.
+- Parametryzowany SQL filtruje właściciela przy odczycie własnych ocen
+  i przy każdym zapisie. Publiczny odczyt zbiorczy zwraca średnią oraz liczbę ocen.
 
 Brak oceny jest oddzielnym stanem; nie oznacza oceny zero. Funkcja nie
-publikuje średnich ocen użytkowników ani publicznych recenzji.
+tworzy publicznych recenzji. Zmiana oceny zastępuje jej poprzedni wkład
+w średnią społeczności bez dodawania kolejnego głosu; usunięcie oceny usuwa
+ten wkład. Oceny pochodzące z importu MyAnimeList podlegają tym samym zasadom.
 
 ## Sprawdzenie
 
@@ -52,4 +61,4 @@ watchlist i kolekcji.
 W przeglądarce sprawdź formularz na stronie anime i własną ocenę na
 watchliście, także po ponownym zalogowaniu, w jasnym i ciemnym motywie
 przy szerokościach 375 i 1280 px. Drugie konto powinno widzieć wyłącznie
-własne oceny.
+własną ocenę indywidualną oraz publiczną średnią i liczbę ocen społeczności.

@@ -17,7 +17,8 @@
         </ul>
         <p class="anime-card-description"<?= ($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== '' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
         <dl class="anime-card-facts">
-            <div><dt><?= !array_key_exists('malId', $anime) ? 'Ocena demonstracyjna' : 'Ocena' ?></dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+            <div><dt><?= !array_key_exists('malId', $anime) ? 'Ocena demonstracyjna' : 'Ocena źródłowa' ?></dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+            <?php require __DIR__ . '/community-anime-rating.html.php'; ?>
             <div><dt>Odcinki</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznane' ?></dd></div>
             <?php if (isset($anime['year'])): ?>
                 <div><dt>Premiera</dt><dd><?= $escape($anime['year']) ?></dd></div>

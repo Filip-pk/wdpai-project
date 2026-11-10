@@ -59,6 +59,7 @@ final class AnimeController extends AppController
         $this->render('anime-list', [
             'pageTitle' => 'Odkrywaj anime — AniVibe',
             'animes' => $result['animes'],
+            'communityRatings' => $this->ratings()->communityForAnimeIds(array_keys($result['animes'])),
             'query' => $criteria->query,
             'genres' => $this->animes()->genres(),
             'genreId' => $criteria->genreId,
@@ -525,6 +526,7 @@ final class AnimeController extends AppController
             'collectionNotice' => !$this->isPost() && ($_GET['collectionSaved'] ?? null) === '1'
                 ? 'Anime zostało dodane do wybranych kolekcji.' : null,
             'userRating' => $userRating,
+            'communityRatings' => $this->ratings()->communityForAnimeIds([$id]),
             'ratingValue' => $ratingErrors === [] ? (string) ($userRating ?? '') : $this->postString('rating'),
             'ratingErrors' => $ratingErrors,
             'ratingNotice' => !$this->isPost() ? match (true) {

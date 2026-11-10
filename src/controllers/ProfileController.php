@@ -90,6 +90,7 @@ final class ProfileController extends AppController
             'options' => ['min_range' => 1],
         ]);
         $result = $this->watchlists()->findPageForUser($id, $page === false ? 1 : $page, status: $statusFilter);
+        $animeIds = array_column($result['entries'], 'animeId');
 
         $this->render('user-profile', [
             'pageTitle' => $profileUser['name'] . ' — Profil użytkownika — AniVibe',
@@ -107,7 +108,8 @@ final class ProfileController extends AppController
             },
             'experience' => ExperienceService::progress($this->experience()->totalForUser($id)),
             'statistics' => $this->watchlists()->statisticsForUser($id),
-            'animes' => $this->animes()->findByIds(array_column($result['entries'], 'animeId')),
+            'animes' => $this->animes()->findByIds($animeIds),
+            'communityRatings' => $this->ratings()->communityForAnimeIds($animeIds),
             'visibleWatchlist' => $result['entries'],
             'watchlistStatuses' => self::STATUSES,
             'statusFilter' => $statusFilter,
@@ -294,6 +296,7 @@ final class ProfileController extends AppController
                 'nextUrl' => $this->watchlistPath($watchlistOnly, $result['page'] + 1, $statusFilter),
             ],
             'userRatings' => $this->ratings()->findByAnimeIdsForUser($user['id'], $animeIds),
+            'communityRatings' => $this->ratings()->communityForAnimeIds($animeIds),
             'experience' => ExperienceService::progress($this->experience()->totalForUser($user['id'])),
             'statusFilter' => $statusFilter,
             'visibleWatchlist' => $result['entries'],

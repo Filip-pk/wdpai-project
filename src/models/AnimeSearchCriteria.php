@@ -9,8 +9,8 @@ final readonly class AnimeSearchCriteria
     public const DEFAULT_SORT = 'score_desc';
 
     public const SORT_OPTIONS = [
-        'score_desc' => 'Ocena: od najwyższej',
-        'score_asc' => 'Ocena: od najniższej',
+        'score_desc' => 'Ocena źródłowa: od najwyższej',
+        'score_asc' => 'Ocena źródłowa: od najniższej',
         'title_asc' => 'Tytuł: A–Z',
         'title_desc' => 'Tytuł: Z–A',
         'episodes_asc' => 'Liczba odcinków: rosnąco',

@@ -84,6 +84,7 @@ $createController = static function (string $controllerClass): AppController {
             static fn (): CollectionRepository => new CollectionRepository($connect()),
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): WatchlistRepository => new WatchlistRepository($connect()),
+            static fn (): RatingRepository => new RatingRepository($connect()),
         );
     }
 
@@ -180,6 +181,7 @@ $createController = static function (string $controllerClass): AppController {
         return new DashboardController(
             static fn (): UserRepository => new UserRepository((new Database())->connect()),
             static fn (): AnimeRepository => new AnimeRepository((new Database())->connect()),
+            static fn (): RatingRepository => new RatingRepository((new Database())->connect()),
         );
     }
 
