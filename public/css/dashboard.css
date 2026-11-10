@@ -1,21 +1,317 @@
-.dashboard-recommendations {
+.dashboard-page {
+    display: grid;
+    gap: var(--space-6);
     min-width: 0;
-    padding-block: var(--space-5);
-    border-block: 1px solid var(--color-border);
 }
 
-.dashboard-recommendations-heading {
+.page-content .dashboard-page > *,
+.page-content .dashboard-page :where(section, article) > * + * {
+    margin-top: 0;
+}
+
+.dashboard-heading {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: var(--space-4);
 }
 
-.page-standard .page-content .dashboard-eyebrow {
-    margin-bottom: var(--space-2);
+.dashboard-welcome {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.dashboard-welcome > div {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.dashboard-page .dashboard-heading h1 {
+    font-size: clamp(1.35rem, 4vw, 2rem);
+    letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
+}
+
+.dashboard-welcome > div > p:last-child {
+    font-size: 0.8rem;
+}
+
+.dashboard-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 3rem;
+    width: 3rem;
+    height: 3rem;
+    overflow: hidden;
+    border: 2px solid var(--color-surface);
+    border-radius: 50%;
+    color: var(--color-button-text);
+    background: linear-gradient(135deg, var(--color-button-start), var(--color-button-end));
+    box-shadow: 0 0 0 2px var(--color-accent);
+    font-size: 1.5rem;
+    text-decoration: none;
+}
+
+.dashboard-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dashboard-page .dashboard-eyebrow {
+    margin: 0;
     color: var(--color-brand);
-    font-size: 0.85rem;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.6875rem;
     font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-profile-link,
+.dashboard-login-info {
+    font-size: 0.8rem;
+}
+
+.dashboard-profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+.dashboard-page .dashboard-demo-notice {
+    flex-basis: 100%;
+    max-width: none;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+    font-size: 0.75rem;
+    line-height: 1.6;
+}
+
+.dashboard-page .mood-panel,
+.dashboard-personas,
+.dashboard-recommendations {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.dashboard-page .mood-panel {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+    background-image: linear-gradient(130deg, var(--color-glow-violet), transparent 65%),
+        radial-gradient(ellipse at top right, var(--color-glow-cyan), transparent 70%);
+}
+
+.dashboard-section-heading,
+.dashboard-recommendations-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.dashboard-section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.dashboard-page :where(.dashboard-section-heading, .dashboard-recommendations-heading) h2 {
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    letter-spacing: -0.03em;
+}
+
+.dashboard-section-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-small);
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+    font-size: 1.5rem;
+}
+
+.dashboard-demo-badge {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+.dashboard-section-heading > p {
+    font-size: 0.75rem;
+}
+
+.dashboard-page .mood-panel > p {
+    font-size: 0.875rem;
+}
+
+.dashboard-page .mood-panel form {
+    margin: 0;
+}
+
+.dashboard-page .mood-fields {
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.mood-fields legend {
+    margin-bottom: var(--space-3);
+    padding: 0;
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+}
+
+.mood-fields label {
+    font-size: 0.8rem;
+}
+
+.mood-fields textarea {
+    min-height: 7rem;
+    border-color: var(--color-border);
+    background-color: var(--color-input-background);
+    font-size: 1rem;
+    opacity: 1;
+}
+
+.mood-fields button {
+    justify-self: stretch;
+    min-height: 2.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.dashboard-moods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dashboard-moods li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    background-color: var(--color-surface-raised);
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.dashboard-moods span {
+    color: var(--color-accent);
+}
+
+.dashboard-demo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.dashboard-personas .persona-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+.dashboard-personas .persona-grid > li {
+    min-width: 0;
+}
+
+.dashboard-personas .persona-card {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    height: 100%;
+    padding: var(--space-4);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+    text-align: center;
+}
+
+.dashboard-personas .persona-card h3 {
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.dashboard-personas .persona-card h3 a {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.dashboard-personas .persona-card h3 a:hover {
+    color: var(--color-brand);
+}
+
+.dashboard-personas .persona-card > p {
+    font-size: 0.6875rem;
+    line-height: 1.5;
+}
+
+.dashboard-persona-mark {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border: 2px solid var(--color-brand);
+    border-radius: 50%;
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 0 1rem var(--color-glow-cyan);
+    font-family: ui-serif, Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.persona-grid > li:nth-child(2n) .dashboard-persona-mark {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    box-shadow: 0 0 1rem var(--color-glow-violet);
+}
+
+.dashboard-recommendations-heading > div {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
 }
 
 .dashboard-recommendations-heading > a,
@@ -24,22 +320,37 @@
     align-items: center;
     gap: var(--space-2);
     min-height: 2.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
+}
+
+.dashboard-recommendations > p {
+    max-width: 90ch;
+    font-size: 0.875rem;
+    line-height: 1.7;
 }
 
 .dashboard-preferences,
 .dashboard-recommendations-empty {
-    padding: var(--space-4);
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-5);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-small);
     background-color: var(--color-surface);
+}
+
+.dashboard-preferences h3,
+.dashboard-recommendations-empty h3 {
+    font-size: 0.9375rem;
 }
 
 .dashboard-preference-list {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    margin-block: var(--space-3);
+    margin: 0;
     padding: 0;
     list-style: none;
 }
@@ -52,17 +363,20 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
     background-color: var(--color-surface-raised);
+    font-size: 0.8rem;
     font-weight: 600;
 }
 
-.dashboard-preferences > p {
-    font-size: 0.9rem;
+.dashboard-preferences > p,
+.dashboard-recommendations-empty p {
+    font-size: 0.8rem;
 }
 
 .dashboard-recommendation-grid > li {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    min-width: 0;
 }
 
 .dashboard-recommendation-grid .anime-card {
@@ -73,10 +387,13 @@
 .page-standard .page-content .dashboard-recommendation-reason {
     min-width: 0;
     padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
     border-inline-start: 3px solid var(--color-brand);
+    border-radius: var(--radius-small);
     color: var(--color-brand);
-    background-color: var(--color-surface-raised);
-    font-size: 0.85rem;
+    background-color: var(--color-surface);
+    font-size: 0.75rem;
+    line-height: 1.6;
     overflow-wrap: anywhere;
 }
 
@@ -95,19 +412,25 @@
 .page-standard .page-content .dashboard-recommendation-details {
     margin-top: var(--space-2);
     color: var(--color-muted);
-    font-size: 0.8rem;
+    font-size: 0.6875rem;
 }
 
 @media (min-width: 40rem) {
-    .dashboard-recommendations-heading {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
+    .dashboard-page {
+        gap: var(--space-7);
     }
-}
 
-@media (min-width: 64rem) {
-    .dashboard-recommendation-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .dashboard-page .mood-panel {
+        padding: var(--space-6);
+    }
+
+    .dashboard-personas .persona-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-4);
+    }
+
+    .mood-fields button {
+        justify-self: end;
+        min-width: 10rem;
     }
 }

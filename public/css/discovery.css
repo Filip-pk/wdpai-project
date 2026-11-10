@@ -1,0 +1,342 @@
+/* Wspólny wygląd pulpitu, katalogu, szczegółów i watchlisty. */
+.page-discovery .page-content > :is(.catalog-page, .dashboard-page, .watchlist-page) {
+    margin-top: 0;
+}
+
+.page-discovery :is(.catalog-heading, .watchlist-heading) h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    letter-spacing: -0.04em;
+}
+
+.page-discovery :is(.catalog-heading, .watchlist-heading) .eyebrow {
+    justify-content: start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 0.6875rem;
+}
+
+.page-discovery :is(.catalog-heading-copy, .catalog-heading-meta) {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.page-discovery .catalog-heading-copy > p:last-child {
+    font-size: 0.875rem;
+}
+
+.page-discovery .catalog-heading-meta {
+    gap: var(--space-2);
+}
+
+.page-discovery .catalog-size {
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+    font-size: 0.8rem;
+}
+
+.page-discovery .catalog-size strong {
+    margin-right: 0.25rem;
+    color: var(--color-accent);
+    font-size: 1.125rem;
+}
+
+.page-discovery .catalog-ranking-link {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.page-discovery .catalog-page {
+    gap: var(--space-5);
+}
+
+.page-discovery .catalog-search {
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.page-discovery .catalog-search-primary {
+    gap: var(--space-4);
+}
+
+.page-discovery .catalog-field label {
+    font-size: 0.8rem;
+}
+
+.page-discovery .catalog-field :is(input, select) {
+    min-height: 3rem;
+    background-color: var(--color-input-background);
+    font-size: 1rem;
+}
+
+.page-discovery .catalog-field p {
+    font-size: 0.75rem;
+}
+
+.page-discovery .catalog-advanced-filters {
+    min-width: 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.catalog-advanced-filters > summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 0.75rem;
+    min-height: 3rem;
+    padding-block: var(--space-3);
+    color: var(--color-text);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+}
+
+.catalog-advanced-filters > summary::-webkit-details-marker {
+    display: none;
+}
+
+.catalog-advanced-filters > summary::after {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    content: "+";
+    color: var(--color-brand);
+    font-size: 1.25rem;
+}
+
+.catalog-advanced-filters[open] > summary::after {
+    content: "−";
+}
+
+.catalog-filters-summary {
+    grid-column: 1;
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+    font-weight: 400;
+}
+
+.page-discovery .catalog-search-filters {
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+}
+
+.page-discovery .catalog-filter-group {
+    padding: var(--space-3);
+    background: var(--color-surface-raised);
+}
+
+.page-discovery .catalog-filter-group legend {
+    font-size: 0.75rem;
+}
+
+.page-discovery .catalog-filter-help {
+    padding-block: var(--space-3) var(--space-4);
+    font-size: 0.75rem;
+}
+
+.page-discovery .catalog-search-actions {
+    gap: var(--space-3);
+}
+
+.page-discovery .catalog-search-actions button {
+    min-height: 3rem;
+    padding-inline: var(--space-5);
+    font-size: 0.875rem;
+}
+
+.page-discovery .catalog-search-actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: 0.75rem;
+}
+
+.page-discovery .catalog-results-heading {
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.page-discovery .catalog-results-heading h2 {
+    font-size: 1.25rem;
+}
+
+.page-discovery .catalog-results-heading p {
+    font-size: 0.75rem;
+}
+
+.page-discovery .anime-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.page-discovery .anime-card {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    align-content: start;
+    height: 100%;
+    padding: 0;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.page-discovery .anime-card-cover {
+    width: 100%;
+    height: auto;
+    min-height: 8.25rem;
+    align-self: start;
+    border-radius: 0.75rem;
+}
+
+.page-discovery .anime-card-cover .anime-cover-placeholder {
+    gap: var(--space-1);
+    padding: var(--space-2);
+    font-size: 0.625rem;
+    text-align: center;
+}
+
+.page-discovery .anime-card-cover .anime-cover-placeholder > span:first-child {
+    font-size: 1.5rem;
+}
+
+.page-discovery .anime-card-cover .anime-type {
+    inset: 0.5rem auto auto 0.5rem;
+    padding: 0.125rem 0.375rem;
+    border: 0;
+    font-size: 0.625rem;
+}
+
+.page-discovery .anime-card-body {
+    gap: var(--space-3);
+    padding: var(--space-3);
+}
+
+.page-discovery .anime-card h3 {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.page-discovery .anime-card .anime-genres {
+    gap: var(--space-1);
+}
+
+.page-discovery .anime-card .anime-genres li {
+    border-radius: 0.375rem;
+    font-size: 0.625rem;
+}
+
+.page-discovery .anime-card-description {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 0.75rem;
+    line-height: 1.65;
+}
+
+.page-discovery .anime-card-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+}
+
+.page-discovery .anime-card-facts dt {
+    margin: 0;
+    font-size: 0.625rem;
+}
+
+.page-discovery .anime-card-facts dd {
+    font-size: 0.75rem;
+}
+
+.page-discovery .anime-card-facts .community-anime-rating-count {
+    font-size: 0.625rem;
+}
+
+.page-discovery .anime-card-action {
+    gap: var(--space-2);
+    font-size: 0.6875rem;
+}
+
+.page-discovery .catalog-pagination {
+    gap: var(--space-2);
+}
+
+.page-discovery .catalog-pagination a {
+    font-size: 0.75rem;
+}
+
+.page-discovery .catalog-help {
+    gap: var(--space-3);
+    border-radius: 1rem;
+    background: linear-gradient(120deg, var(--color-glow-violet), transparent), var(--color-surface);
+}
+
+.page-discovery .catalog-help h2 {
+    font-size: 1.125rem;
+}
+
+.page-discovery .catalog-help :is(p, a) {
+    font-size: 0.8rem;
+}
+
+@media (min-width: 40rem) {
+    .page-discovery .anime-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .page-discovery .anime-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .page-discovery .anime-card-cover {
+        aspect-ratio: 4 / 3;
+        max-height: 16rem;
+        border-radius: 0.75rem 0.75rem 0 0;
+    }
+
+    .page-discovery .anime-card-body {
+        padding: var(--space-4);
+    }
+
+    .page-discovery .anime-card h3 {
+        font-size: 1.0625rem;
+    }
+
+    .page-discovery .catalog-heading {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--space-5);
+    }
+
+    .page-discovery .catalog-heading-meta {
+        justify-items: end;
+        max-width: 15rem;
+        text-align: right;
+    }
+}
+
+@media (min-width: 80rem) {
+    .page-discovery .anime-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .page-discovery .catalog-search-primary {
+        grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .page-discovery .catalog-query {
+        grid-column: auto;
+    }
+
+    .page-discovery .catalog-search-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}

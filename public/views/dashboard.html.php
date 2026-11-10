@@ -1,146 +1,179 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<header class="page-heading">
-    <h1><?= $user === null ? 'Witaj w AniVibe!' : 'Hej, ' . $escape($user['name']) . '!' ?></h1>
-    <p>Odkrywaj anime i buduj własną kolekcję.</p>
-    <p>Rozmowy z AI i dobieranie anime według nastroju są demonstracyjne; licznik zapytań nie jest jeszcze aktywny.</p>
-    <?php if ($user === null): ?>
-        <p><a href="/login">Zaloguj się</a>, aby zobaczyć swój profil i watchlistę.</p>
-    <?php endif; ?>
-</header>
-
-<section class="dashboard-recommendations" aria-labelledby="recommendations-title" data-recommendation-mode="<?= $escape($recommendationMode) ?>" data-recommendation-source-count="<?= $escape($recommendationSourceCount) ?>">
-    <div class="dashboard-recommendations-heading">
-        <div>
-            <p class="dashboard-eyebrow"><?= $recommendationMode === 'personalized' ? 'Z Twojej watchlisty' : 'Odkryj coś nowego' ?></p>
-            <h2 id="recommendations-title"><?= $recommendationMode === 'personalized' ? 'Dla Ciebie' : 'Propozycje na początek' ?></h2>
-        </div>
-        <a href="/anime">Zobacz cały katalog <span aria-hidden="true">→</span></a>
-    </div>
-
-    <?php if ($recommendationMode === 'personalized'): ?>
-        <p>Szukamy anime podobnych do tytułów z Twojej watchlisty, szczególnie tych wysoko ocenionych. Uwzględniamy wspólne motywy, jakość propozycji i różnorodność całej listy — bez AI.</p>
-        <div class="dashboard-preferences">
-            <h3>Twoje ulubione gatunki</h3>
-            <ul class="dashboard-preference-list">
-                <?php foreach ($preferredGenres as $genre): ?>
-                    <li><a href="/anime?genre=<?= $escape($genre['id']) ?>" data-preferred-genre-id="<?= $escape($genre['id']) ?>"><?= $escape($genre['name']) ?></a></li>
-                <?php endforeach; ?>
-            </ul>
-            <p>Pozycje na Twojej watchliście: <?= $escape($recommendationSourceCount) ?>. Zmiany na liście i w ocenach uwzględniamy przy kolejnym otwarciu pulpitu.</p>
-        </div>
-    <?php elseif ($recommendationMode === 'guest'): ?>
-        <p>Na początek poznaj dobrze oceniane tytuły z katalogu. <a href="/login">Zaloguj się</a> i zbuduj watchlistę, aby otrzymywać własne rekomendacje.</p>
-    <?php else: ?>
-        <p>To dobrze oceniane propozycje z katalogu. Potrzebujemy więcej informacji o Twoich ulubionych gatunkach, aby dopasować je do Ciebie. Dodaj anime do watchlisty, oznacz obejrzane tytuły i wystaw im oceny.</p>
-    <?php endif; ?>
-
-    <?php if ($recommendations !== []): ?>
-        <ul class="anime-grid dashboard-recommendation-grid">
-            <?php foreach ($recommendations as $animeId => $anime): ?>
-                <li data-recommended-anime-id="<?= $escape($animeId) ?>">
-                    <?php
-                    $reason = $recommendationReasons[$animeId] ?? null;
-                    $seed = $reason['seed'] ?? null;
-                    ?>
-                    <?php if ($reason !== null && ($seed !== null || $reason['genres'] !== [])): ?>
-                        <div class="dashboard-recommendation-reason"<?php if ($seed !== null): ?> data-recommendation-seed-id="<?= $escape($seed['animeId']) ?>"<?php endif; ?>>
-                            <p class="dashboard-recommendation-source">
-                                <?php if ($seed !== null): ?>
-                                    <?php if ($seed['rating'] !== null && $seed['rating'] >= 7): ?>
-                                        Bo wysoko oceniasz
-                                    <?php elseif ($seed['status'] === 'completed'): ?>
-                                        Znasz już
-                                    <?php elseif ($seed['status'] === 'watching'): ?>
-                                        Oglądasz
-                                    <?php else: ?>
-                                        Z Twojej watchlisty:
-                                    <?php endif; ?>
-                                    <a href="/anime/<?= $escape($seed['animeId']) ?>"><?= $escape($seed['title']) ?></a><?php if ($seed['rating'] !== null && $seed['rating'] >= 7): ?> <span>(<?= $escape($seed['rating']) ?>/10)</span><?php endif; ?>
-                                <?php else: ?>
-                                    Zgodne z Twoimi preferencjami
-                                <?php endif; ?>
-                            </p>
-                            <?php if ($reason['genres'] !== []): ?>
-                                <p class="dashboard-recommendation-details"><?= $seed !== null && $seed['sharedStudio'] ? 'Wspólne studio i motywy:' : ($seed !== null ? 'Wspólne motywy:' : 'Motywy:') ?> <?= $escape(implode(', ', $reason['genres'])) ?></p>
-                            <?php elseif ($seed !== null && $seed['sharedStudio']): ?>
-                                <p class="dashboard-recommendation-details">Wspólne studio</p>
-                            <?php endif; ?>
-                        </div>
+<div class="dashboard-page">
+    <header class="page-heading dashboard-heading">
+        <div class="dashboard-welcome">
+            <?php if ($user !== null): ?>
+                <a class="dashboard-avatar" href="/users/<?= $escape($accountId) ?>" aria-label="<?= $escape('Zobacz swój profil: ' . $user['name']) ?>">
+                    <?php if (!empty($currentUserAvatarUrl)): ?>
+                        <img src="<?= $escape($currentUserAvatarUrl) ?>" alt="" width="48" height="48" decoding="async">
+                    <?php else: ?>
+                        <span aria-hidden="true">✦</span>
                     <?php endif; ?>
-                    <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
+                </a>
+            <?php else: ?>
+                <span class="dashboard-avatar" aria-hidden="true">✦</span>
+            <?php endif; ?>
+            <div>
+                <p class="dashboard-eyebrow">Twój świat anime</p>
+                <h1><?= $user === null ? 'Witaj w AniVibe!' : 'Hej, ' . $escape($user['name']) . '!' ?> <span aria-hidden="true">👋</span></h1>
+                <p>Odkrywaj anime i buduj własną kolekcję.</p>
+            </div>
+        </div>
+        <?php if ($user !== null): ?>
+            <a class="dashboard-profile-link" href="/profile">Ustawienia konta <span aria-hidden="true">↗</span></a>
+        <?php else: ?>
+            <p class="dashboard-login-info"><a href="/login">Zaloguj się</a>, aby zobaczyć swój profil i watchlistę.</p>
+        <?php endif; ?>
+        <p class="dashboard-demo-notice">Rozmowy z AI i dobieranie anime według nastroju są demonstracyjne; licznik zapytań nie jest jeszcze aktywny.</p>
+    </header>
+
+    <section class="mood-panel" aria-labelledby="mood-title">
+        <header class="dashboard-section-heading">
+            <div class="dashboard-section-title">
+                <span class="dashboard-section-icon" aria-hidden="true">✧</span>
+                <h2 id="mood-title">Jak się dziś czujesz?</h2>
+            </div>
+            <span class="dashboard-demo-badge">Podgląd AI</span>
+        </header>
+
+        <p>
+            Opisz swój nastrój, a asystent pomoże
+            dobrać anime na dzisiejszy seans.
+        </p>
+
+        <form action="/chat" method="post">
+            <fieldset class="mood-fields" disabled>
+                <legend>Rekomendacje według nastroju</legend>
+
+                <label for="mood-message">
+                    Twój nastrój i preferencje
+                </label>
+
+                <textarea
+                    id="mood-message"
+                    name="message"
+                    rows="4"
+                    maxlength="2000"
+                    placeholder="Chcę coś z magią i komedią..."
+                    required
+                ></textarea>
+
+                <ul class="dashboard-moods" aria-label="Przykładowe nastroje">
+                    <li><span aria-hidden="true">✦</span> Cyberpunk</li>
+                    <li><span aria-hidden="true">⚔</span> Mroczne fantasy</li>
+                    <li><span aria-hidden="true">🌸</span> Romantyczne</li>
+                    <li><span aria-hidden="true">ϟ</span> Szybka akcja</li>
+                </ul>
+
+                <button type="submit">Zapytaj AI</button>
+            </fieldset>
+        </form>
+
+        <a class="dashboard-demo-link" href="/chat">Zobacz przykładową rozmowę z asystentem <span aria-hidden="true">→</span></a>
+    </section>
+
+    <section class="dashboard-personas" aria-labelledby="personas-title">
+        <header class="dashboard-section-heading">
+            <div class="dashboard-section-title">
+                <span class="dashboard-section-icon" aria-hidden="true">♧</span>
+                <h2 id="personas-title">Porozmawiaj z postacią AI</h2>
+            </div>
+            <p>Rozmowy demonstracyjne</p>
+        </header>
+
+        <ul class="persona-grid">
+            <?php foreach ($personas as $personaId => $persona): ?>
+                <li>
+                    <article class="persona-card">
+                        <h3>
+                            <a href="/chat/<?= $escape($personaId) ?>">
+                                <span class="dashboard-persona-mark" aria-hidden="true"><?= $escape([1 => '🍥', 2 => 'L', 3 => '⚔', 4 => 'ϟ'][$personaId] ?? '✦') ?></span>
+                                <span><?= $escape($persona['name']) ?></span>
+                            </a>
+                        </h3>
+
+                        <p><?= $escape($persona['anime']) ?></p>
+                    </article>
                 </li>
             <?php endforeach; ?>
         </ul>
-    <?php else: ?>
-        <div class="dashboard-recommendations-empty">
-            <h3>Na razie brak nowych propozycji</h3>
-            <p><?= $recommendationMode === 'personalized' ? 'Nie znaleźliśmy kolejnych anime pasujących do Twoich preferencji poza tytułami już obecnymi na Twojej watchliście. Odkryj nowe gatunki w katalogu lub uzupełnij swoje oceny.' : 'Nie znaleźliśmy dostępnych propozycji. Zajrzyj do katalogu i wybierz kolejne anime do swojej watchlisty.' ?></p>
+    </section>
+
+    <section class="dashboard-recommendations" aria-labelledby="recommendations-title" data-recommendation-mode="<?= $escape($recommendationMode) ?>" data-recommendation-source-count="<?= $escape($recommendationSourceCount) ?>">
+        <div class="dashboard-recommendations-heading">
+            <div>
+                <p class="dashboard-eyebrow"><?= $recommendationMode === 'personalized' ? 'Z Twojej watchlisty' : 'Odkryj coś nowego' ?></p>
+                <h2 id="recommendations-title"><?= $recommendationMode === 'personalized' ? 'Dla Ciebie' : 'Propozycje na początek' ?></h2>
+            </div>
+            <a href="/anime">Zobacz cały katalog <span aria-hidden="true">→</span></a>
         </div>
-    <?php endif; ?>
 
-    <?php if ($user !== null): ?>
-        <a class="dashboard-watchlist-link" href="/watchlist">Przejdź do swojej watchlisty <span aria-hidden="true">→</span></a>
-    <?php endif; ?>
-</section>
+        <?php if ($recommendationMode === 'personalized'): ?>
+            <p>Szukamy anime podobnych do tytułów z Twojej watchlisty, szczególnie tych wysoko ocenionych. Uwzględniamy wspólne motywy, jakość propozycji i różnorodność całej listy — bez AI.</p>
+            <div class="dashboard-preferences">
+                <h3>Twoje ulubione gatunki</h3>
+                <ul class="dashboard-preference-list">
+                    <?php foreach ($preferredGenres as $genre): ?>
+                        <li><a href="/anime?genre=<?= $escape($genre['id']) ?>" data-preferred-genre-id="<?= $escape($genre['id']) ?>"><?= $escape($genre['name']) ?></a></li>
+                    <?php endforeach; ?>
+                </ul>
+                <p>Pozycje na Twojej watchliście: <?= $escape($recommendationSourceCount) ?>. Zmiany na liście i w ocenach uwzględniamy przy kolejnym otwarciu pulpitu.</p>
+            </div>
+        <?php elseif ($recommendationMode === 'guest'): ?>
+            <p>Na początek poznaj dobrze oceniane tytuły z katalogu. <a href="/login">Zaloguj się</a> i zbuduj watchlistę, aby otrzymywać własne rekomendacje.</p>
+        <?php else: ?>
+            <p>To dobrze oceniane propozycje z katalogu. Potrzebujemy więcej informacji o Twoich ulubionych gatunkach, aby dopasować je do Ciebie. Dodaj anime do watchlisty, oznacz obejrzane tytuły i wystaw im oceny.</p>
+        <?php endif; ?>
 
-<section class="mood-panel" aria-labelledby="mood-title">
-    <h2 id="mood-title">Jak się dziś czujesz?</h2>
+        <?php if ($recommendations !== []): ?>
+            <ul class="anime-grid dashboard-recommendation-grid">
+                <?php foreach ($recommendations as $animeId => $anime): ?>
+                    <li data-recommended-anime-id="<?= $escape($animeId) ?>">
+                        <?php
+                        $reason = $recommendationReasons[$animeId] ?? null;
+                        $seed = $reason['seed'] ?? null;
+                        ?>
+                        <?php if ($reason !== null && ($seed !== null || $reason['genres'] !== [])): ?>
+                            <div class="dashboard-recommendation-reason"<?php if ($seed !== null): ?> data-recommendation-seed-id="<?= $escape($seed['animeId']) ?>"<?php endif; ?>>
+                                <p class="dashboard-recommendation-source">
+                                    <?php if ($seed !== null): ?>
+                                        <?php if ($seed['rating'] !== null && $seed['rating'] >= 7): ?>
+                                            Bo wysoko oceniasz
+                                        <?php elseif ($seed['status'] === 'completed'): ?>
+                                            Znasz już
+                                        <?php elseif ($seed['status'] === 'watching'): ?>
+                                            Oglądasz
+                                        <?php else: ?>
+                                            Z Twojej watchlisty:
+                                        <?php endif; ?>
+                                        <a href="/anime/<?= $escape($seed['animeId']) ?>"><?= $escape($seed['title']) ?></a><?php if ($seed['rating'] !== null && $seed['rating'] >= 7): ?> <span>(<?= $escape($seed['rating']) ?>/10)</span><?php endif; ?>
+                                    <?php else: ?>
+                                        Zgodne z Twoimi preferencjami
+                                    <?php endif; ?>
+                                </p>
+                                <?php if ($reason['genres'] !== []): ?>
+                                    <p class="dashboard-recommendation-details"><?= $seed !== null && $seed['sharedStudio'] ? 'Wspólne studio i motywy:' : ($seed !== null ? 'Wspólne motywy:' : 'Motywy:') ?> <?= $escape(implode(', ', $reason['genres'])) ?></p>
+                                <?php elseif ($seed !== null && $seed['sharedStudio']): ?>
+                                    <p class="dashboard-recommendation-details">Wspólne studio</p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                        <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <div class="dashboard-recommendations-empty">
+                <h3>Na razie brak nowych propozycji</h3>
+                <p><?= $recommendationMode === 'personalized' ? 'Nie znaleźliśmy kolejnych anime pasujących do Twoich preferencji poza tytułami już obecnymi na Twojej watchliście. Odkryj nowe gatunki w katalogu lub uzupełnij swoje oceny.' : 'Nie znaleźliśmy dostępnych propozycji. Zajrzyj do katalogu i wybierz kolejne anime do swojej watchlisty.' ?></p>
+            </div>
+        <?php endif; ?>
 
-    <p>
-        Opisz swój nastrój, a asystent pomoże
-        dobrać anime na dzisiejszy seans.
-    </p>
-
-    <form action="/chat" method="post">
-        <fieldset disabled>
-            <legend>Rekomendacje według nastroju</legend>
-
-            <label for="mood-message">
-                Twój nastrój i preferencje
-            </label>
-
-            <textarea
-                id="mood-message"
-                name="message"
-                rows="4"
-                maxlength="2000"
-                placeholder="Chcę coś z magią i komedią..."
-                required
-            ></textarea>
-
-            <button type="submit">Zapytaj AI</button>
-        </fieldset>
-    </form>
-
-    <ul aria-label="Przykładowe nastroje">
-        <li>Cyberpunk</li>
-        <li>Mroczne fantasy</li>
-        <li>Romantyczne</li>
-        <li>Szybka akcja</li>
-    </ul>
-
-    <a href="/chat">Zobacz przykładową rozmowę z asystentem</a>
-</section>
-
-<section aria-labelledby="personas-title">
-    <h2 id="personas-title">Porozmawiaj z postacią AI</h2>
-
-    <ul class="persona-grid">
-        <?php foreach ($personas as $personaId => $persona): ?>
-            <li>
-                <article class="persona-card">
-                    <h3>
-                        <a href="/chat/<?= $escape($personaId) ?>">
-                            <?= $escape($persona['name']) ?>
-                        </a>
-                    </h3>
-
-                    <p><?= $escape($persona['anime']) ?></p>
-                </article>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-</section>
+        <?php if ($user !== null): ?>
+            <a class="dashboard-watchlist-link" href="/watchlist">Przejdź do swojej watchlisty <span aria-hidden="true">→</span></a>
+        <?php endif; ?>
+    </section>
+</div>
 
 <?php require __DIR__ . '/partials/footer.html.php'; ?>

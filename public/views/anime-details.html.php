@@ -20,152 +20,168 @@
                     <li><?= $escape($genreName) ?></li>
                 <?php endforeach; ?>
             </ul>
-            <p>Znajdź informacje o serii i dodaj ją do swojej kolekcji.</p>
+            <p class="anime-detail-intro">Znajdź informacje o serii i dodaj ją do swojej kolekcji.</p>
+            <a class="anime-detail-primary-link" href="#anime-actions-title">Watchlista i Twoja ocena <span aria-hidden="true">↗</span></a>
         </div>
     </header>
 
-    <section class="anime-details-section" aria-labelledby="synopsis-title">
-        <div class="anime-section-heading">
-            <h2 id="synopsis-title">Opis fabuły</h2>
-            <?php if (($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== ''): ?>
-                <span class="anime-language">Opis w języku angielskim</span>
-            <?php endif; ?>
-        </div>
-        <p class="anime-synopsis"<?= ($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== '' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
-    </section>
+    <nav class="anime-detail-shortcuts" aria-label="Sekcje anime">
+        <a href="#synopsis-title">Opis fabuły</a>
+        <a href="#anime-facts-title">Informacje</a>
+        <a href="#anime-actions-title">Watchlista i ocena</a>
+        <a href="#comments">Komentarze</a>
+    </nav>
 
-    <section class="anime-details-section" aria-labelledby="anime-facts-title">
-        <h2 id="anime-facts-title">Informacje o serii</h2>
-
-        <dl class="anime-detail-facts">
-            <div><dt>Studio</dt><dd><?= $escape($anime['studio'] === '' ? 'Nieznane' : $anime['studio']) ?></dd></div>
-            <div><dt>Rok premiery</dt><dd><?= isset($anime['year']) ? $escape($anime['year']) : 'Nieznany' ?></dd></div>
-            <div><dt>Liczba odcinków</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznana' ?></dd></div>
-            <div><dt>Ocena źródłowa</dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
-            <?php require __DIR__ . '/partials/community-anime-rating.html.php'; ?>
-        </dl>
-        <?php if (!empty($anime['sourceUrl']) && str_starts_with($anime['sourceUrl'], 'https://')): ?>
-            <p class="anime-source">Dane o anime: <a href="<?= $escape($anime['sourceUrl']) ?>" rel="external noreferrer"><?= $escape($anime['sourceLabel']) ?></a>.</p>
-        <?php endif; ?>
-        <details class="anime-source">
-            <summary>Źródła katalogu</summary>
-            <p><a href="https://github.com/cedya77/anime-offline-database" rel="external noreferrer">Anime Offline Database — cedya77</a>,
-                kontynuacja <a href="https://github.com/manami-project/anime-offline-database" rel="external noreferrer">manami-project</a>;
-                opisy i oceny ze <a href="https://huggingface.co/datasets/moviebrain01/anime-dataset-2025" rel="external noreferrer">snapshotu moviebrain01</a>
-                oraz <a href="https://huggingface.co/datasets/TheRealVigilante/Processed_Top_15k_Anime" rel="external noreferrer">TheRealVigilante / Quan Than</a>.</p>
-        </details>
-    </section>
-
-    <section class="anime-details-section anime-collection-actions" aria-labelledby="anime-collections-title">
-        <h2 id="anime-collections-title">Twoje prywatne kolekcje</h2>
-        <?php if ($isLoggedIn): ?>
-            <?php if ($collectionNotice !== null): ?>
-                <p class="anime-collection-notice" data-kind="success" role="status"><?= $escape($collectionNotice) ?></p>
-            <?php endif; ?>
-            <?php if ($collectionErrors !== []): ?>
-                <div class="anime-collection-notice" data-kind="error" role="alert">
-                    <ul><?php foreach ($collectionErrors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+    <div class="anime-detail-layout">
+        <div class="anime-detail-primary">
+            <section class="anime-details-section" aria-labelledby="synopsis-title">
+                <div class="anime-section-heading">
+                    <h2 id="synopsis-title">Opis fabuły</h2>
+                    <?php if (($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== ''): ?>
+                        <span class="anime-language">Opis w języku angielskim</span>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
+                <p class="anime-synopsis"<?= ($anime['descriptionLanguage'] ?? '') === 'en' && $anime['description'] !== '' ? ' lang="en"' : '' ?>><?= $escape($anime['description'] === '' ? 'Opis tego anime nie jest jeszcze dostępny.' : $anime['description']) ?></p>
+            </section>
 
-            <details class="anime-collection-picker"<?= $collectionErrors !== [] ? ' open' : '' ?>>
-                <summary>Dodaj do kolekcji</summary>
-                <form action="/anime/<?= $escape($animeId) ?>/collections" method="post" class="collection-form">
-                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                    <fieldset class="collection-choices">
-                        <legend>Wybierz jedną lub kilka swoich kolekcji</legend>
-                        <?php foreach ($collections as $collection): ?>
-                            <?php $alreadyAdded = in_array($collection['id'], $animeCollectionIds, true); ?>
-                            <label class="collection-choice" for="anime-collection-<?= $escape($collection['id']) ?>">
-                                <input id="anime-collection-<?= $escape($collection['id']) ?>" name="collectionIds[]" type="checkbox" value="<?= $escape($collection['id']) ?>"<?= $alreadyAdded || in_array($collection['id'], $selectedCollectionIds, true) ? ' checked' : '' ?><?= $alreadyAdded ? ' disabled' : '' ?>>
-                                <span class="collection-choice-copy">
-                                    <span class="collection-choice-name"><?= $escape($collection['name']) ?></span>
-                                    <?php if ($alreadyAdded): ?><span class="collection-choice-added">Dodano</span><?php endif; ?>
-                                </span>
-                            </label>
-                        <?php endforeach; ?>
-                    </fieldset>
-                    <button type="submit">Dodaj do wybranych kolekcji</button>
-                </form>
-                <p class="collection-help">Możesz dodać ten tytuł do wielu kolekcji. Zachowasz status i postęp na watchliście.</p>
-            </details>
+            <section class="anime-details-section" aria-labelledby="anime-facts-title">
+                <h2 id="anime-facts-title">Informacje o serii</h2>
 
-            <details class="anime-collection-picker"<?= $collectionForm['name'] !== '' || $collectionForm['description'] !== '' ? ' open' : '' ?>>
-                <summary>Utwórz nową kolekcję</summary>
-                <form action="/anime/<?= $escape($animeId) ?>/collections/create" method="post" class="collection-form">
-                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                    <div class="profile-field">
-                        <label for="anime-collection-name">Nazwa kolekcji</label>
-                        <input id="anime-collection-name" name="name" type="text" maxlength="120" value="<?= $escape($collectionForm['name']) ?>" placeholder="Np. Do obejrzenia ze znajomymi" required>
-                    </div>
-                    <div class="profile-field">
-                        <label for="anime-collection-description">Krótki opis <span>(opcjonalnie)</span></label>
-                        <textarea id="anime-collection-description" name="description" rows="3" maxlength="500"><?= $escape($collectionForm['description']) ?></textarea>
-                    </div>
-                    <button type="submit">Utwórz kolekcję i dodaj anime</button>
-                </form>
-            </details>
-            <p><a href="/profile/collections">Przejdź do moich kolekcji →</a></p>
-        <?php else: ?>
-            <p><a href="/login">Zaloguj się</a>, aby tworzyć własne kolekcje i dodawać do nich anime.</p>
-        <?php endif; ?>
-    </section>
-
-    <section class="anime-details-section" aria-labelledby="anime-actions-title">
-        <h2 id="anime-actions-title">Twoja watchlista i ocena</h2>
-
-        <?php if ($isLoggedIn): ?>
-            <form action="/watchlist" method="post">
-                <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                <input type="hidden" name="animeId" value="<?= $escape($animeId) ?>">
-                <input type="hidden" name="mode" value="add">
-                <button type="submit">Dodaj do watchlisty</button>
-            </form>
-        <?php else: ?>
-            <p><a href="/login">Zaloguj się</a>, aby dodać anime do swojej watchlisty.</p>
-        <?php endif; ?>
-
-        <section class="anime-rating-panel" aria-labelledby="anime-rating-title"<?php if ($isLoggedIn): ?> data-user-rating="<?= $escape($userRating ?? '') ?>"<?php endif; ?>>
-            <h3 id="anime-rating-title">Twoja ocena</h3>
-            <?php if ($isLoggedIn): ?>
-                <p class="anime-rating-current"><?= $userRating !== null ? 'Twoja ocena: ' . $escape($userRating) . ' / 10' : 'To anime czeka na Twoją ocenę.' ?></p>
-                <p class="anime-rating-help" id="anime-rating-help">Twój indywidualny wybór jest widoczny dla Ciebie i wpływa na średnią społeczności AniVibe. Nie publikujemy listy osób głosujących ani ich ocen. Możesz zmienić lub usunąć swoją ocenę. Ocena źródłowa i postęp oglądania pozostają niezależne.</p>
-                <?php if ($ratingNotice !== null): ?>
-                    <p class="anime-rating-notice" data-kind="success" role="status"><?= $escape($ratingNotice) ?></p>
+                <dl class="anime-detail-facts">
+                    <div><dt>Studio</dt><dd><?= $escape($anime['studio'] === '' ? 'Nieznane' : $anime['studio']) ?></dd></div>
+                    <div><dt>Rok premiery</dt><dd><?= isset($anime['year']) ? $escape($anime['year']) : 'Nieznany' ?></dd></div>
+                    <div><dt>Liczba odcinków</dt><dd><?= isset($anime['episodes']) ? $escape($anime['episodes']) : 'Nieznana' ?></dd></div>
+                    <div><dt>Ocena źródłowa</dt><dd><?= isset($anime['score']) ? $escape(number_format($anime['score'], 2, ',', '')) . ' / 10' : 'Brak oceny' ?></dd></div>
+                    <?php require __DIR__ . '/partials/community-anime-rating.html.php'; ?>
+                </dl>
+                <?php if (!empty($anime['sourceUrl']) && str_starts_with($anime['sourceUrl'], 'https://')): ?>
+                    <p class="anime-source">Dane o anime: <a href="<?= $escape($anime['sourceUrl']) ?>" rel="external noreferrer"><?= $escape($anime['sourceLabel']) ?></a>.</p>
                 <?php endif; ?>
-                <?php if ($ratingErrors !== []): ?>
-                    <div class="anime-rating-notice" data-kind="error" role="alert">
-                        <ul><?php foreach ($ratingErrors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
-                    </div>
-                <?php endif; ?>
-                <form action="/anime/<?= $escape($animeId) ?>/rating" method="post" class="anime-rating-form">
-                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                    <div class="anime-rating-field">
-                        <label for="anime-rating">Oceń anime w skali od 1 do 10</label>
-                        <select id="anime-rating" name="rating" aria-describedby="anime-rating-help"<?= $ratingErrors !== [] ? ' aria-invalid="true"' : '' ?> required>
-                            <option value=""<?= $ratingValue === '' ? ' selected' : '' ?>>Wybierz ocenę</option>
-                            <?php for ($value = 1; $value <= 10; $value++): ?>
-                                <option value="<?= $escape($value) ?>"<?= $ratingValue === (string) $value ? ' selected' : '' ?>><?= $escape($value) ?> / 10</option>
-                            <?php endfor; ?>
-                        </select>
-                    </div>
-                    <button type="submit">Zapisz ocenę</button>
-                </form>
-                <?php if ($userRating !== null): ?>
-                    <form action="/anime/<?= $escape($animeId) ?>/rating/remove" method="post" class="anime-rating-remove">
+                <details class="anime-source">
+                    <summary>Źródła katalogu</summary>
+                    <p><a href="https://github.com/cedya77/anime-offline-database" rel="external noreferrer">Anime Offline Database — cedya77</a>,
+                        kontynuacja <a href="https://github.com/manami-project/anime-offline-database" rel="external noreferrer">manami-project</a>;
+                        opisy i oceny ze <a href="https://huggingface.co/datasets/moviebrain01/anime-dataset-2025" rel="external noreferrer">snapshotu moviebrain01</a>
+                        oraz <a href="https://huggingface.co/datasets/TheRealVigilante/Processed_Top_15k_Anime" rel="external noreferrer">TheRealVigilante / Quan Than</a>.</p>
+                </details>
+            </section>
+        </div>
+
+        <div class="anime-detail-secondary">
+            <section class="anime-details-section anime-personal-panel" aria-labelledby="anime-actions-title">
+                <h2 id="anime-actions-title">Twoja watchlista i ocena</h2>
+
+                <?php if ($isLoggedIn): ?>
+                    <form action="/watchlist" method="post" class="anime-watchlist-add">
                         <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                        <button type="submit">Usuń ocenę</button>
+                        <input type="hidden" name="animeId" value="<?= $escape($animeId) ?>">
+                        <input type="hidden" name="mode" value="add">
+                        <button type="submit">Dodaj do watchlisty</button>
                     </form>
+                <?php else: ?>
+                    <p><a href="/login">Zaloguj się</a>, aby dodać anime do swojej watchlisty.</p>
                 <?php endif; ?>
-            <?php else: ?>
-                <p><a href="/login">Zaloguj się</a>, aby zapisać własną ocenę tego anime.</p>
-            <?php endif; ?>
-        </section>
 
-        <a href="/chat">Przejdź do asystenta AI</a>
-    </section>
+                <section class="anime-rating-panel" aria-labelledby="anime-rating-title"<?php if ($isLoggedIn): ?> data-user-rating="<?= $escape($userRating ?? '') ?>"<?php endif; ?>>
+                    <h3 id="anime-rating-title">Twoja ocena</h3>
+                    <?php if ($isLoggedIn): ?>
+                        <p class="anime-rating-current"><?= $userRating !== null ? 'Twoja ocena: ' . $escape($userRating) . ' / 10' : 'To anime czeka na Twoją ocenę.' ?></p>
+                        <p class="anime-rating-help" id="anime-rating-help">Twój indywidualny wybór jest widoczny dla Ciebie i wpływa na średnią społeczności AniVibe. Nie publikujemy listy osób głosujących ani ich ocen. Możesz zmienić lub usunąć swoją ocenę. Ocena źródłowa i postęp oglądania pozostają niezależne.</p>
+                        <?php if ($ratingNotice !== null): ?>
+                            <p class="anime-rating-notice" data-kind="success" role="status"><?= $escape($ratingNotice) ?></p>
+                        <?php endif; ?>
+                        <?php if ($ratingErrors !== []): ?>
+                            <div class="anime-rating-notice" data-kind="error" role="alert">
+                                <ul><?php foreach ($ratingErrors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+                            </div>
+                        <?php endif; ?>
+                        <form action="/anime/<?= $escape($animeId) ?>/rating" method="post" class="anime-rating-form">
+                            <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                            <div class="anime-rating-field">
+                                <label for="anime-rating">Oceń anime w skali od 1 do 10</label>
+                                <select id="anime-rating" name="rating" aria-describedby="anime-rating-help"<?= $ratingErrors !== [] ? ' aria-invalid="true"' : '' ?> required>
+                                    <option value=""<?= $ratingValue === '' ? ' selected' : '' ?>>Wybierz ocenę</option>
+                                    <?php for ($value = 1; $value <= 10; $value++): ?>
+                                        <option value="<?= $escape($value) ?>"<?= $ratingValue === (string) $value ? ' selected' : '' ?>><?= $escape($value) ?> / 10</option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
+                            <button type="submit">Zapisz ocenę</button>
+                        </form>
+                        <?php if ($userRating !== null): ?>
+                            <form action="/anime/<?= $escape($animeId) ?>/rating/remove" method="post" class="anime-rating-remove">
+                                <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                                <button type="submit">Usuń ocenę</button>
+                            </form>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <p><a href="/login">Zaloguj się</a>, aby zapisać własną ocenę tego anime.</p>
+                    <?php endif; ?>
+                </section>
 
-    <section class="anime-details-section" aria-labelledby="trailer-title">
+                <a class="anime-detail-assistant-link" href="/chat">Przejdź do asystenta AI <span aria-hidden="true">→</span></a>
+            </section>
+
+            <section class="anime-details-section anime-collection-actions" aria-labelledby="anime-collections-title">
+                <h2 id="anime-collections-title">Twoje prywatne kolekcje</h2>
+                <?php if ($isLoggedIn): ?>
+                    <?php if ($collectionNotice !== null): ?>
+                        <p class="anime-collection-notice" data-kind="success" role="status"><?= $escape($collectionNotice) ?></p>
+                    <?php endif; ?>
+                    <?php if ($collectionErrors !== []): ?>
+                        <div class="anime-collection-notice" data-kind="error" role="alert">
+                            <ul><?php foreach ($collectionErrors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <details class="anime-collection-picker"<?= $collectionErrors !== [] ? ' open' : '' ?>>
+                        <summary>Dodaj do kolekcji</summary>
+                        <form action="/anime/<?= $escape($animeId) ?>/collections" method="post" class="collection-form">
+                            <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                            <fieldset class="collection-choices">
+                                <legend>Wybierz jedną lub kilka swoich kolekcji</legend>
+                                <?php foreach ($collections as $collection): ?>
+                                    <?php $alreadyAdded = in_array($collection['id'], $animeCollectionIds, true); ?>
+                                    <label class="collection-choice" for="anime-collection-<?= $escape($collection['id']) ?>">
+                                        <input id="anime-collection-<?= $escape($collection['id']) ?>" name="collectionIds[]" type="checkbox" value="<?= $escape($collection['id']) ?>"<?= $alreadyAdded || in_array($collection['id'], $selectedCollectionIds, true) ? ' checked' : '' ?><?= $alreadyAdded ? ' disabled' : '' ?>>
+                                        <span class="collection-choice-copy">
+                                            <span class="collection-choice-name"><?= $escape($collection['name']) ?></span>
+                                            <?php if ($alreadyAdded): ?><span class="collection-choice-added">Dodano</span><?php endif; ?>
+                                        </span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </fieldset>
+                            <button type="submit">Dodaj do wybranych kolekcji</button>
+                        </form>
+                        <p class="collection-help">Możesz dodać ten tytuł do wielu kolekcji. Zachowasz status i postęp na watchliście.</p>
+                    </details>
+
+                    <details class="anime-collection-picker"<?= $collectionForm['name'] !== '' || $collectionForm['description'] !== '' ? ' open' : '' ?>>
+                        <summary>Utwórz nową kolekcję</summary>
+                        <form action="/anime/<?= $escape($animeId) ?>/collections/create" method="post" class="collection-form">
+                            <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                            <div class="profile-field">
+                                <label for="anime-collection-name">Nazwa kolekcji</label>
+                                <input id="anime-collection-name" name="name" type="text" maxlength="120" value="<?= $escape($collectionForm['name']) ?>" placeholder="Np. Do obejrzenia ze znajomymi" required>
+                            </div>
+                            <div class="profile-field">
+                                <label for="anime-collection-description">Krótki opis <span>(opcjonalnie)</span></label>
+                                <textarea id="anime-collection-description" name="description" rows="3" maxlength="500"><?= $escape($collectionForm['description']) ?></textarea>
+                            </div>
+                            <button type="submit">Utwórz kolekcję i dodaj anime</button>
+                        </form>
+                    </details>
+                    <p><a href="/profile/collections">Przejdź do moich kolekcji →</a></p>
+                <?php else: ?>
+                    <p><a href="/login">Zaloguj się</a>, aby tworzyć własne kolekcje i dodawać do nich anime.</p>
+                <?php endif; ?>
+            </section>
+
+
+        </div>
+    </div>
+
+    <section class="anime-details-section anime-trailer-panel" aria-labelledby="trailer-title">
         <h2 id="trailer-title">Podgląd serii</h2>
 
         <p>Zwiastun zostanie dodany w kolejnym etapie.</p>
