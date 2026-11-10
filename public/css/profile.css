@@ -513,6 +513,263 @@
     font-size: 0.8rem;
 }
 
+/* Ustawienia własnego konta — pozostałe sekcje zachowują swój układ. */
+.profile-account {
+    gap: var(--space-5);
+}
+
+.profile-account .profile-heading {
+    justify-items: start;
+    gap: var(--space-3);
+}
+
+.profile-account .profile-heading .eyebrow {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.6875rem;
+}
+
+.profile-account .profile-heading h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+}
+
+.profile-account .profile-heading > p:last-child {
+    font-size: 0.9rem;
+}
+
+.profile-account .profile-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+}
+
+.profile-account .profile-tabs a {
+    display: grid;
+    place-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2);
+    border: 0;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+.profile-account .profile-tabs a[aria-current="page"] {
+    color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+}
+
+.profile-account .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+}
+
+.profile-sidebar {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.profile-account :where(.profile-summary, .profile-editor, .profile-watchlist, .profile-empty, .experience-panel) {
+    padding: var(--space-5);
+    border-radius: var(--radius-medium);
+    box-shadow: none;
+}
+
+.profile-account .profile-summary {
+    background-image: radial-gradient(ellipse at top right, var(--color-glow-violet), transparent 70%);
+}
+
+.profile-summary-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.profile-account .profile-avatar {
+    width: 5rem;
+    height: 5rem;
+    border: 3px solid var(--color-surface);
+    border-radius: 50%;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 1.5rem var(--color-glow-violet);
+}
+
+.profile-account .profile-avatar:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 5px;
+}
+
+.profile-photo-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.profile-photo-link:hover {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+}
+
+.profile-account p.profile-card-label {
+    color: var(--color-brand);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.profile-account .profile-identity h2 {
+    font-size: 1.4rem;
+    overflow-wrap: anywhere;
+}
+
+.profile-account .profile-identity h2 a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.profile-account .profile-identity h2 a:hover {
+    color: var(--color-brand);
+    text-decoration: underline;
+}
+
+.profile-account .profile-stats > div {
+    padding: var(--space-3);
+    border: 0;
+}
+
+.profile-account .profile-stats dd {
+    order: -1;
+    margin: 0;
+    color: var(--color-accent);
+    font-size: 1.75rem;
+}
+
+.profile-public-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2.75rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.profile-account .experience-panel {
+    background-image: linear-gradient(135deg, var(--color-glow-violet), transparent);
+}
+
+.profile-account .experience-heading {
+    align-items: start;
+}
+
+.profile-account .experience-symbol {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+}
+
+.profile-account .experience-level {
+    font-size: 1.3rem;
+}
+
+.profile-editor-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.profile-editor-heading > div {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.profile-editor-symbol {
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-small);
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+    font-size: 1.4rem;
+}
+
+.profile-account .profile-editor-heading h2 {
+    font-size: 1.1rem;
+}
+
+.profile-account .profile-editor-heading p {
+    font-size: 0.8rem;
+}
+
+.profile-account .profile-field label,
+.profile-account .profile-avatar-upload label {
+    font-size: 0.8rem;
+}
+
+.profile-account .profile-field :where(input, select, textarea) {
+    min-height: 3.25rem;
+}
+
+.profile-account .profile-avatar-upload {
+    padding: var(--space-5);
+    border-style: solid;
+    background-color: var(--color-surface-raised);
+}
+
+.profile-account .profile-avatar-upload h3 {
+    scroll-margin-top: 6rem;
+    font-size: 1rem;
+}
+
+@media (min-width: 40rem) {
+    .profile-account .profile-tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 64rem) {
+    .profile-account .profile-grid {
+        grid-template-columns: minmax(15rem, 0.75fr) minmax(0, 1.4fr);
+        gap: var(--space-6);
+    }
+
+    .profile-account .profile-editor {
+        padding: var(--space-6);
+    }
+
+    .profile-account .profile-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-5) var(--space-4);
+    }
+
+    .profile-account :where(.profile-field-wide, .profile-form .profile-actions) {
+        grid-column: 1 / -1;
+    }
+}
+
 @media (min-width: 48rem) {
     .user-profile-statistics .profile-stats {
         grid-template-columns: repeat(4, minmax(0, 1fr));
