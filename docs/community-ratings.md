@@ -33,6 +33,22 @@ pusty. Efekt jest widoczny przy kolejnym pobraniu strony.
 należy do widoku. Ocena źródłowa, watchlista, postęp oglądania, kolekcje
 i EXP pozostają niezależne od tej agregacji.
 
+## Rankingi anime
+
+Publiczna strona `/anime/ranking` wykorzystuje oceny społeczności w rankingu
+„Najlepiej oceniane” (`mode=best`). Domyślny próg to 5 ocen; można go zmienić
+parametrem `min_votes`. Sortowanie korzysta z dokładnej średniej, a następnie
+liczby ocen, tytułu i ID anime. Ocena źródłowa nie wpływa na tę kolejność.
+
+Drugi widok, „Najczęściej oglądane” (`mode=watched`), liczy konta mające dany
+tytuł na watchliście ze statusem „Oglądam” lub „Ukończone”. Próg liczby ocen
+nie filtruje tego widoku. Oba rankingi mają filtry gatunku i dokładnego roku
+premiery oraz strony po 20 anime. Nie wymagają nowej migracji ani zależności.
+
+Dotychczasowy ranking użytkowników i EXP pozostaje pod adresem `/ranking`
+i wymaga logowania. Pełne zasady i parametry opisuje
+[dokumentacja rankingów anime](anime-rankings.md).
+
 ## Baza i uprawnienia
 
 Funkcja nie wymaga nowej migracji. Korzysta z tabeli i indeksu dodanych

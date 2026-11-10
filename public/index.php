@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controller\AdminController;
 use App\Controller\AnimeController;
+use App\Controller\AnimeRankingController;
 use App\Controller\AppController;
 use App\Controller\AuthController;
 use App\Controller\ChatController;
@@ -20,6 +21,7 @@ use App\Controller\RankingController;
 use App\Controller\ReplyNotificationController;
 use App\Database;
 use App\Repository\AnimeRepository;
+use App\Repository\AnimeRankingRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
 use App\Repository\CommentReactionRepository;
@@ -55,6 +57,17 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Cache-Control: no-store');
 
 $createController = static function (string $controllerClass): AppController {
+    if ($controllerClass === AnimeRankingController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        return new AnimeRankingController(
+            static fn (): AnimeRepository => new AnimeRepository($connect()),
+            static fn (): AnimeRankingRepository => new AnimeRankingRepository($connect()),
+        );
+    }
+
     if ($controllerClass === AnimeController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -222,6 +235,7 @@ $routing->get('/ranking', RankingController::class, 'index');
 $routing->get('/users/{id}', ProfileController::class, 'show');
 
 $routing->get('/anime', AnimeController::class, 'index');
+$routing->get('/anime/ranking', AnimeRankingController::class, 'index');
 $routing->get('/anime/{id}', AnimeController::class, 'show');
 $routing->post('/anime/{id}/comments', AnimeController::class, 'createComment');
 $routing->get('/anime/{id}/comments/{commentId}', AnimeController::class, 'showCommentThread');

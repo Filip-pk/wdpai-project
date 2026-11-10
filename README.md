@@ -9,7 +9,7 @@ AI i rozmowy z postaciami.
 - Katalog anime ze szczegółami, opisami, okładkami, gatunkami i ocenami źródłowymi.
 - Wyszukiwanie po tytule i nazwach alternatywnych, gatunku, formacie oraz
   zakresach liczby odcinków, oceny i roku premiery.
-- Sortowanie oceną, tytułem, odcinkami i rokiem w obu kierunkach;
+- Sortowanie oceną źródłową, tytułem, odcinkami i rokiem w obu kierunkach;
   domyślnie najlepiej oceniane anime. Paginacja zachowuje wybrane kryteria.
 - Rejestracja, logowanie i własna watchlista: dodawanie i usuwanie anime,
   statusy „Planowane”, „Oglądam”, „Ukończone”, „Wstrzymane” i „Porzucone”
@@ -39,6 +39,9 @@ AI i rozmowy z postaciami.
 - Oceny społeczności AniVibe: publiczna średnia i liczba ocen na kartach
   anime oraz w szczegółach. Lista głosujących i ich indywidualne oceny
   nie są publikowane; własną ocenę widzi właściciel konta.
+- Publiczne rankingi anime: najlepiej oceniane przez społeczność AniVibe
+  (domyślnie od 5 ocen) oraz najczęściej oglądane, z filtrami gatunku i roku
+  oraz paginacją. Ranking użytkowników i EXP pozostaje osobną funkcją.
 - Poziomy i EXP: 5 punktów za odcinek oraz 100 za ukończony tytuł;
   rosnące progi poziomów i aktualny ranking TOP 100 użytkowników.
 - Jasny, ciemny i systemowy motyw oraz układ dostosowany do telefonu i komputera.
@@ -248,6 +251,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
 - [Własne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
 - [Oceny społeczności AniVibe](docs/community-ratings.md)
+- [Rankingi anime: najlepiej oceniane i najczęściej oglądane](docs/anime-rankings.md)
 - [Komentarze pod anime i migracja istniejącej bazy](docs/anime-comments.md)
 - [Odpowiedzi na komentarze i powiadomienia o odpowiedziach](docs/comment-replies.md)
 - [Like i dislike komentarzy oraz odpowiedzi](docs/comment-reactions.md)
