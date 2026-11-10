@@ -1,0 +1,290 @@
+.watchlist-page {
+    gap: var(--space-5);
+}
+
+.watchlist-heading {
+    gap: var(--space-3);
+    align-items: start;
+}
+
+.watchlist-heading > p:last-of-type {
+    font-size: 0.875rem;
+}
+
+.watchlist-overview-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    width: 100%;
+    margin: var(--space-2) 0 0;
+}
+
+.watchlist-overview-stats > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+}
+
+.watchlist-overview-stats dt {
+    margin: 0;
+    font-size: 0.75rem;
+}
+
+.watchlist-overview-stats dd {
+    order: -1;
+    margin: 0;
+    color: var(--color-accent);
+    font-size: 1.75rem;
+}
+
+.watchlist-page .profile-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background: var(--color-surface);
+}
+
+.watchlist-page .profile-tabs a {
+    display: grid;
+    place-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2);
+    border: 0;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.watchlist-page .profile-tabs a[aria-current="page"] {
+    color: var(--color-accent);
+    background: var(--color-surface-raised);
+}
+
+.watchlist-page > .experience-panel {
+    padding: var(--space-4);
+    border-radius: 1rem;
+    background: linear-gradient(120deg, var(--color-glow-violet), transparent), var(--color-surface);
+}
+
+.watchlist-page .experience-symbol {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+}
+
+.watchlist-page .experience-level {
+    font-size: 1.3rem;
+}
+
+.watchlist-page :is(.experience-total, .experience-ranking-link) {
+    font-size: 0.75rem;
+}
+
+.watchlist-page .profile-watchlist {
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: 1rem;
+}
+
+.watchlist-page .profile-watchlist h2 {
+    font-size: 1.25rem;
+}
+
+.watchlist-page .profile-watchlist > section > p {
+    font-size: 0.8rem;
+}
+
+.watchlist-page .profile-watchlist .anime-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.watchlist-page .profile-watchlist .watchlist-card {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: 1rem;
+    background: var(--color-surface-raised);
+}
+
+.watchlist-page .watchlist-card .anime-card {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: var(--space-3);
+    height: auto;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.watchlist-page .watchlist-card .anime-card-cover {
+    aspect-ratio: 2 / 3;
+    max-height: none;
+    border-radius: 0.75rem;
+}
+
+.watchlist-page .watchlist-card .anime-card-body {
+    padding: 0;
+}
+
+.watchlist-page .watchlist-card :is(p, label) {
+    font-size: 0.75rem;
+}
+
+.watchlist-page .watchlist-card .anime-card-action {
+    font-size: 0.6875rem;
+}
+
+.watchlist-page .watchlist-rating {
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.watchlist-page .watchlist-rating a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: 0.75rem;
+}
+
+.watchlist-page .watchlist-card progress {
+    max-width: none;
+    height: 0.5rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-pill);
+    accent-color: var(--color-brand);
+}
+
+.watchlist-page .profile-watchlist .watchlist-edit {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2) var(--space-3);
+}
+
+.watchlist-page .watchlist-edit :is(select, input[type="number"]) {
+    padding-inline: var(--space-2);
+    font-size: 1rem;
+}
+
+.watchlist-page .watchlist-edit button {
+    grid-column: 1 / -1;
+    min-height: 3rem;
+    margin-top: var(--space-2);
+    border-color: transparent;
+    color: var(--color-button-text);
+    background: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+    font-size: 0.8rem;
+}
+
+.watchlist-page .profile-empty {
+    padding: var(--space-5);
+    border-radius: 1rem;
+}
+
+.watchlist-page > .profile-empty {
+    background: linear-gradient(120deg, var(--color-glow-violet), transparent), var(--color-surface);
+}
+
+.watchlist-page > .profile-empty h2 {
+    font-size: 1.125rem;
+}
+
+.watchlist-page > .profile-empty :is(p, a) {
+    font-size: 0.8rem;
+}
+
+@media (min-width: 23rem) {
+    .watchlist-page .profile-watchlist .watchlist-edit {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .watchlist-page .watchlist-edit label[for^="entry-status-"] {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .watchlist-page .watchlist-edit select {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .watchlist-page .watchlist-edit label[for^="entry-watched-"] {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .watchlist-page .watchlist-edit input[type="number"] {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+
+@media (min-width: 40rem) {
+    .watchlist-page > .experience-panel {
+        grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1.5fr);
+        gap: var(--space-3) var(--space-5);
+        align-items: center;
+    }
+
+    .watchlist-page .experience-heading {
+        display: grid;
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        gap: var(--space-2);
+    }
+
+    .watchlist-page .experience-progress {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .watchlist-page .experience-ranking-link {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .watchlist-heading {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-3) var(--space-5);
+    }
+
+    .watchlist-heading > :is(p, h1) {
+        grid-column: 1;
+    }
+
+    .watchlist-overview-stats {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        min-width: 15rem;
+        margin: 0;
+    }
+
+    .watchlist-page .profile-tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .watchlist-page .profile-watchlist {
+        padding: var(--space-5);
+    }
+}
+
+@media (min-width: 80rem) {
+    .watchlist-page .profile-watchlist .anime-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .watchlist-page .watchlist-card .anime-card {
+        grid-template-columns: 6rem minmax(0, 1fr);
+    }
+}

@@ -1,19 +1,19 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<div class="profile-page<?= !$watchlistOnly ? ' profile-account profile-overview' : '' ?>">
-    <?php if ($watchlistOnly): ?>
-        <?php require __DIR__ . '/partials/profile-tabs.html.php'; ?>
-    <?php endif; ?>
-
-    <header class="profile-heading">
+<div class="profile-page<?= $watchlistOnly ? ' watchlist-page' : ' profile-account profile-overview' ?>">
+    <header class="profile-heading<?= $watchlistOnly ? ' watchlist-heading' : '' ?>">
         <p class="eyebrow">Twoje konto AniVibe</p>
         <h1><?= $watchlistOnly ? 'Ulubione anime' : 'Twój profil' ?></h1>
         <p><?= $watchlistOnly ? 'Twoje serie, statusy i postępy oglądania.' : 'Zarządzaj swoimi danymi i ustawieniami.' ?></p>
+        <?php if ($watchlistOnly): ?>
+            <dl class="watchlist-overview-stats">
+                <div><dt>Na Twojej liście</dt><dd data-watchlist-count="<?= $escape($watchlistTotal) ?>"><?= $escape($watchlistTotal) ?></dd></div>
+                <div><dt>Ukończone serie</dt><dd data-completed-count="<?= $escape($completedCount) ?>"><?= $escape($completedCount) ?></dd></div>
+            </dl>
+        <?php endif; ?>
     </header>
 
-    <?php if (!$watchlistOnly): ?>
-        <?php require __DIR__ . '/partials/profile-tabs.html.php'; ?>
-    <?php endif; ?>
+    <?php require __DIR__ . '/partials/profile-tabs.html.php'; ?>
 
     <?php if ($saved): ?>
         <p class="profile-notice" data-kind="success" role="status">Profil i ustawienia zostały zapisane.</p>

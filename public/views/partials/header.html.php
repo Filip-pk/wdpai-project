@@ -133,6 +133,9 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isDiscoveryPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/discovery.css') ?>">
     <?php endif; ?>
+    <?php if ($currentPath === '/watchlist' || $currentPath === '/watchlist/remove'): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/watchlist.css') ?>">
+    <?php endif; ?>
     <?php if ($isAnimeDetailsPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/anime-details.css') ?>">
     <?php endif; ?>
