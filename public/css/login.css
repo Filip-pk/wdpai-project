@@ -1,37 +1,22 @@
-/* ========================================
-   1. Zmienne widoku logowania
-   ======================================== */
-
+/* Wspólne karty logowania i rejestracji, od telefonu do desktopu. */
 .auth-page {
     --auth-background: var(--color-auth-background);
-    --auth-surface: var(--color-auth-surface);
+    --auth-surface: var(--color-surface);
     --auth-input-background: var(--color-input-background);
     --auth-text: var(--color-text);
     --auth-muted: var(--color-muted);
     --auth-brand: var(--color-brand);
-    --auth-accent: var(--color-auth-accent);
-    --auth-border: var(--color-auth-border);
+    --auth-accent: var(--color-accent);
+    --auth-border: color-mix(in srgb, var(--color-border) 65%, transparent);
     --auth-focus: var(--color-focus);
-    --auth-hover: var(--color-auth-hover);
-    --auth-button-text: var(--color-auth-button-text);
-    --auth-button-start: var(--color-auth-button-start);
-    --auth-button-end: var(--color-auth-button-end);
-    /* Podpis ilustracji zawsze leży na ciemnej nakładce. */
-    --auth-showcase-text: #f7f4ff;
-    --auth-showcase-muted: #e5e1f0;
-    --auth-showcase-brand: #7deaf2;
-    --auth-showcase-background: #1d1e33;
-    --auth-radius: 1.5rem;
+    --auth-warning: #805200;
+    --auth-radius: 1.15rem;
     --auth-field-radius: 0.8rem;
     --auth-gap: 1.25rem;
-    --auth-panel-padding: 1.25rem;
-    --auth-shadow: var(--shadow-auth);
-    --auth-warning: #805200;
 
     width: 100%;
-    max-width: 35rem;
+    max-width: 29rem;
     margin-inline: auto;
-
     color: var(--auth-text);
 }
 
@@ -39,26 +24,18 @@
     --auth-warning: #f6cc7a;
 }
 
-/* ========================================
-   2. Powrót i główna karta
-   ======================================== */
-
 .auth-page .auth-back {
     display: inline-flex;
     align-items: center;
     gap: 0.65rem;
-
     min-height: 2.75rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem 0.25rem;
-
+    margin-bottom: 1.25rem;
+    padding: 0.5rem 0;
     border-radius: 0.5rem;
-
     color: var(--auth-muted);
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-decoration: none;
-
     transition: color 160ms ease;
 }
 
@@ -67,20 +44,20 @@
 }
 
 .auth-page .auth-back span {
-    font-size: 1.4rem;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--auth-border);
+    border-radius: 50%;
+    background: var(--auth-surface);
+    font-size: 1.25rem;
 }
 
 .auth-page .auth-card {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-
-    margin: 0;
-
-    border: 1px solid var(--auth-border);
-    border-radius: var(--auth-radius);
-
-    background-color: var(--auth-background);
-    box-shadow: var(--auth-shadow);
+    gap: 1.5rem;
+    min-width: 0;
 }
 
 .auth-page .auth-card > * {
@@ -88,164 +65,131 @@
     margin: 0;
 }
 
-.auth-page[aria-labelledby="register-title"] {
-    max-width: 38rem;
-}
-
-.auth-page > .auth-panel {
-    border: 1px solid var(--auth-border);
-    border-top: 3px solid var(--auth-accent);
-    border-radius: var(--auth-radius);
-
-    background-color: var(--auth-background);
-    box-shadow: var(--auth-shadow);
-}
-
-
-/* ========================================
-   3. Ilustracja i jej podpis
-   ======================================== */
-
+/* Krótki banner zachowuje klimat makiety bez odsuwania formularza. */
 .auth-page .auth-showcase {
     position: relative;
     isolation: isolate;
-
-    min-height: 15rem;
+    min-height: 10rem;
     overflow: hidden;
-
-    border-bottom: 1px solid var(--auth-border);
-    border-radius:
-        var(--auth-radius)
-        var(--auth-radius)
-        0
-        0;
-
-    background-color: var(--auth-showcase-background);
+    border: 1px solid var(--auth-border);
+    border-radius: var(--auth-radius);
+    background: #17182b;
 }
 
-/* Obraz jest dekoracyjną warstwą wewnątrz panelu. */
 .auth-page .auth-image {
     position: absolute;
     inset: 0;
     z-index: -2;
-
     width: 100%;
     height: 100%;
-
     object-fit: cover;
-    object-position: center 35%;
+    object-position: center 36%;
 }
 
 .auth-page .auth-showcase::after {
     position: absolute;
     inset: 0;
     z-index: -1;
-
     content: "";
-
-    background: linear-gradient(
-        180deg,
-        rgb(15 16 32 / 10%) 0%,
-        rgb(15 16 32 / 65%) 45%,
-        rgb(15 16 32 / 98%) 100%
-    );
+    background: linear-gradient(180deg, rgb(15 16 32 / 5%), rgb(15 16 32 / 96%));
 }
 
 .auth-page .auth-showcase-content {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    gap: 0.75rem;
-
-    min-height: 15rem;
-    padding: var(--auth-panel-padding);
-}
-
-.auth-page p.auth-kicker {
-    margin: 0;
-
-    color: var(--auth-brand);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    gap: 0.45rem;
+    min-height: 10rem;
+    padding: 1.1rem;
 }
 
 .auth-page .auth-showcase h2 {
     margin: 0;
-
-    color: var(--auth-showcase-text);
-    font-size: clamp(1.35rem, 3vw, 2rem);
-    line-height: 1.2;
-}
-
-.auth-page .auth-showcase .auth-showcase-description {
-    max-width: 30ch;
-    margin: 0;
-
-    color: var(--auth-showcase-muted);
-    font-size: 0.9rem;
+    color: #f7f4ff;
+    font-size: 1.25rem;
 }
 
 .auth-page .auth-showcase .auth-kicker {
-    color: var(--auth-showcase-brand);
+    color: #ffafcf;
+    font-size: 0.62rem;
 }
 
+.auth-page .auth-showcase-description {
+    max-width: 32ch;
+    color: #e5e1f0;
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
 
-/* ========================================
-   4. Panel formularza
-   ======================================== */
-
-.auth-page .auth-panel {
+.auth-page .auth-panel,
+.auth-page .auth-fields {
     display: grid;
     gap: var(--auth-gap);
-
-    padding: var(--auth-panel-padding);
+    min-width: 0;
 }
 
-.auth-page .auth-panel > * {
+.auth-page .auth-panel > *,
+.auth-page .auth-heading > * {
     min-width: 0;
     margin: 0;
 }
 
 .auth-page .auth-heading {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.7rem;
 }
 
-.auth-page .auth-heading > * {
+.auth-page p.auth-kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin: 0;
+    color: var(--auth-brand);
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    line-height: 1.5;
+    text-transform: uppercase;
+}
+
+.auth-page .auth-status-dot {
+    flex: 0 0 auto;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0.65rem color-mix(in srgb, var(--auth-brand) 40%, transparent);
 }
 
 .auth-page .auth-heading h1 {
-    font-size: clamp(1.65rem, 4vw, 2.35rem);
-    letter-spacing: -0.035em;
-    line-height: 1.2;
+    font-size: clamp(1.5rem, 5.7vw, 1.85rem);
+    letter-spacing: -0.04em;
+    line-height: 1.25;
+    text-wrap: pretty;
 }
 
 .auth-page .auth-heading > p:last-child {
     color: var(--auth-muted);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     line-height: 1.7;
 }
 
-.auth-page .auth-notice {
-    padding: 0.75rem 0.9rem;
-
-    border: 1px solid var(--auth-border);
-    border-radius: var(--auth-field-radius);
-
+.auth-page .auth-info {
     color: var(--auth-muted);
-    background-color: var(--auth-surface);
-
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     line-height: 1.6;
 }
 
-
-/* ========================================
-   5. Pola formularza
-   ======================================== */
+.auth-page .auth-notice {
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--auth-border);
+    border-radius: var(--auth-field-radius);
+    color: var(--auth-muted);
+    background: var(--auth-surface);
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
 
 .auth-page .auth-notice[role="alert"] {
     border-color: var(--color-danger);
@@ -269,18 +213,10 @@
     padding-inline-start: 1.1rem;
 }
 
-.auth-page .auth-form {
-    margin: 0;
-}
-
+.auth-page .auth-form,
 .auth-page .auth-fields {
-    display: grid;
-    gap: var(--auth-gap);
-
-    min-width: 0;
     margin: 0;
     padding: 0;
-
     border: 0;
 }
 
@@ -290,55 +226,41 @@
     min-width: 0;
 }
 
-.auth-page .auth-fields > legend:not(.auth-visually-hidden) {
-    margin-bottom: var(--auth-gap);
-    padding: 0;
-    color: var(--auth-muted);
-    font-size: 0.85rem;
-    font-weight: 700;
-}
-
 .auth-page .auth-field label {
-    color: var(--auth-text);
-
-    font-size: 0.8rem;
+    color: var(--auth-muted);
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .auth-page .auth-field input {
     width: 100%;
     min-width: 0;
     min-height: 3.25rem;
-
-    padding: 0.85rem 1rem;
-
+    padding: 0.8rem 1rem;
     border: 1px solid var(--auth-border);
     border-radius: var(--auth-field-radius);
-
     color: var(--auth-text);
-    background-color: var(--auth-input-background);
-
+    background: var(--auth-input-background);
+    font: inherit;
     font-size: 1rem;
-
-    transition:
-        border-color 160ms ease,
-        background-color 160ms ease;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .auth-page .auth-field input::placeholder {
     color: var(--auth-muted);
-    opacity: 1;
-}
-
-.auth-page .auth-field input:disabled {
-    cursor: not-allowed;
-    opacity: 1;
-    -webkit-text-fill-color: var(--auth-muted);
+    opacity: 0.8;
 }
 
 .auth-page .auth-field input:enabled:hover {
     border-color: var(--auth-brand);
+}
+
+.auth-page .auth-field input:focus-visible {
+    border-color: var(--auth-brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--auth-brand) 10%, transparent);
 }
 
 .auth-page .auth-field input:autofill {
@@ -355,7 +277,7 @@
 .auth-page .auth-password-help {
     display: flex;
     justify-content: flex-end;
-    margin-top: -0.5rem;
+    margin-top: -1rem;
 }
 
 .auth-page .auth-text-button {
@@ -363,15 +285,12 @@
     align-items: center;
     justify-content: center;
     min-height: 2.75rem;
-    padding: 0.5rem 0.25rem;
-
+    padding: 0.5rem 0.1rem;
     border: 0;
     border-radius: 0.4rem;
-
     color: var(--auth-accent);
     background: none;
-
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     line-height: 1.5;
     text-decoration: none;
@@ -388,141 +307,84 @@
     cursor: not-allowed;
 }
 
-
-/* ========================================
-   6. Główny przycisk
-   ======================================== */
-
 .auth-page .auth-submit {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
-
+    gap: 0.6rem;
     width: 100%;
-    min-height: 3.5rem;
-    padding: 0.9rem 1rem;
-
+    min-height: 3.35rem;
+    padding: 0.8rem 1rem;
     border: 1px solid transparent;
     border-radius: var(--auth-field-radius);
-
-    color: var(--auth-button-text);
-    background-color: var(--auth-button-start);
-    background-image: linear-gradient(
-        110deg,
-        var(--auth-button-start),
-        var(--auth-button-end)
-    );
-
-    font-size: 1rem;
+    color: #ffffff;
+    background: linear-gradient(110deg, #c92370, #7544d4);
+    box-shadow: 0 0.5rem 1.5rem rgb(255 60 145 / 16%);
+    font-size: 0.85rem;
     font-weight: 800;
-    line-height: 1.4;
-}
-
-.auth-page .auth-submit:disabled {
-    border: 1px dashed var(--auth-button-text);
-    cursor: not-allowed;
-}
-
-.auth-page .auth-submit:enabled {
-    box-shadow: var(--shadow-accent);
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    text-transform: uppercase;
     transition: box-shadow 160ms ease, transform 160ms ease;
 }
 
+[data-theme="dark"] .auth-page .auth-submit {
+    color: #130d23;
+    background: linear-gradient(110deg, #ff3c91, #8b5cf6);
+}
+
 .auth-page .auth-submit:enabled:hover {
-    box-shadow: var(--shadow-accent-hover);
+    box-shadow: 0 0.65rem 1.75rem rgb(255 60 145 / 26%);
     transform: translateY(-1px);
 }
 
 .auth-page .auth-submit span {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
+    line-height: 1;
 }
-
-
-/* ========================================
-   7. Tekst pomocniczy
-   ======================================== */
 
 .auth-page .auth-help {
+    margin: 0;
     color: var(--auth-muted);
-    font-size: 0.75rem;
-    text-align: center;
+    font-size: 0.7rem;
+    line-height: 1.6;
 }
-
-.auth-page .auth-field .auth-help {
-    text-align: left;
-}
-
-.auth-page > .auth-panel > p:last-child {
-    justify-self: center;
-    color: var(--auth-muted);
-    font-size: 0.875rem;
-    text-align: center;
-}
-
-.auth-page > .auth-panel > p:last-child a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.75rem;
-    font-weight: 700;
-}
-
-
-/* ========================================
-   8. Rejestracja i aktywny link do demo
-   ======================================== */
 
 .auth-page .auth-register {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 0.25rem 0.5rem;
+    gap: 0 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--auth-border);
 }
 
 .auth-page .auth-register p {
     margin: 0;
     color: var(--auth-muted);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .auth-page .auth-demo-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.65rem;
-
-    min-height: 3rem;
-    padding: 0.75rem 1rem;
-
-    border: 1px solid var(--auth-border);
-    border-radius: var(--auth-field-radius);
-
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    border-radius: 0.5rem;
     color: var(--auth-brand);
-    background-color: var(--auth-surface);
-
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 600;
     text-align: center;
     text-decoration: none;
-
-    transition:
-        color 160ms ease,
-        background-color 160ms ease,
-        border-color 160ms ease;
 }
 
 .auth-page .auth-demo-link:hover {
-    border-color: var(--auth-brand);
-
     color: var(--auth-text);
-    background-color: var(--auth-hover);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
 }
-
-
-/* ========================================
-   9. Fokus i tekst dla czytników ekranu
-   ======================================== */
 
 .auth-page :where(a, button, input):focus-visible {
     outline: 3px solid var(--auth-focus);
@@ -531,105 +393,77 @@
 
 .auth-page .auth-visually-hidden {
     position: absolute;
-
     width: 1px;
     height: 1px;
     padding: 0;
     margin: -1px;
-
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-
     border: 0;
 }
 
-
-/* ========================================
-   10. Większy telefon i tablet
-   ======================================== */
-
 @media (min-width: 40rem) {
     .auth-page {
-        --auth-panel-padding: 2rem;
-        --auth-gap: 1.5rem;
+        --auth-gap: 1.4rem;
+        margin-block: 1rem 3rem;
     }
 
-    .auth-page .auth-showcase,
-    .auth-page .auth-showcase-content {
-        min-height: 18rem;
-    }
-}
-
-
-/* ========================================
-   11. Desktop — dwie kolumny
-   ======================================== */
-
-@media (min-width: 64rem) {
-    .auth-page {
-        max-width: 66rem;
-        --auth-panel-padding: 2.5rem;
-    }
-
-    .auth-page .auth-card {
-        grid-template-columns:
-            minmax(0, 0.9fr)
-            minmax(0, 1.1fr);
-
-        align-items: stretch;
+    .auth-page .auth-back {
+        margin-bottom: 1rem;
     }
 
     .auth-page .auth-showcase {
-        display: flex;
-        align-items: flex-end;
-
-        min-height: 100%;
-
-        border-right: 1px solid var(--auth-border);
-        border-bottom: 0;
-
-        border-radius:
-            var(--auth-radius)
-            0
-            0
-            var(--auth-radius);
+        display: none;
     }
 
-    .auth-page .auth-showcase-content {
-        width: 100%;
-        min-height: 100%;
-        padding-block: 3rem;
+    .auth-page .auth-panel {
+        position: relative;
+        padding: 2rem;
+        border: 1px solid var(--auth-border);
+        border-radius: var(--auth-radius);
+        background: var(--auth-background);
+        box-shadow: 0 1.5rem 4rem rgb(15 16 32 / 12%);
     }
 
-    .auth-page .auth-image {
-        object-position: 60% center;
+    .auth-page .auth-panel::before,
+    .auth-page .auth-panel::after {
+        position: absolute;
+        width: 0.9rem;
+        height: 0.9rem;
+        border: solid var(--auth-brand);
+        content: "";
+        pointer-events: none;
     }
 
-    .auth-page .auth-showcase::after {
-        background: linear-gradient(
-            180deg,
-            rgb(15 16 32 / 5%) 0%,
-            rgb(15 16 32 / 30%) 40%,
-            rgb(15 16 32 / 98%) 100%
-        );
+    .auth-page .auth-panel::before {
+        top: -0.2rem;
+        left: -0.2rem;
+        border-width: 2px 0 0 2px;
     }
 
-    .auth-page .auth-showcase h2 {
-        font-size: 2.25rem;
+    .auth-page .auth-panel::after {
+        right: -0.2rem;
+        bottom: -0.2rem;
+        border-width: 0 2px 2px 0;
+        border-color: var(--auth-accent);
+    }
+
+    .auth-page .auth-heading .auth-kicker {
+        margin-bottom: 0.5rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--auth-border);
+    }
+
+    .auth-page .auth-heading h1 {
+        font-size: 1.75rem;
     }
 }
-
-
-/* ========================================
-   12. Ograniczenie ruchu
-   ======================================== */
 
 @media (prefers-reduced-motion: reduce) {
     .auth-page .auth-back,
     .auth-page .auth-field input,
-    .auth-page .auth-submit:enabled,
-    .auth-page .auth-demo-link {
+    .auth-page .auth-submit {
         transition: none;
     }
 
