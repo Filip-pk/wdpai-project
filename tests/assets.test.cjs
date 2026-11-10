@@ -12,7 +12,7 @@ function hash(content) {
 }
 
 for (const [route, expectedPaths] of [
-    ['/', ['/css/navigation.css', '/css/style.css', '/js/navigation.js', '/js/theme.js']],
+    ['/', ['/css/navigation.css', '/css/style.css', '/css/welcome.css', '/js/navigation.js', '/js/theme.js']],
     ['/login', ['/css/login.css', '/css/navigation.css', '/css/style.css', '/js/navigation.js', '/js/theme.js']],
 ]) {
     test(`${route} serves assets with versions matching their current content`, async () => {

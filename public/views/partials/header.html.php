@@ -79,6 +79,10 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <link rel="stylesheet" href="<?= $assetUrl('/css/navigation.css') ?>">
     <script src="<?= $assetUrl('/js/navigation.js') ?>" defer></script>
 
+    <?php if ($isWelcome): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/welcome.css') ?>">
+    <?php endif; ?>
+
     <?php if (in_array($currentPath, ['/login', '/register'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
     <?php endif; ?>
