@@ -129,6 +129,28 @@ $run('Ponowne zbudowanie profilu uwzględnia zmianę oceny bez zachowania poprze
     $assert($service->buildProfile([])['genreWeights'] === []);
 });
 
+$run('Rzadsze motywy odróżniają zainteresowania od samych popularnych gatunków', static function () use ($service, $signal, $assert): void {
+    $profile = $service->buildProfile([
+        $signal(1, 'completed', [1]), $signal(2, 'completed', [2]),
+    ], [1 => 1.5, 2 => 3.0]);
+    $assert($profile['genreWeights'][2] > $profile['genreWeights'][1]);
+    $assert($profile['preferredGenreIds'] === [2, 1]);
+});
+
+$run('Duża wysoko oceniana lista odróżnia ulubione anime od słabszych własnych ocen', static function () use ($service, $signal, $assert): void {
+    $signals = [];
+    for ($id = 1; $id <= 15; $id++) {
+        $signals[] = $signal($id, 'completed', [1], 9);
+    }
+    $signals[] = $signal(20, 'completed', [2], 6);
+    $signals[] = $signal(21, 'completed', [3], 10);
+    $signals[] = $signal(22, 'completed', [4], 8);
+    $profile = $service->buildProfile($signals);
+    $assert($profile['genreWeights'][2] < 0, 'Ocena 6 nie jest mocnym pozytywem przy zwykłych ocenach 9.');
+    $assert($profile['genreWeights'][3] > $profile['genreWeights'][4], 'Ulubione anime ma większą siłę niż jedynie dobre.');
+    $assert($profile['genreWeights'][4] > 0, 'Ocena 8 nadal może wzmacniać preferencję.');
+});
+
 $run('Nieprawidłowe ID użytkownika jest odrzucane przed dostępem do repozytorium', static function () use ($service, $assert): void {
     foreach ([0, -1, PHP_INT_MIN] as $userId) {
         $rejected = false;
