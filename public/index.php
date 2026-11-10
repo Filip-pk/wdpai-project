@@ -31,12 +31,14 @@ use App\Repository\MalImportRepository;
 use App\Repository\MessageRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
+use App\Repository\RecommendationRepository;
 use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\MailService;
 use App\Service\MalImportService;
+use App\Service\RecommendationService;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -191,10 +193,15 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === DashboardController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
         return new DashboardController(
-            static fn (): UserRepository => new UserRepository((new Database())->connect()),
-            static fn (): AnimeRepository => new AnimeRepository((new Database())->connect()),
-            static fn (): RatingRepository => new RatingRepository((new Database())->connect()),
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): AnimeRepository => new AnimeRepository($connect()),
+            static fn (): RatingRepository => new RatingRepository($connect()),
+            static fn (): RecommendationService => new RecommendationService(new RecommendationRepository($connect())),
         );
     }
 

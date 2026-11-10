@@ -1,0 +1,113 @@
+.dashboard-recommendations {
+    min-width: 0;
+    padding-block: var(--space-5);
+    border-block: 1px solid var(--color-border);
+}
+
+.dashboard-recommendations-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.page-standard .page-content .dashboard-eyebrow {
+    margin-bottom: var(--space-2);
+    color: var(--color-brand);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.dashboard-recommendations-heading > a,
+.dashboard-watchlist-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    font-weight: 600;
+}
+
+.dashboard-preferences,
+.dashboard-recommendations-empty {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+}
+
+.dashboard-preference-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block: var(--space-3);
+    padding: 0;
+    list-style: none;
+}
+
+.dashboard-preference-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-raised);
+    font-weight: 600;
+}
+
+.dashboard-preferences > p {
+    font-size: 0.9rem;
+}
+
+.dashboard-recommendation-grid > li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.dashboard-recommendation-grid .anime-card {
+    flex: 1;
+    height: auto;
+}
+
+.page-standard .page-content .dashboard-recommendation-reason {
+    min-width: 0;
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--color-brand);
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.page-standard .page-content .dashboard-recommendation-source,
+.page-standard .page-content .dashboard-recommendation-details {
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+.dashboard-recommendation-source a {
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.page-standard .page-content .dashboard-recommendation-details {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+    font-size: 0.8rem;
+}
+
+@media (min-width: 40rem) {
+    .dashboard-recommendations-heading {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+@media (min-width: 64rem) {
+    .dashboard-recommendation-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

@@ -85,6 +85,10 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
         <script src="<?= $assetUrl('/js/catalog.js') ?>" defer></script>
     <?php endif; ?>
 
+    <?php if ($currentPath === '/dashboard'): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/dashboard.css') ?>">
+    <?php endif; ?>
+
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>
     <?php if ($currentPath === '/anime/ranking'): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/anime-ranking.css') ?>">
