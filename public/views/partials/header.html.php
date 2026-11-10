@@ -133,6 +133,9 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isDiscoveryPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/discovery.css') ?>">
     <?php endif; ?>
+    <?php if ($isAnimeDetailsPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/anime-details.css') ?>">
+    <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?>">
     <a href="#main-content" class="skip-link">
