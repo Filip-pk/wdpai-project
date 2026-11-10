@@ -41,6 +41,7 @@ function recommendations(page) {
         mode: mode[1], sourceCount: Number(sourceCount[1]),
         ids: [...page.html.matchAll(/data-recommended-anime-id="(\d+)"/g)].map(item => Number(item[1])),
         genres: [...page.html.matchAll(/data-preferred-genre-id="(\d+)"/g)].map(item => Number(item[1])),
+        seeds: [...page.html.matchAll(/data-recommendation-seed-id="(\d+)"/g)].map(item => Number(item[1])),
     };
 }
 
@@ -67,9 +68,11 @@ test('dashboard recommendations follow the current account watchlist and ratings
             assert.equal(publicResult.mode, 'guest'); assert.equal(publicResult.sourceCount, 0);
             assert.ok(publicResult.ids.length > 0 && publicResult.ids.length <= 6);
             assert.deepEqual(publicResult.genres, []);
+            assert.deepEqual(publicResult.seeds, [], 'Public starter cards never cite another account private viewing history');
             assert.ok(!guestPage.html.includes(first.email) && !guestPage.html.includes(first.name));
             const page = await first.client.request('/dashboard'), result = recommendations(page);
             assert.equal(result.mode, 'starter'); assert.equal(result.sourceCount, 0); assert.deepEqual(result.genres, []);
+            assert.deepEqual(result.seeds, []);
             assert.match(page.html, /propozycje|propozycj/i);
             assert.match(page.html, /\/css\/dashboard\.css\?v=[a-f0-9]{12}/);
             assert.equal((await guest.request('/dashboard', {})).status, 404, 'Recommendations are read-only');
@@ -84,7 +87,10 @@ test('dashboard recommendations follow the current account watchlist and ratings
                 assert.deepEqual(result.genres, [fixture.genreId]);
                 assert.deepEqual(result.ids, fixture.animes.slice(1, 7).map(anime => anime.id));
                 assert.ok(page.html.includes(fixture.genreName));
-                assert.match(page.html, /Pasuje do Twoich gustów/);
+                assert.deepEqual(result.seeds, result.ids.map(() => fixture.animes[0].id), 'Each explanation identifies a real own source anime, not only its most frequent two genres');
+                assert.ok(page.html.includes(fixture.animes[0].title), 'The source title is visible beside the recommendation');
+                assert.ok(page.html.includes('href="/anime/' + fixture.animes[0].id + '"'), 'The source anime can be opened from the explanation');
+                if (user === first) assert.match(page.html, /10\s*\/\s*10/, 'An explicitly high own rating is explained truthfully');
                 assert.deepEqual(recommendations(await user.client.request('/dashboard')), result);
                 assert.deepEqual(recommendations(await user.client.request('/dashboard?user_id=' + (user === first ? second.id : first.id))), result);
                 const other = user === first ? second : first;

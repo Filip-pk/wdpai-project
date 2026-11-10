@@ -19,7 +19,7 @@
     </div>
 
     <?php if ($recommendationMode === 'personalized'): ?>
-        <p>Dobieramy anime do gatunków z Twojej watchlisty, uwzględniając statusy oglądania, Twoje oceny i preferowany format. Rekomendacje działają bez AI.</p>
+        <p>Szukamy anime podobnych do tytułów z Twojej watchlisty, szczególnie tych wysoko ocenionych. Uwzględniamy wspólne motywy, jakość propozycji i różnorodność całej listy — bez AI.</p>
         <div class="dashboard-preferences">
             <h3>Twoje ulubione gatunki</h3>
             <ul class="dashboard-preference-list">
@@ -39,8 +39,34 @@
         <ul class="anime-grid dashboard-recommendation-grid">
             <?php foreach ($recommendations as $animeId => $anime): ?>
                 <li data-recommended-anime-id="<?= $escape($animeId) ?>">
-                    <?php if (($recommendationReasons[$animeId] ?? []) !== []): ?>
-                        <p class="dashboard-recommendation-reason">Pasuje do Twoich gustów: <strong><?= $escape(implode(', ', $recommendationReasons[$animeId])) ?></strong></p>
+                    <?php
+                    $reason = $recommendationReasons[$animeId] ?? null;
+                    $seed = $reason['seed'] ?? null;
+                    ?>
+                    <?php if ($reason !== null && ($seed !== null || $reason['genres'] !== [])): ?>
+                        <div class="dashboard-recommendation-reason"<?php if ($seed !== null): ?> data-recommendation-seed-id="<?= $escape($seed['animeId']) ?>"<?php endif; ?>>
+                            <p class="dashboard-recommendation-source">
+                                <?php if ($seed !== null): ?>
+                                    <?php if ($seed['rating'] !== null && $seed['rating'] >= 7): ?>
+                                        Bo wysoko oceniasz
+                                    <?php elseif ($seed['status'] === 'completed'): ?>
+                                        Znasz już
+                                    <?php elseif ($seed['status'] === 'watching'): ?>
+                                        Oglądasz
+                                    <?php else: ?>
+                                        Z Twojej watchlisty:
+                                    <?php endif; ?>
+                                    <a href="/anime/<?= $escape($seed['animeId']) ?>"><?= $escape($seed['title']) ?></a><?php if ($seed['rating'] !== null && $seed['rating'] >= 7): ?> <span>(<?= $escape($seed['rating']) ?>/10)</span><?php endif; ?>
+                                <?php else: ?>
+                                    Zgodne z Twoimi preferencjami
+                                <?php endif; ?>
+                            </p>
+                            <?php if ($reason['genres'] !== []): ?>
+                                <p class="dashboard-recommendation-details"><?= $seed !== null && $seed['sharedStudio'] ? 'Wspólne studio i motywy:' : ($seed !== null ? 'Wspólne motywy:' : 'Motywy:') ?> <?= $escape(implode(', ', $reason['genres'])) ?></p>
+                            <?php elseif ($seed !== null && $seed['sharedStudio']): ?>
+                                <p class="dashboard-recommendation-details">Wspólne studio</p>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                     <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
                 </li>

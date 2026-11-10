@@ -71,11 +71,31 @@
 }
 
 .page-standard .page-content .dashboard-recommendation-reason {
+    min-width: 0;
     padding: var(--space-3) var(--space-4);
     border-inline-start: 3px solid var(--color-brand);
     color: var(--color-brand);
     background-color: var(--color-surface-raised);
     font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.page-standard .page-content .dashboard-recommendation-source,
+.page-standard .page-content .dashboard-recommendation-details {
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+.dashboard-recommendation-source a {
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.page-standard .page-content .dashboard-recommendation-details {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+    font-size: 0.8rem;
 }
 
 @media (min-width: 40rem) {

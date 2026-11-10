@@ -57,12 +57,23 @@ final class DashboardController extends AppController
                     continue;
                 }
                 $animes[$id] = $found[$id];
-                $recommendationReasons[$id] = [];
-                foreach ($entry['matchedGenreIds'] as $genreId) {
+                $reason = $entry['reason'] ?? null;
+                $genreNames = [];
+                foreach ($reason['sharedGenreIds'] ?? $entry['matchedGenreIds'] as $genreId) {
                     if (isset($genres[$genreId])) {
-                        $recommendationReasons[$id][] = $genres[$genreId]['name'];
+                        $genreNames[] = $genres[$genreId]['name'];
                     }
                 }
+                $recommendationReasons[$id] = [
+                    'seed' => $reason === null ? null : [
+                        'animeId' => $reason['animeId'],
+                        'title' => $reason['title'],
+                        'rating' => $reason['rating'],
+                        'status' => $reason['status'],
+                        'sharedStudio' => $reason['sharedStudio'],
+                    ],
+                    'genres' => array_slice($genreNames, 0, 2),
+                ];
             }
             foreach ($result['preferredGenreIds'] as $genreId) {
                 if (isset($genres[$genreId])) {
