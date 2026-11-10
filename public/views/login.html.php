@@ -1,6 +1,6 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<section class="auth-page" aria-labelledby="login-title">
+<section class="auth-page auth-page-login" aria-labelledby="login-title">
     <a href="/" class="auth-back">
         <span aria-hidden="true">←</span>
         Wróć do strony głównej
@@ -10,7 +10,7 @@
         <aside class="auth-showcase" aria-labelledby="showcase-title">
             <img
                 class="auth-image"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwTAlUwptX9haUuyqwZqeefs8ohDyVw4xfhdc5FUsrkEM5OmZ_7RQqkeSjkzjVAq3yfL0IsJk6MUhjjRlrUtgvA0X9fMydWSCZMknzjqDgWZLr6EvBV_aPF6g-ECwZJFFnsoltLlTVD2O7cFi_FTtDpDgSHbWdqM-kT9hCybq0ZwdWx_f___4PUwUb8ZzT6O5h4iVSi4WYmCUEqyKjm-UYLVKg4OTH9-LARrcWViuVVOYW0TSpolD6GA"
+                src="<?= $assetUrl('/img/neo-tokyo-guide.jpg') ?>"
                 alt=""
                 fetchpriority="high"
                 decoding="async"
@@ -33,7 +33,7 @@
 
         <div class="auth-panel">
             <header class="auth-heading">
-                <p class="auth-kicker">Twoja przygoda trwa dalej</p>
+                <p class="auth-kicker"><span class="auth-status-dot" aria-hidden="true"></span> Twoja przygoda trwa dalej</p>
 
                 <h1 id="login-title">
                     Witaj z powrotem!
@@ -46,7 +46,7 @@
                 </p>
             </header>
 
-            <p id="login-info" class="auth-notice">
+            <p id="login-info" class="auth-info">
                 Zaloguj się adresem e-mail i hasłem swojego konta.
             </p>
 
@@ -135,7 +135,7 @@
                         type="submit"
                         class="auth-submit"
                     >
-                        <span aria-hidden="true">↗</span>
+                        <span aria-hidden="true">→</span>
                         Zaloguj się
                     </button>
                 </fieldset>
