@@ -2,11 +2,15 @@
 
 <div class="catalog-page">
     <header class="catalog-heading">
-        <p class="eyebrow">Znajdź swój następny seans</p>
-        <h1>Odkrywaj anime</h1>
-        <p>Przeglądaj tytuły, poznawaj historie i wybieraj serie do swojej watchlisty.</p>
-        <p class="catalog-size"><strong data-catalog-count="<?= $escape($catalogTotal) ?>"><?= $escape($catalogTotal) ?></strong> anime w katalogu</p>
-        <a class="catalog-ranking-link" href="/anime/ranking">Rankingi anime społeczności <span aria-hidden="true">→</span></a>
+        <div class="catalog-heading-copy">
+            <p class="eyebrow">Znajdź swój następny seans</p>
+            <h1>Odkrywaj anime</h1>
+            <p>Przeglądaj tytuły, poznawaj historie i wybieraj serie do swojej watchlisty.</p>
+        </div>
+        <div class="catalog-heading-meta">
+            <p class="catalog-size"><strong data-catalog-count="<?= $escape($catalogTotal) ?>"><?= $escape($catalogTotal) ?></strong> anime w katalogu</p>
+            <a class="catalog-ranking-link" href="/anime/ranking">Rankingi anime społeczności <span aria-hidden="true">→</span></a>
+        </div>
     </header>
 
     <?php if (!empty($searchError)): ?>
@@ -39,64 +43,69 @@
             </div>
         </div>
 
-        <div class="catalog-search-filters">
-            <fieldset class="catalog-filter-group">
-                <legend>Format</legend>
-                <div class="catalog-field">
-                    <label for="anime-type">Typ anime</label>
-                    <select id="anime-type" name="type">
-                        <?php foreach ($typeOptions as $value => $label): ?>
-                            <option value="<?= $escape($value) ?>" <?= $filters['type'] === $value ? 'selected' : '' ?>><?= $escape($label) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </fieldset>
+        <details class="catalog-advanced-filters"<?= implode('', $filters) !== '' || !empty($searchError) ? ' open' : '' ?>>
+            <summary>
+                <span>Dodatkowe filtry</span>
+                <span class="catalog-filters-summary">Format, odcinki, ocena i rok premiery</span>
+            </summary>
+            <div class="catalog-search-filters">
+                <fieldset class="catalog-filter-group">
+                    <legend>Format</legend>
+                    <div class="catalog-field">
+                        <label for="anime-type">Typ anime</label>
+                        <select id="anime-type" name="type">
+                            <?php foreach ($typeOptions as $value => $label): ?>
+                                <option value="<?= $escape($value) ?>" <?= $filters['type'] === $value ? 'selected' : '' ?>><?= $escape($label) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </fieldset>
 
-            <fieldset class="catalog-filter-group">
-                <legend>Liczba odcinków</legend>
-                <div class="catalog-range">
-                    <div class="catalog-field">
-                        <label for="anime-episodes-min">Od</label>
-                        <input id="anime-episodes-min" name="episodes_min" type="number" min="1" max="2147483647" step="1" value="<?= $escape($filters['episodes_min']) ?>" placeholder="np. 1">
+                <fieldset class="catalog-filter-group">
+                    <legend>Liczba odcinków</legend>
+                    <div class="catalog-range">
+                        <div class="catalog-field">
+                            <label for="anime-episodes-min">Od</label>
+                            <input id="anime-episodes-min" name="episodes_min" type="number" min="1" max="2147483647" step="1" value="<?= $escape($filters['episodes_min']) ?>" placeholder="np. 1">
+                        </div>
+                        <div class="catalog-field">
+                            <label for="anime-episodes-max">Do</label>
+                            <input id="anime-episodes-max" name="episodes_max" type="number" min="1" max="2147483647" step="1" value="<?= $escape($filters['episodes_max']) ?>" placeholder="np. 26">
+                        </div>
                     </div>
-                    <div class="catalog-field">
-                        <label for="anime-episodes-max">Do</label>
-                        <input id="anime-episodes-max" name="episodes_max" type="number" min="1" max="2147483647" step="1" value="<?= $escape($filters['episodes_max']) ?>" placeholder="np. 26">
-                    </div>
-                </div>
-            </fieldset>
+                </fieldset>
 
-            <fieldset class="catalog-filter-group">
-                <legend>Ocena źródłowa</legend>
-                <div class="catalog-range">
-                    <div class="catalog-field">
-                        <label for="anime-score-min">Od</label>
-                        <input id="anime-score-min" name="score_min" type="number" min="0" max="10" step="0.01" value="<?= $escape($filters['score_min']) ?>" placeholder="np. 7.0">
+                <fieldset class="catalog-filter-group">
+                    <legend>Ocena źródłowa</legend>
+                    <div class="catalog-range">
+                        <div class="catalog-field">
+                            <label for="anime-score-min">Od</label>
+                            <input id="anime-score-min" name="score_min" type="number" min="0" max="10" step="0.01" value="<?= $escape($filters['score_min']) ?>" placeholder="np. 7.0">
+                        </div>
+                        <div class="catalog-field">
+                            <label for="anime-score-max">Do</label>
+                            <input id="anime-score-max" name="score_max" type="number" min="0" max="10" step="0.01" value="<?= $escape($filters['score_max']) ?>" placeholder="np. 10">
+                        </div>
                     </div>
-                    <div class="catalog-field">
-                        <label for="anime-score-max">Do</label>
-                        <input id="anime-score-max" name="score_max" type="number" min="0" max="10" step="0.01" value="<?= $escape($filters['score_max']) ?>" placeholder="np. 10">
-                    </div>
-                </div>
-                <p class="catalog-filter-hint">Skala od 0 do 10.</p>
-            </fieldset>
+                    <p class="catalog-filter-hint">Skala od 0 do 10.</p>
+                </fieldset>
 
-            <fieldset class="catalog-filter-group">
-                <legend>Rok premiery</legend>
-                <div class="catalog-range">
-                    <div class="catalog-field">
-                        <label for="anime-year-min">Od</label>
-                        <input id="anime-year-min" name="year_min" type="number" min="1900" max="2200" step="1" value="<?= $escape($filters['year_min']) ?>" placeholder="np. 2000">
+                <fieldset class="catalog-filter-group">
+                    <legend>Rok premiery</legend>
+                    <div class="catalog-range">
+                        <div class="catalog-field">
+                            <label for="anime-year-min">Od</label>
+                            <input id="anime-year-min" name="year_min" type="number" min="1900" max="2200" step="1" value="<?= $escape($filters['year_min']) ?>" placeholder="np. 2000">
+                        </div>
+                        <div class="catalog-field">
+                            <label for="anime-year-max">Do</label>
+                            <input id="anime-year-max" name="year_max" type="number" min="1900" max="2200" step="1" value="<?= $escape($filters['year_max']) ?>" placeholder="Dowolny">
+                        </div>
                     </div>
-                    <div class="catalog-field">
-                        <label for="anime-year-max">Do</label>
-                        <input id="anime-year-max" name="year_max" type="number" min="1900" max="2200" step="1" value="<?= $escape($filters['year_max']) ?>" placeholder="Dowolny">
-                    </div>
-                </div>
-            </fieldset>
-        </div>
-
-        <p class="catalog-filter-help">Puste pola oznaczają dowolną wartość. Po wybraniu zakresu pomijamy anime bez tych danych.</p>
+                </fieldset>
+            </div>
+            <p class="catalog-filter-help">Puste pola oznaczają dowolną wartość. Po wybraniu zakresu pomijamy anime bez tych danych.</p>
+        </details>
         <div class="catalog-search-actions">
             <button type="submit">Szukaj anime</button>
             <a href="/anime">Wyczyść filtry</a>
