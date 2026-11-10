@@ -8,6 +8,7 @@ use App\Data\DemoData;
 use App\Repository\AnimeRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
+use App\Service\RecommendationService;
 use Closure;
 
 final class DashboardController extends AppController
@@ -16,6 +17,7 @@ final class DashboardController extends AppController
         private UserRepository|Closure $users,
         private AnimeRepository|Closure $animes,
         private RatingRepository|Closure $ratings,
+        private RecommendationService|Closure $recommendationService,
     ) {
     }
 
@@ -23,10 +25,6 @@ final class DashboardController extends AppController
     {
         if ($this->animes instanceof Closure) {
             $this->animes = ($this->animes)();
-        }
-        $animes = $this->animes->findByIds([3, 5]);
-        if ($this->ratings instanceof Closure) {
-            $this->ratings = ($this->ratings)();
         }
         $user = null;
 
@@ -37,11 +35,54 @@ final class DashboardController extends AppController
             $user = $this->currentUser($this->users);
         }
 
+        $recommendationReasons = [];
+        $preferredGenres = [];
+        $sourceCount = 0;
+        $mode = 'guest';
+        if ($user === null) {
+            $animes = $this->animes->search(perPage: 6)['animes'];
+        } else {
+            if ($this->recommendationService instanceof Closure) {
+                $this->recommendationService = ($this->recommendationService)();
+            }
+            $result = $this->recommendationService->recommendForUser($user['id']);
+            $mode = $result['mode'];
+            $sourceCount = $result['sourceCount'];
+            $found = $this->animes->findByIds(array_column($result['entries'], 'animeId'));
+            $genres = array_column($this->animes->genres(), null, 'id');
+            $animes = [];
+            foreach ($result['entries'] as $entry) {
+                $id = $entry['animeId'];
+                if (!isset($found[$id])) {
+                    continue;
+                }
+                $animes[$id] = $found[$id];
+                $recommendationReasons[$id] = [];
+                foreach ($entry['matchedGenreIds'] as $genreId) {
+                    if (isset($genres[$genreId])) {
+                        $recommendationReasons[$id][] = $genres[$genreId]['name'];
+                    }
+                }
+            }
+            foreach ($result['preferredGenreIds'] as $genreId) {
+                if (isset($genres[$genreId])) {
+                    $preferredGenres[] = $genres[$genreId];
+                }
+            }
+        }
+        if ($this->ratings instanceof Closure) {
+            $this->ratings = ($this->ratings)();
+        }
+
         $this->render('dashboard', [
             'pageTitle' => 'Twój pulpit — AniVibe',
             'user' => $user,
             'personas' => DemoData::personas(),
             'recommendations' => $animes,
+            'recommendationReasons' => $recommendationReasons,
+            'preferredGenres' => $preferredGenres,
+            'recommendationMode' => $mode,
+            'recommendationSourceCount' => $sourceCount,
             'communityRatings' => $this->ratings->communityForAnimeIds(array_keys($animes)),
         ]);
     }
