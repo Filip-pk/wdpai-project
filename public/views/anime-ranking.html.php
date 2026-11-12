@@ -11,13 +11,15 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
 
 <div class="anime-ranking-page" data-ranking-mode="<?= $escape($criteria->mode) ?>" data-ranking-page="<?= $escape($ranking['page']) ?>" data-ranking-total="<?= $escape($ranking['total']) ?>" data-ranking-total-pages="<?= $escape($ranking['totalPages']) ?>">
     <header class="anime-ranking-heading">
-        <p class="eyebrow">Wybory społeczności AniVibe</p>
-        <h1>Rankingi anime</h1>
-        <p>Odkryj tytuły najlepiej oceniane i najczęściej oglądane przez użytkowników AniVibe.</p>
-        <div class="anime-ranking-related">
-            <a href="/anime">Przeglądaj katalog anime</a>
-            <a href="/ranking">Ranking użytkowników</a>
+        <div class="anime-ranking-heading-copy">
+            <p class="eyebrow">Wybory społeczności AniVibe</p>
+            <h1>Rankingi anime</h1>
+            <p>Odkryj tytuły najlepiej oceniane i najczęściej oglądane przez użytkowników AniVibe.</p>
         </div>
+        <nav class="anime-ranking-related" aria-label="Więcej w AniVibe">
+            <a href="/anime">Przeglądaj katalog anime <span aria-hidden="true">↗</span></a>
+            <a href="/ranking">Ranking użytkowników <span aria-hidden="true">→</span></a>
+        </nav>
     </header>
 
     <nav class="anime-ranking-tabs" aria-label="Wybierz ranking anime">
@@ -26,14 +28,17 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
         <?php endforeach; ?>
     </nav>
 
-    <p class="anime-ranking-description">
-        <?php if ($isWatchedRanking): ?>
-            Liczymy konta, które mają anime na watchliście ze statusem „Oglądam” lub „Ukończone”. Każde konto liczy się raz przy danym tytule.
-        <?php else: ?>
-            Kolejność według średniej ocen AniVibe. Minimalna liczba ocen: <?= $escape($criteria->minVotes) ?>.
-            Przy tej samej średniej wyżej jest tytuł z większą liczbą ocen; kolejne remisy porządkuje tytuł anime.
-        <?php endif; ?>
-    </p>
+    <details class="anime-ranking-explanation">
+        <summary><?= $isWatchedRanking ? 'Jak liczymy oglądających?' : 'Jak powstaje ranking ocen?' ?></summary>
+        <p class="anime-ranking-description">
+            <?php if ($isWatchedRanking): ?>
+                Liczymy konta, które mają anime na watchliście ze statusem „Oglądam” lub „Ukończone”. Każde konto liczy się raz przy danym tytule.
+            <?php else: ?>
+                Kolejność według średniej ocen AniVibe. Minimalna liczba ocen: <?= $escape($criteria->minVotes) ?>.
+                Przy tej samej średniej wyżej jest tytuł z większą liczbą ocen; kolejne remisy porządkuje tytuł anime.
+            <?php endif; ?>
+        </p>
+    </details>
 
     <?php if ($criteria->errors !== []): ?>
         <div id="anime-ranking-errors" class="anime-ranking-errors" role="alert">
@@ -72,11 +77,15 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
 
     <section class="anime-ranking-results" aria-labelledby="anime-ranking-results-title">
         <header class="anime-ranking-results-heading">
-            <h2 id="anime-ranking-results-title"><?= $escape($criteria::MODES[$criteria->mode]) ?></h2>
-            <p>Wyników: <?= $escape($ranking['total']) ?></p>
+            <div>
+                <p class="anime-ranking-kicker">Głos społeczności</p>
+                <h2 id="anime-ranking-results-title"><?= $escape($criteria::MODES[$criteria->mode]) ?></h2>
+            </div>
+            <p class="anime-ranking-total">Wyników: <strong><?= $escape($ranking['total']) ?></strong></p>
         </header>
         <?php if ($ranking['entries'] === []): ?>
             <div class="anime-ranking-empty">
+                <span class="anime-ranking-empty-mark" aria-hidden="true">✦</span>
                 <p>Brak anime spełniających wybrane kryteria.</p>
                 <p><?= $isWatchedRanking ? 'Zmień filtry lub dodaj oglądane anime do swojej watchlisty.' : 'Zmień filtry lub zmniejsz minimalną liczbę ocen. Możesz też ocenić anime w katalogu.' ?></p>
                 <a href="/anime">Przejdź do katalogu anime</a>
@@ -94,7 +103,7 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
                     ?>
                     <li class="anime-ranking-item" data-ranked-anime-id="<?= $escape($animeId) ?>" data-rank="<?= $escape($entry['rank']) ?>" data-community-average="<?= $escape($rankAverage) ?>" data-community-count="<?= $escape($entry['communityCount']) ?>" data-watcher-count="<?= $escape($entry['watcherCount']) ?>" data-year="<?= $escape($anime['year'] ?? '') ?>">
                         <div class="anime-ranking-position">
-                            <span class="anime-ranking-rank">Pozycja <?= $escape($entry['rank']) ?></span>
+                            <span class="anime-ranking-rank"><span>Pozycja</span><strong><?= $escape($entry['rank']) ?></strong></span>
                             <?php if ($isWatchedRanking): ?>
                                 <span class="anime-ranking-watchers">Oglądam lub Ukończone: <strong><?= $escape($entry['watcherCount']) ?></strong></span>
                             <?php endif; ?>

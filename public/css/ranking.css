@@ -1,0 +1,322 @@
+/* Ranking społeczności: własna pozycja i czytelne wiersze od telefonu. */
+.page-library .ranking-page {
+    gap: var(--space-5);
+}
+
+.page-library .ranking-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.ranking-heading-copy {
+    display: grid;
+    flex: 1 1 24rem;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.page-library .ranking-heading .eyebrow {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.6875rem;
+}
+
+.page-library .ranking-heading h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    letter-spacing: -0.04em;
+}
+
+.ranking-heading-copy > p:last-child {
+    max-width: 66ch;
+    font-size: 0.875rem;
+    line-height: 1.75;
+}
+
+.ranking-related-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.ranking-related-link:hover {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+}
+
+.page-library .ranking-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.page-library .ranking-page :is(.ranking-own, .experience-panel, .ranking-rules, .ranking-row, .ranking-empty) {
+    padding: var(--space-4);
+    border-radius: 1rem;
+    box-shadow: none;
+}
+
+.page-library .ranking-own {
+    gap: var(--space-3);
+    background: radial-gradient(ellipse at top right, var(--color-glow-violet), transparent 80%), var(--color-surface);
+}
+
+.ranking-own-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ranking-own-symbol {
+    display: grid;
+    flex: 0 0 2rem;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.625rem;
+    color: var(--color-accent);
+    background: var(--color-surface-raised);
+    font-size: 1.25rem;
+}
+
+.page-library .ranking-own h2 {
+    font-size: 0.875rem;
+}
+
+.page-library .ranking-own .ranking-own-position {
+    color: var(--color-accent);
+    font-size: clamp(2.25rem, 7vw, 3rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
+}
+
+.page-library .ranking-own > p:not(.ranking-own-position) {
+    font-size: 0.8125rem;
+    line-height: 1.7;
+}
+
+.page-library .ranking-own > a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding: 0;
+    font-size: 0.75rem;
+    text-decoration: none;
+}
+
+.page-library .ranking-page .experience-panel {
+    background: linear-gradient(120deg, var(--color-glow-violet), transparent), var(--color-surface);
+}
+
+.page-library .ranking-page .experience-symbol {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.875rem;
+    font-size: 1.25rem;
+}
+
+.page-library .ranking-page .experience-level {
+    font-size: 1.3rem;
+}
+
+.page-library .ranking-page .experience-total {
+    font-size: 0.75rem;
+}
+
+.page-library .ranking-page .ranking-rules {
+    padding: 0;
+    background-color: var(--color-surface);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+}
+
+.page-library .ranking-rules > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 3.25rem;
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text);
+    font-size: 0.8rem;
+    list-style: none;
+}
+
+.ranking-rules > summary::-webkit-details-marker {
+    display: none;
+}
+
+.ranking-rules > summary::after {
+    content: "+";
+    color: var(--color-brand);
+    font-size: 1.25rem;
+    font-weight: 400;
+}
+
+.ranking-rules[open] > summary::after {
+    content: "−";
+}
+
+.page-library .ranking-page .ranking-rules[open] > ul {
+    margin: 0 var(--space-4) var(--space-4);
+}
+
+.page-library .ranking-page .ranking-rules[open] > p {
+    margin: 0 var(--space-4) var(--space-4);
+}
+
+.page-library .ranking-board {
+    gap: var(--space-4);
+}
+
+.page-library .ranking-board-heading {
+    align-items: center;
+}
+
+.page-library .ranking-board h2 {
+    font-size: 1.125rem;
+}
+
+.page-library .ranking-count {
+    justify-self: start;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+}
+
+.page-library .ranking-refresh {
+    font-size: 0.75rem;
+    text-decoration: none;
+}
+
+.page-library .ranking-list {
+    gap: var(--space-3);
+}
+
+.page-library .ranking-page .ranking-row {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--color-surface);
+}
+
+.page-library .ranking-position {
+    display: grid;
+    place-items: center;
+    align-self: start;
+    min-width: 0;
+    min-height: 2.5rem;
+    padding: 0;
+    border-radius: 0.75rem;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+}
+
+.page-library .ranking-row-leading {
+    border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+.page-library .ranking-row-leading .ranking-position {
+    color: var(--color-accent);
+    background: var(--color-surface-raised);
+}
+
+.page-library .ranking-page .ranking-row-own {
+    border-color: var(--color-accent);
+    background: linear-gradient(110deg, var(--color-glow-violet), transparent), var(--color-surface);
+    box-shadow: inset 3px 0 var(--color-accent);
+}
+
+.page-library .ranking-user {
+    gap: var(--space-3);
+    min-height: 2.75rem;
+}
+
+.page-library .ranking-avatar {
+    flex: 0 0 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 50%;
+    font-size: 1rem;
+}
+
+.page-library .ranking-user-name {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.page-library .ranking-you {
+    margin-left: var(--space-1);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    font-size: 0.625rem;
+    font-weight: 500;
+}
+
+.page-library .ranking-values {
+    grid-column: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+.page-library .ranking-values dt {
+    margin: 0;
+    font-size: 0.6875rem;
+}
+
+.page-library .ranking-values dd {
+    margin-top: var(--space-1);
+    font-size: 0.875rem;
+}
+
+.page-library .ranking-values > div:last-child dd {
+    color: var(--color-brand);
+}
+
+.page-library .ranking-empty {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
+@media (min-width: 48rem) {
+    .page-library .ranking-overview {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+    }
+
+    .page-library .ranking-page :is(.ranking-own, .experience-panel) {
+        padding: var(--space-5);
+    }
+
+    .page-library .ranking-page .ranking-row {
+        grid-template-columns: 3rem minmax(0, 1fr) minmax(12rem, 0.5fr);
+        padding: var(--space-4) var(--space-5);
+    }
+
+    .page-library .ranking-position {
+        align-self: center;
+        font-size: 0.8125rem;
+    }
+
+    .page-library .ranking-values {
+        grid-column: 3;
+        padding-top: 0;
+        border-top: 0;
+    }
+}

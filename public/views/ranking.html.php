@@ -2,15 +2,21 @@
 
 <div class="ranking-page">
     <header class="ranking-heading">
-        <p class="eyebrow">Społeczność AniVibe</p>
-        <h1>Ranking TOP 100</h1>
-        <p>Aktualna setka użytkowników z największą liczbą EXP. Oglądaj anime, zapisuj postępy i zdobywaj kolejne poziomy.</p>
+        <div class="ranking-heading-copy">
+            <p class="eyebrow">Społeczność AniVibe</p>
+            <h1>Ranking TOP 100</h1>
+            <p>Aktualna setka użytkowników z największą liczbą EXP. Oglądaj anime, zapisuj postępy i zdobywaj kolejne poziomy.</p>
+        </div>
+        <a class="ranking-related-link" href="/anime/ranking">Ranking anime <span aria-hidden="true">↗</span></a>
     </header>
 
     <div class="ranking-overview">
         <?php if ($ownRanking !== null): ?>
             <section class="ranking-own" aria-labelledby="ranking-own-title" data-own-ranking-user-id="<?= $escape($ownRanking['userId']) ?>" data-own-ranking-rank="<?= $escape($ownRanking['rank']) ?>" data-own-ranking-exp="<?= $escape($ownRanking['totalExp']) ?>">
-                <h2 id="ranking-own-title">Twoja pozycja</h2>
+                <div class="ranking-own-heading">
+                    <span class="ranking-own-symbol" aria-hidden="true">✦</span>
+                    <h2 id="ranking-own-title">Twoja pozycja</h2>
+                </div>
                 <p class="ranking-own-position">#<?= $escape($ownRanking['rank']) ?></p>
                 <p><?= $isInTop100 ? 'Jesteś w aktualnym TOP 100.' : 'Twoje miejsce w całej społeczności. Zdobywaj EXP i dołącz do TOP 100.' ?></p>
                 <a href="/watchlist">Przejdź do watchlisty <span aria-hidden="true">→</span></a>
@@ -44,7 +50,7 @@
             <ol class="ranking-list" aria-label="Aktualny ranking użytkowników">
                 <?php foreach ($leaders as $leader): ?>
                     <?php $isOwnRow = $ownRanking !== null && $leader['userId'] === $ownRanking['userId']; ?>
-                    <li class="ranking-row<?= $isOwnRow ? ' ranking-row-own' : '' ?>" value="<?= $escape($leader['rank']) ?>" data-ranking-user-id="<?= $escape($leader['userId']) ?>" data-ranking-position="<?= $escape($leader['rank']) ?>" data-total-exp="<?= $escape($leader['totalExp']) ?>" data-user-level="<?= $escape($leader['level']) ?>">
+                    <li class="ranking-row<?= $leader['rank'] <= 3 ? ' ranking-row-leading' : '' ?><?= $isOwnRow ? ' ranking-row-own' : '' ?>" value="<?= $escape($leader['rank']) ?>" data-ranking-user-id="<?= $escape($leader['userId']) ?>" data-ranking-position="<?= $escape($leader['rank']) ?>" data-total-exp="<?= $escape($leader['totalExp']) ?>" data-user-level="<?= $escape($leader['level']) ?>">
                         <span class="ranking-position" aria-label="<?= $escape('Miejsce ' . $leader['rank']) ?>">#<?= $escape($leader['rank']) ?></span>
                         <a class="ranking-user" href="/users/<?= $escape($leader['userId']) ?>" aria-label="<?= $escape('Profil: ' . $leader['name']) ?>">
                             <span class="ranking-avatar" aria-hidden="true">
