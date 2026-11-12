@@ -1,0 +1,416 @@
+/* Asystent, rozmowy z postaciami i demonstracyjny kreator. */
+.page-ai .ai-page,
+.page-ai .ai-layout,
+.page-ai .ai-panel,
+.page-ai .ai-rail,
+.page-ai .ai-persona-intro,
+.page-ai .ai-creator-fields,
+.page-ai .ai-creator-field {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.page-ai .ai-page {
+    gap: var(--space-5);
+}
+
+.page-ai .ai-layout.ai-layout-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.page-ai .ai-page > *,
+.page-ai .ai-page :where(section, article, aside, header, form, fieldset) > * {
+    margin: 0;
+}
+
+.page-ai .ai-panel {
+    align-content: start;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.page-ai .ai-panel h2,
+.page-ai .ai-creator-fields legend {
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.page-ai .ai-panel h3 {
+    font-size: 0.8125rem;
+}
+
+.page-ai .ai-page .ai-demo-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-muted);
+    background-color: var(--color-surface-raised);
+    font-size: 0.75rem;
+    line-height: 1.75;
+}
+
+.ai-demo-notice > span {
+    flex-shrink: 0;
+    color: var(--color-brand);
+}
+
+.page-ai .ai-back {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    min-height: 2.75rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.page-ai .ai-chat-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.page-ai .ai-page .chat-messages {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.page-ai .chat-messages > li {
+    display: flex;
+    min-width: 0;
+}
+
+.page-ai .chat-messages > li:has(.message-user) {
+    justify-content: flex-end;
+}
+
+.page-ai .message {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem 1rem 1rem var(--space-1);
+    background-color: var(--color-surface-raised);
+}
+
+.page-ai .message-user {
+    border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+    border-radius: 1rem 1rem var(--space-1) 1rem;
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface));
+}
+
+.page-ai .ai-page .message p {
+    color: var(--color-text);
+    font-size: 0.875rem;
+    line-height: 1.85;
+}
+
+.page-ai .message time {
+    justify-self: end;
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+}
+
+.page-ai .chat-form {
+    min-width: 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.page-ai .chat-form fieldset {
+    gap: var(--space-3);
+    padding: 0;
+    border: 0;
+}
+
+.page-ai .chat-form legend {
+    padding: 0 0 var(--space-3);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+}
+
+.page-ai .ai-page label {
+    font-size: 0.8125rem;
+}
+
+.page-ai .ai-page :is(input, select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 3rem;
+    color: var(--color-text);
+    background-color: var(--color-input-background);
+    font-size: 1rem;
+}
+
+.page-ai .ai-page textarea {
+    line-height: 1.75;
+}
+
+.page-ai .ai-page button {
+    min-height: 2.75rem;
+    max-width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.page-ai .ai-page button:disabled,
+.page-ai .ai-page fieldset:disabled :is(input, select, textarea, button) {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.page-ai .chat-form button,
+.page-ai .ai-creator-submit {
+    width: 100%;
+    border-color: transparent;
+    color: var(--color-button-text);
+    background-image: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+    font-weight: 750;
+}
+
+.page-ai .ai-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.page-ai .ai-quick-actions button {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    background-color: var(--color-surface-raised);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.page-ai .ai-recommendation .anime-card {
+    height: auto;
+    box-shadow: none;
+}
+
+.page-ai .ai-recommendation .anime-cover {
+    max-height: 15rem;
+}
+
+.page-ai .ai-recommendation .anime-card-body {
+    gap: var(--space-3);
+    padding: var(--space-4);
+}
+
+.page-ai .ai-recommendation .anime-card h3 {
+    font-size: 1rem;
+}
+
+.page-ai .ai-persona-avatar {
+    display: grid;
+    flex: 0 0 3.5rem;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    color: var(--color-brand);
+    background: linear-gradient(145deg, var(--color-glow-violet), var(--color-glow-cyan)), var(--color-surface);
+    font-size: 1.75rem;
+}
+
+.page-ai .ai-persona-intro {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+}
+
+.page-ai .ai-persona-copy {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.page-ai .ai-persona-copy .social-title {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.page-ai .ai-panel .ai-bond-rank {
+    color: var(--color-brand);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.page-ai .ninja-bond progress {
+    width: 100%;
+    height: 0.65rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-raised);
+    accent-color: var(--color-accent);
+}
+
+.page-ai .ninja-bond progress::-webkit-progress-bar {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-raised);
+}
+
+.page-ai .ninja-bond progress::-webkit-progress-value {
+    border-radius: var(--radius-pill);
+    background: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+}
+
+.page-ai .ninja-bond progress::-moz-progress-bar {
+    border-radius: var(--radius-pill);
+    background: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
+}
+
+.page-ai :is(.ramen-card, .adventure-card) .ai-card-symbol {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    background-color: var(--color-surface-raised);
+    font-size: 1.5rem;
+}
+
+.page-ai .ai-panel > p,
+.page-ai .ai-creator-field > p {
+    font-size: 0.8125rem;
+    line-height: 1.75;
+}
+
+.page-ai .ai-creator-form {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.page-ai .ai-creator-fields {
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.page-ai .ai-creator-fields + .ai-creator-fields {
+    margin-top: 0;
+}
+
+.page-ai .ai-creator-fields legend {
+    padding-inline: var(--space-2);
+}
+
+.page-ai .ai-creator-field {
+    gap: var(--space-2);
+}
+
+.page-ai .ai-creator-actions {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.page-ai .ai-page .ai-persona-list {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+}
+
+.page-ai .ai-persona-list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.page-ai .ai-persona-list li:last-child {
+    border-bottom: 0;
+}
+
+.page-ai .ai-persona-list li > div {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.page-ai .ai-persona-list strong {
+    font-size: 0.8125rem;
+}
+
+.page-ai .ai-persona-list p {
+    font-size: 0.75rem;
+}
+
+.page-ai .ai-persona-list .ai-persona-avatar {
+    flex-basis: 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.875rem;
+    font-size: 1.25rem;
+}
+
+@media (min-width: 48rem) {
+    .page-ai .ai-panel,
+    .page-ai .ai-creator-fields {
+        padding: var(--space-5);
+    }
+
+    .page-ai .message {
+        max-width: 90%;
+    }
+
+    .page-ai .ai-creator-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 75rem) {
+    .page-ai .ai-layout {
+        grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 1fr);
+        align-items: start;
+        gap: var(--space-5);
+    }
+
+    .page-ai .ai-creator-form {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .page-ai .ai-creator .ai-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .page-ai .ai-creator .ai-personas-panel {
+        grid-row: 1;
+    }
+
+    .page-ai .ai-persona-list {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .page-ai .ai-persona-list li {
+        align-items: flex-start;
+        padding-block: 0;
+        border: 0;
+    }
+}

@@ -26,26 +26,30 @@ $isErrorPage = $isErrorPage ?? false;
 $isWelcome = !$isErrorPage && $currentPath === '/';
 $isAuthPage = !$isErrorPage && in_array($currentPath, ['/login', '/register'], true);
 $isWorkspace = !$isWelcome && !$isAuthPage && !$isErrorPage;
+$isAiPage = !$isErrorPage && ($currentPath === '/chat' || $currentPath === '/admin'
+    || str_starts_with((string) $currentPath, '/chat/'));
+$isProjectsPage = !$isErrorPage && ($currentPath === '/projects'
+    || str_starts_with((string) $currentPath, '/projects/'));
+$isImportPage = !$isErrorPage && str_starts_with((string) $currentPath, '/profile/import');
+$isModerationPage = !$isErrorPage && ($currentPath === '/moderation'
+    || str_starts_with((string) $currentPath, '/moderation/'));
 $isCommentThreadPage = !$isErrorPage && ($threadMode ?? false) === true;
 $isSocialFormsPage = !$isErrorPage && ($currentPath === '/messages/blocked'
     || $currentPath === '/notifications/comments'
     || str_starts_with((string) $currentPath, '/reports/'));
-$isCommunityPage = !$isErrorPage && ($isCommentThreadPage || $isSocialFormsPage
+$isCommunityPage = !$isErrorPage && ($isCommentThreadPage || $isSocialFormsPage || $isModerationPage
     || $currentPath === '/messages' || str_starts_with((string) $currentPath, '/messages/'));
 $isAnimeDetailsPage = !$isErrorPage && !$isCommentThreadPage
     && preg_match('~^/anime/[1-9][0-9]*(?:/|$)~', (string) $currentPath) === 1;
 $isDiscoveryPage = !$isErrorPage && (in_array($currentPath, ['/dashboard', '/anime', '/watchlist', '/watchlist/remove'], true)
     || $isAnimeDetailsPage);
 $isLibraryPage = !$isErrorPage && (str_starts_with((string) $currentPath, '/profile/collections')
-    || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
+    || $isImportPage || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
 $isRedesignPage = $isWelcome || $isAuthPage
-    || $isDiscoveryPage || $isLibraryPage || $isErrorPage || $isCommunityPage
+    || $isDiscoveryPage || $isLibraryPage || $isErrorPage || $isCommunityPage || $isAiPage || $isProjectsPage
     || in_array($currentPath, ['/profile', '/profile/avatar'], true)
     || str_starts_with((string) $currentPath, '/users/');
-$isProjectsPage = $currentPath === '/projects'
-    || str_starts_with((string) $currentPath, '/projects/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
-$isImportPage = str_starts_with((string) $currentPath, '/profile/import');
 $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
 ?>
 
@@ -101,11 +105,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
     <?php endif; ?>
 
-    <?php if ($isProjectsPage): ?>
-        <link rel="stylesheet" href="<?= $assetUrl('/css/projects.css') ?>">
-    <?php endif; ?>
-
-    <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
+    <?php if (!$isErrorPage && ($isUserProfilePage || $isImportPage || $isCollectionsPage || str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove', '/chat'], true))): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/catalog.css') ?>">
         <script src="<?= $assetUrl('/js/catalog.js') ?>" defer></script>
     <?php endif; ?>
@@ -134,10 +134,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isUserProfilePage || in_array($currentPath, ['/ranking', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/experience.css') ?>">
     <?php endif; ?>
-    <?php if ($isImportPage): ?>
-        <link rel="stylesheet" href="<?= $assetUrl('/css/import.css') ?>">
-    <?php endif; ?>
-    <?php if ($isCommunityPage): ?>
+    <?php if ($isCommunityPage || $isAiPage || $isProjectsPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/social.css') ?>">
     <?php endif; ?>
     <?php if ($isSocialFormsPage): ?>
@@ -146,7 +143,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isCommentThreadPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/discussion.css') ?>">
     <?php endif; ?>
-    <?php if ($isCommunityPage && !$isSocialFormsPage && !$isCommentThreadPage): ?>
+    <?php if ($isCommunityPage && !$isSocialFormsPage && !$isCommentThreadPage && !$isModerationPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/messages.css') ?>">
     <?php endif; ?>
     <?php if ($isDiscoveryPage): ?>
@@ -161,6 +158,18 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isLibraryPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/library.css') ?>">
     <?php endif; ?>
+    <?php if ($isImportPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/import.css') ?>">
+    <?php endif; ?>
+    <?php if ($isAiPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/ai.css') ?>">
+    <?php endif; ?>
+    <?php if ($isProjectsPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/projects.css') ?>">
+    <?php endif; ?>
+    <?php if ($isModerationPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/moderation.css') ?>">
+    <?php endif; ?>
     <?php if ($isCollectionsPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/collections-library.css') ?>">
     <?php endif; ?>
@@ -171,7 +180,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
         <link rel="stylesheet" href="<?= $assetUrl('/css/error.css') ?>">
     <?php endif; ?>
 </head>
-<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?><?= $isCommunityPage ? ' page-community' : '' ?>">
+<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?><?= $isCommunityPage ? ' page-community' : '' ?><?= $isAiPage ? ' page-ai' : '' ?><?= $isProjectsPage ? ' page-projects' : '' ?><?= $isImportPage ? ' page-import' : '' ?><?= $isModerationPage ? ' page-moderation' : '' ?>">
     <a href="#main-content" class="skip-link">
         Przejdź do treści
     </a>

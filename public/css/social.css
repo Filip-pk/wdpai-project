@@ -1,10 +1,10 @@
-/* Wspólne nagłówki, zakładki i puste stany społeczności. */
-.page-community .page-content > * {
+/* Wspólne nagłówki, zakładki i puste stany aplikacji. */
+:is(.page-community, .page-ai, .page-projects) .page-content > * {
     margin-top: 0;
     min-width: 0;
 }
 
-.page-community .social-hero {
+:is(.page-community, .page-ai, .page-projects) .social-hero {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -19,7 +19,7 @@
     min-width: 0;
 }
 
-.page-community .page-content .social-kicker {
+:is(.page-community, .page-ai, .page-projects) .page-content .social-kicker {
     color: var(--color-brand);
     font-family: ui-monospace, Consolas, monospace;
     font-size: 0.6875rem;
@@ -28,14 +28,14 @@
     text-transform: uppercase;
 }
 
-.page-community .social-title {
+:is(.page-community, .page-ai, .page-projects) .social-title {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     letter-spacing: -0.04em;
     line-height: 1.25;
     overflow-wrap: anywhere;
 }
 
-.page-community .social-description {
+:is(.page-community, .page-ai, .page-projects) .social-description {
     max-width: 42rem;
     font-size: 0.875rem;
     line-height: 1.75;
@@ -91,7 +91,7 @@
     overflow-wrap: anywhere;
 }
 
-.page-community .social-empty {
+:is(.page-community, .page-ai, .page-projects) .social-empty {
     display: grid;
     justify-items: center;
     gap: var(--space-3);
@@ -131,11 +131,11 @@
     font-weight: 700;
 }
 
-.page-community .community-unread {
+:is(.page-community, .page-ai, .page-projects) .community-unread {
     color: var(--color-surface);
 }
 
-.page-community :where(a, button, summary, textarea, select):focus-visible {
+:is(.page-community, .page-ai, .page-projects) :where(a, button, summary, textarea, select):focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 3px;
 }
@@ -150,7 +150,7 @@
         font-size: 0.8125rem;
     }
 
-    .page-community .social-empty {
+    :is(.page-community, .page-ai, .page-projects) .social-empty {
         padding: var(--space-7) var(--space-5);
     }
 }
