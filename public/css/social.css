@@ -1,0 +1,156 @@
+/* Wspólne nagłówki, zakładki i puste stany społeczności. */
+.page-community .page-content > * {
+    margin-top: 0;
+    min-width: 0;
+}
+
+.page-community .social-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.social-hero > div {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.page-community .page-content .social-kicker {
+    color: var(--color-brand);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.page-community .social-title {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    letter-spacing: -0.04em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.page-community .social-description {
+    max-width: 42rem;
+    font-size: 0.875rem;
+    line-height: 1.75;
+}
+
+.social-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+    min-width: 0;
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+}
+
+.social-tabs a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-1);
+    border-radius: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.social-tabs a:hover,
+.social-tabs a[aria-current="page"] {
+    color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+}
+
+.social-pill {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-brand);
+    background-color: var(--color-surface);
+    font-size: 0.75rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.page-community .social-empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    padding: var(--space-6) var(--space-4);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-medium);
+    background-color: var(--color-surface);
+    text-align: center;
+}
+
+.social-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+    font-size: 1.5rem;
+}
+
+.social-empty h2 {
+    font-size: 1rem;
+}
+
+.social-empty p {
+    max-width: 32rem;
+    font-size: 0.8125rem;
+    line-height: 1.75;
+}
+
+.social-empty a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.page-community .community-unread {
+    color: var(--color-surface);
+}
+
+.page-community :where(a, button, summary, textarea, select):focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+}
+
+@media (min-width: 40rem) {
+    .social-tabs {
+        width: min(100%, 38rem);
+    }
+
+    .social-tabs a {
+        padding-inline: var(--space-4);
+        font-size: 0.8125rem;
+    }
+
+    .page-community .social-empty {
+        padding: var(--space-7) var(--space-5);
+    }
+}

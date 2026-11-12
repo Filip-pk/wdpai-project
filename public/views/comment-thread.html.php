@@ -1,18 +1,31 @@
 <?php
-require __DIR__ . '/partials/header.html.php';
 $threadMode = true;
+require __DIR__ . '/partials/header.html.php';
 $threadUrl = '/anime/' . $animeId . '/comments/' . $thread['id'] . '?commentsPage=' . $commentFormPage . '&repliesPage=' . $replies['page'];
 $canReply = !$thread['isRemoved'] && !($thread['isDeleted'] ?? false);
 ?>
 
 <div class="comment-thread-page anime-comments" data-thread-id="<?= $escape($thread['id']) ?>">
-    <header class="comments-heading comment-thread-heading">
+    <a class="comment-thread-back" href="/anime/<?= $escape($animeId) ?>?commentsPage=<?= $escape($commentFormPage) ?>#comment-<?= $escape($thread['id']) ?>">← Komentarze do anime</a>
+
+    <header class="comments-heading comment-thread-heading social-hero">
         <div>
-            <a class="comment-thread-back" href="/anime/<?= $escape($animeId) ?>?commentsPage=<?= $escape($commentFormPage) ?>#comment-<?= $escape($thread['id']) ?>">← Komentarze do anime</a>
-            <h1>Odpowiedzi na komentarz</h1>
-            <p><?= $escape($anime['title']) ?></p>
+            <p class="social-kicker">Społeczność AniVibe</p>
+            <h1 class="social-title">Odpowiedzi na komentarz</h1>
+            <p class="social-description">Dołącz do dyskusji o anime i poznaj spojrzenie innych fanów.</p>
         </div>
+        <span class="social-pill">Odpowiedzi: <?= $escape($replies['total']) ?></span>
     </header>
+
+    <div class="discussion-anime">
+        <span class="discussion-anime-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m10 8 6 4-6 4Z"/></svg>
+        </span>
+        <div class="discussion-anime-copy">
+            <span>Rozmawiasz o anime</span>
+            <a href="/anime/<?= $escape($animeId) ?>"><?= $escape($anime['title']) ?></a>
+        </div>
+    </div>
 
     <?php if ($commentNotice !== null): ?>
         <p class="comment-notice" data-kind="success" role="status"><?= $escape($commentNotice) ?></p>
@@ -24,6 +37,7 @@ $canReply = !$thread['isRemoved'] && !($thread['isDeleted'] ?? false);
     <?php endif; ?>
 
     <section class="comment-thread-root" aria-label="Komentarz rozpoczynający wątek">
+        <h2 class="discussion-section-label">Początek dyskusji</h2>
         <?php $comment = $thread; require __DIR__ . '/partials/comment-card.html.php'; ?>
     </section>
 
@@ -35,7 +49,13 @@ $canReply = !$thread['isRemoved'] && !($thread['isDeleted'] ?? false);
             </div>
         </header>
         <?php if ($replies['entries'] === []): ?>
-            <p class="comments-empty">Nie ma jeszcze odpowiedzi w tym wątku.</p>
+            <div class="social-empty">
+                <span class="social-empty-icon" aria-hidden="true">✦</span>
+                <p>Nie ma jeszcze odpowiedzi w tym wątku.</p>
+                <?php if ($canReply): ?>
+                    <a href="#reply-form"><?= $isLoggedIn ? 'Napisz pierwszą odpowiedź' : 'Przejdź do logowania, aby odpowiedzieć' ?> <span aria-hidden="true">→</span></a>
+                <?php endif; ?>
+            </div>
         <?php else: ?>
             <ol class="comments-list comment-replies-list" aria-label="Odpowiedzi na komentarz">
                 <?php foreach ($replies['entries'] as $comment): ?>

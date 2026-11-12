@@ -1,11 +1,20 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<section class="community-page" aria-labelledby="blocked-heading">
-    <header class="community-heading">
-        <a class="community-back" href="/messages">← Wiadomości</a>
-        <h1 id="blocked-heading">Zablokowani użytkownicy</h1>
-        <p>Blokada zatrzymuje wysyłanie wiadomości w obu kierunkach. Historia rozmów pozostaje dostępna.</p>
+<section class="community-page community-blocked-page" aria-labelledby="blocked-heading">
+    <header class="community-heading social-hero">
+        <div class="community-heading-copy">
+            <p class="social-kicker">Twoje rozmowy · Twoje zasady</p>
+            <h1 id="blocked-heading" class="social-title">Zablokowani użytkownicy</h1>
+            <p class="social-description">Blokada zatrzymuje wysyłanie wiadomości w obu kierunkach. Historia rozmów pozostaje dostępna.</p>
+        </div>
+        <span class="social-pill"><span aria-hidden="true">◌</span> Zablokowani: <?= $escape($blocked['total']) ?></span>
     </header>
+
+    <nav class="social-tabs" aria-label="Sekcje społeczności">
+        <a href="/messages">Wiadomości</a>
+        <a href="/notifications/comments">Powiadomienia</a>
+        <a href="/messages/blocked" aria-current="page">Zablokowani</a>
+    </nav>
 
     <?php if (($notice ?? '') !== ''): ?>
         <p class="community-notice" data-kind="success" role="status"><?= $escape($notice) ?></p>
@@ -21,7 +30,14 @@
     <?php endif; ?>
 
     <?php if ($blocked['entries'] === []): ?>
-        <p class="community-panel community-empty">Nie blokujesz żadnego użytkownika.</p>
+        <div class="community-panel community-empty social-empty">
+            <span class="social-empty-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m12 3 8 3v6c0 4-8 9-8 9s-8-5-8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg>
+            </span>
+            <h2>Nie blokujesz żadnego użytkownika.</h2>
+            <p>Listą blokad możesz zarządzać również z poziomu prywatnej rozmowy.</p>
+            <a class="community-back" href="/messages">← Wiadomości</a>
+        </div>
     <?php else: ?>
         <ul class="community-list" aria-label="Zablokowani użytkownicy" data-blocked-total="<?= $escape($blocked['total']) ?>">
             <?php foreach ($blocked['entries'] as $blockedUser): ?>
@@ -35,7 +51,10 @@
                                     <span>🌸</span>
                                 <?php endif; ?>
                             </span>
-                            <span class="community-user-name"><?= $escape($blockedUser['name']) ?></span>
+                            <span class="blocked-user-copy">
+                                <span class="community-user-name"><?= $escape($blockedUser['name']) ?></span>
+                                <span class="blocked-user-status">Wiadomości zablokowane</span>
+                            </span>
                         </a>
                         <form class="community-inline-form" method="post" action="/users/<?= $escape($blockedUser['id']) ?>/unblock">
                             <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">

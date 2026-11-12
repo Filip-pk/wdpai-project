@@ -11,13 +11,24 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
     (new DateTimeImmutable($value))->setTimezone(new DateTimeZone('Europe/Warsaw'));
 ?>
 
-<div class="messages-page">
-    <header class="messages-page-heading">
-        <p class="eyebrow">Prywatne rozmowy</p>
-        <h1>Wiadomości</h1>
-        <p>Rozmawiaj z innymi fanami anime. Dostęp do rozmowy mają tylko jej uczestnicy.</p>
-        <a class="messages-back" href="/messages/blocked">Zablokowani użytkownicy</a>
+<div class="messages-page<?= $isComposing ? ' is-composing' : '' ?>">
+    <header class="messages-page-heading social-hero">
+        <div class="messages-heading-copy">
+            <p class="social-kicker">Społeczność · prywatne rozmowy</p>
+            <h1 class="social-title"><?= $isComposing ? 'Nowa wiadomość' : 'Wiadomości' ?></h1>
+            <p class="social-description">Rozmawiaj z innymi fanami anime. Dostęp do rozmowy mają tylko jej uczestnicy.</p>
+        </div>
+        <span class="messages-privacy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>
+            Tylko dla uczestników
+        </span>
     </header>
+
+    <nav class="social-tabs" aria-label="Sekcje społeczności">
+        <a href="/messages" aria-current="page">Wiadomości</a>
+        <a href="/notifications/comments">Powiadomienia</a>
+        <a href="/messages/blocked">Zablokowani użytkownicy</a>
+    </nav>
 
     <?php if ($sent): ?>
         <p class="messages-notice" data-kind="success" role="status">Wiadomość została wysłana.</p>
@@ -39,11 +50,14 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
         <aside class="messages-inbox" aria-labelledby="conversations-title" data-conversations-total="<?= $escape($conversationList['total']) ?>" data-conversations-page="<?= $escape($conversationList['page']) ?>" data-conversations-total-pages="<?= $escape($conversationList['totalPages']) ?>">
             <header class="messages-inbox-heading">
                 <h2 id="conversations-title">Twoje rozmowy</h2>
-                <p><?= $escape($conversationList['total']) ?> rozmów</p>
+                <span class="social-pill" aria-label="<?= $escape('Liczba rozmów: ' . $conversationList['total']) ?>"><?= $escape($conversationList['total']) ?></span>
             </header>
 
             <?php if ($conversationList['entries'] === []): ?>
-                <div class="messages-empty">
+                <div class="messages-empty social-empty">
+                    <span class="social-empty-icon" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11a8 8 0 0 1-8 8H5l-3 3V11a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8Z"/><path d="M7 9h9M7 13h6"/></svg>
+                    </span>
                     <p>Nie masz jeszcze żadnej rozmowy.</p>
                     <p>Otwórz profil użytkownika i wybierz „Napisz wiadomość”.</p>
                     <a href="/ranking">Poznaj społeczność AniVibe <span aria-hidden="true">→</span></a>
@@ -71,6 +85,7 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                                         <time datetime="<?= $escape($lastMessageDate->format(DATE_ATOM)) ?>"><?= $escape($lastMessageDate->format('d.m.Y H:i')) ?></time>
                                     <?php endif; ?>
                                 </span>
+                                <span class="conversation-chevron" aria-hidden="true">›</span>
                             </a>
                         </li>
                     <?php endforeach; ?>
@@ -125,7 +140,10 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                 <section id="message-history" class="message-history" aria-labelledby="message-history-title">
                     <h3 id="message-history-title">Historia rozmowy</h3>
                     <?php if ($messagePage['entries'] === []): ?>
-                        <p class="messages-empty">Wyślij pierwszą wiadomość i rozpocznij rozmowę.</p>
+                        <div class="messages-empty messages-thread-empty social-empty">
+                            <span class="social-empty-icon" aria-hidden="true">✦</span>
+                            <p>Wyślij pierwszą wiadomość i rozpocznij rozmowę.</p>
+                        </div>
                     <?php endif; ?>
                     <ol class="message-list" aria-label="Wiadomości w kolejności od najstarszej" data-message-page="<?= $escape($messagePage['page']) ?>" data-message-total="<?= $escape($messagePage['total']) ?>" data-message-total-pages="<?= $escape($messagePage['totalPages']) ?>">
                         <?php foreach ($messagePage['entries'] as $message): ?>
@@ -182,14 +200,17 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                         <textarea id="message-body" name="body" rows="4" maxlength="4000" aria-describedby="message-help<?= $errors !== [] ? ' message-errors' : '' ?>"<?= $errors !== [] ? ' aria-invalid="true"' : '' ?> required><?= $escape($body) ?></textarea>
                         <p id="message-help">Zwykły tekst, do 4000 znaków. Zgłoszoną wiadomość może sprawdzić moderator.</p>
                         <div class="message-form-actions">
-                            <button type="submit">Wyślij wiadomość</button>
+                            <button type="submit">Wyślij wiadomość <span aria-hidden="true">↗</span></button>
                         </div>
                     </form>
                 <?php endif; ?>
             </section>
         <?php else: ?>
             <section class="messages-welcome" aria-labelledby="messages-welcome-title">
-                <span class="messages-welcome-symbol" aria-hidden="true">✦</span>
+                <span class="messages-welcome-symbol" aria-hidden="true">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11a8 8 0 0 1-8 8H5l-3 3V11a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8Z"/><path d="M7 9h9M7 13h6"/></svg>
+                </span>
+                <p class="messages-welcome-kicker">Rozmowy zaczynają się od wspólnej pasji</p>
                 <h2 id="messages-welcome-title">Twój anime krąg</h2>
                 <p>Wybierz rozmowę z listy albo otwórz profil innego użytkownika, aby napisać pierwszą wiadomość.</p>
                 <a href="/ranking">Przejdź do społeczności <span aria-hidden="true">→</span></a>
