@@ -1,0 +1,69 @@
+/* Nagłówki i zakładki kolekcji oraz rankingów. */
+.page-library :is(.collections-page, .ranking-page, .anime-ranking-page) {
+    min-width: 0;
+    gap: var(--space-5);
+}
+
+.page-library :is(.collections-heading-copy, .ranking-heading, .anime-ranking-heading) {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.page-library :is(.profile-heading, .ranking-heading, .anime-ranking-heading) .eyebrow {
+    justify-content: start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 0.6875rem;
+}
+
+.page-library :is(.collections-heading, .ranking-heading, .anime-ranking-heading) h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
+}
+
+.page-library :is(.collections-heading-copy, .ranking-heading, .anime-ranking-heading) > p:last-child {
+    font-size: 0.875rem;
+    line-height: 1.75;
+}
+
+.page-library .profile-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background: var(--color-surface);
+}
+
+.page-library .profile-tabs a {
+    display: grid;
+    place-items: center;
+    min-height: 2.75rem;
+    padding: var(--space-2);
+    border: 0;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.page-library .profile-tabs a[aria-current="page"] {
+    color: var(--color-accent);
+    background: var(--color-surface-raised);
+}
+
+.page-library :is(.collection-pagination, .anime-ranking-pagination) a {
+    border-radius: var(--radius-small);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+@media (min-width: 40rem) {
+    .page-library .profile-tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}

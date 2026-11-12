@@ -28,8 +28,10 @@ $isWorkspace = !$isWelcome && !$isAuthPage;
 $isAnimeDetailsPage = preg_match('~^/anime/[1-9][0-9]*(?:/|$)~', (string) $currentPath) === 1;
 $isDiscoveryPage = in_array($currentPath, ['/dashboard', '/anime', '/watchlist', '/watchlist/remove'], true)
     || $isAnimeDetailsPage;
+$isLibraryPage = str_starts_with((string) $currentPath, '/profile/collections')
+    || in_array($currentPath, ['/anime/ranking', '/ranking'], true);
 $isRedesignPage = $isWelcome || $isAuthPage
-    || $isDiscoveryPage
+    || $isDiscoveryPage || $isLibraryPage
     || in_array($currentPath, ['/profile', '/profile/avatar'], true)
     || str_starts_with((string) $currentPath, '/users/');
 $isProjectsPage = $currentPath === '/projects'
@@ -139,8 +141,11 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isAnimeDetailsPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/anime-details.css') ?>">
     <?php endif; ?>
+    <?php if ($isLibraryPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/library.css') ?>">
+    <?php endif; ?>
 </head>
-<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?>">
+<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?>">
     <a href="#main-content" class="skip-link">
         Przejdź do treści
     </a>
