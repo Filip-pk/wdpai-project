@@ -22,16 +22,17 @@ $currentPath = parse_url(
     PHP_URL_PATH,
 );
 
-$isWelcome = $currentPath === '/';
-$isAuthPage = in_array($currentPath, ['/login', '/register'], true);
-$isWorkspace = !$isWelcome && !$isAuthPage;
-$isAnimeDetailsPage = preg_match('~^/anime/[1-9][0-9]*(?:/|$)~', (string) $currentPath) === 1;
-$isDiscoveryPage = in_array($currentPath, ['/dashboard', '/anime', '/watchlist', '/watchlist/remove'], true)
-    || $isAnimeDetailsPage;
-$isLibraryPage = str_starts_with((string) $currentPath, '/profile/collections')
-    || in_array($currentPath, ['/anime/ranking', '/ranking'], true);
+$isErrorPage = $isErrorPage ?? false;
+$isWelcome = !$isErrorPage && $currentPath === '/';
+$isAuthPage = !$isErrorPage && in_array($currentPath, ['/login', '/register'], true);
+$isWorkspace = !$isWelcome && !$isAuthPage && !$isErrorPage;
+$isAnimeDetailsPage = !$isErrorPage && preg_match('~^/anime/[1-9][0-9]*(?:/|$)~', (string) $currentPath) === 1;
+$isDiscoveryPage = !$isErrorPage && (in_array($currentPath, ['/dashboard', '/anime', '/watchlist', '/watchlist/remove'], true)
+    || $isAnimeDetailsPage);
+$isLibraryPage = !$isErrorPage && (str_starts_with((string) $currentPath, '/profile/collections')
+    || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
 $isRedesignPage = $isWelcome || $isAuthPage
-    || $isDiscoveryPage || $isLibraryPage
+    || $isDiscoveryPage || $isLibraryPage || $isErrorPage
     || in_array($currentPath, ['/profile', '/profile/avatar'], true)
     || str_starts_with((string) $currentPath, '/users/');
 $isProjectsPage = $currentPath === '/projects'
@@ -89,7 +90,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
         <link rel="stylesheet" href="<?= $assetUrl('/css/welcome.css') ?>">
     <?php endif; ?>
 
-    <?php if (in_array($currentPath, ['/login', '/register'], true)): ?>
+    <?php if ($isAuthPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
     <?php endif; ?>
 
@@ -150,8 +151,11 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($currentPath === '/ranking'): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/ranking.css') ?>">
     <?php endif; ?>
+    <?php if ($isErrorPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/error.css') ?>">
+    <?php endif; ?>
 </head>
-<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?>">
+<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?>">
     <a href="#main-content" class="skip-link">
         Przejdź do treści
     </a>
