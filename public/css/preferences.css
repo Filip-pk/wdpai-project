@@ -1,0 +1,10 @@
+html[data-font-size="large"] { font-size: 112.5%; }
+html[data-font-size="largest"] { font-size: 125%; }
+html[data-line-height="relaxed"] { --preferred-line-height: 1.9; }
+html[data-line-height="spacious"] { --preferred-line-height: 2.2; }
+html[data-line-height="relaxed"] :is(p, li, input, select, textarea),
+html[data-line-height="spacious"] :is(p, li, input, select, textarea) { line-height: var(--preferred-line-height); }
+html[data-density="compact"] { --space-3: 0.6rem; --space-4: 0.8rem; --space-5: 1.15rem; --space-6: 1.6rem; }
+html[data-density="spacious"] { --space-3: 1rem; --space-4: 1.25rem; --space-5: 1.85rem; --space-6: 2.5rem; }
+html[data-density="compact"] .settings-field :is(input, select, textarea) { padding-block: 0.5rem; }
+html[data-density="spacious"] .settings-field :is(input, select, textarea) { padding-block: 1rem; }

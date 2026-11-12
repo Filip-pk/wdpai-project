@@ -19,6 +19,7 @@ use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Controller\RankingController;
 use App\Controller\ReplyNotificationController;
+use App\Controller\SettingsController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\AnimeRankingRepository;
@@ -34,6 +35,7 @@ use App\Repository\RatingRepository;
 use App\Repository\RecommendationRepository;
 use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
+use App\Repository\PreferencesRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\MailService;
@@ -59,6 +61,16 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Cache-Control: no-store');
 
 $createController = static function (string $controllerClass): AppController {
+    if ($controllerClass === SettingsController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        return new SettingsController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): PreferencesRepository => new PreferencesRepository($connect()),
+        );
+    }
     if ($controllerClass === AnimeRankingController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -228,6 +240,9 @@ $routing = new Routing(static function (string $controllerClass) use ($createCon
     $controller->setCommunityRepository(
         static fn (): CommunityRepository => new CommunityRepository((new Database())->connect()),
     );
+    $controller->setPreferencesRepository(
+        static fn (): PreferencesRepository => new PreferencesRepository((new Database())->connect()),
+    );
     return $controller;
 });
 
@@ -279,6 +294,9 @@ $routing->get('/moderation', CommunityController::class, 'moderation');
 $routing->post('/moderation/reports/{id}/resolve', CommunityController::class, 'resolve');
 
 $routing->get('/profile', ProfileController::class, 'index');
+$routing->get('/settings', SettingsController::class, 'index');
+$routing->post('/settings', SettingsController::class, 'index');
+$routing->post('/settings/appearance/reset', SettingsController::class, 'resetAppearance');
 $routing->post('/profile', ProfileController::class, 'index');
 $routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');
 $routing->get('/profile/import', MalImportController::class, 'index');
