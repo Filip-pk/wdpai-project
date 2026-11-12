@@ -20,6 +20,15 @@ final class PreferencesService
         'interface_density' => 'comfortable',
     ];
 
+    public const ACCESSIBILITY = [
+        'high_contrast' => ['0' => 'Standardowy', '1' => 'Zwiększony'],
+        'reduced_motion' => ['0' => 'Zgodnie z systemem', '1' => 'Ograniczone'],
+        'strong_focus' => ['0' => 'Standardowe', '1' => 'Mocniejsze'],
+        'large_controls' => ['0' => 'Standardowe', '1' => 'Większe'],
+        'message_text_size' => ['standard' => 'Standardowy', 'large' => 'Duży', 'largest' => 'Bardzo duży'],
+        'comment_text_size' => ['standard' => 'Standardowy', 'large' => 'Duży', 'largest' => 'Bardzo duży'],
+    ];
+
     public static function validate(array $values, array $choices): array
     {
         foreach ($choices as $key => $options) {

@@ -42,6 +42,26 @@
                     <button type="submit" class="settings-secondary">Przywróć domyślny wygląd</button>
                 </form>
             </section>
+            <section class="settings-card" id="accessibility" aria-labelledby="accessibility-title">
+                <header><p class="eyebrow">Czytelnie i wygodnie</p><h2 id="accessibility-title">Dostępność</h2></header>
+                <form method="post" action="/settings/accessibility" data-accessibility-form>
+                    <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                    <div class="settings-fields">
+                        <?php foreach (['high_contrast' => 'Kontrast', 'reduced_motion' => 'Animacje', 'strong_focus' => 'Wyróżnienie fokusu klawiatury', 'large_controls' => 'Przyciski i pola formularzy', 'message_text_size' => 'Tekst wiadomości', 'comment_text_size' => 'Tekst komentarzy'] as $key => $label): ?>
+                            <div class="settings-field">
+                                <label for="settings-<?= $escape($key) ?>"><?= $escape($label) ?></label>
+                                <select id="settings-<?= $escape($key) ?>" name="<?= $escape($key) ?>" data-preference="<?= $escape($key) ?>">
+                                    <?php foreach (\App\Service\PreferencesService::ACCESSIBILITY[$key] as $value => $choice): ?>
+                                        <option value="<?= $escape($value) ?>"<?= ($form[$key] ?? '') === (string) $value ? ' selected' : '' ?>><?= $escape($choice) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="settings-help">Systemowe ograniczenie animacji jest zawsze respektowane. Rozmiary wiadomości i komentarzy ustawisz niezależnie od reszty tekstu.</p>
+                    <div class="settings-actions"><button type="submit">Zapisz dostępność</button></div>
+                </form>
+            </section>
         </div>
 
         <aside class="settings-preview settings-card" aria-labelledby="preview-title">
@@ -53,6 +73,7 @@
                 <button type="button" data-preview-button>Sprawdź wygląd przycisku</button>
             </article>
             <p class="settings-help">Podgląd przycisku jest przykładem. Zapisz ustawienia w formularzu obok.</p>
+            <div class="settings-example-card"><p class="message-body">Przykładowa wiadomość: polecisz mi swoją ulubioną serię?</p><p class="comment-body">Przykładowy komentarz: ta historia ma wyjątkowy klimat.</p></div>
         </aside>
     </div>
 </div>

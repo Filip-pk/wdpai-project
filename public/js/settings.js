@@ -3,22 +3,39 @@
     const form = document.querySelector('[data-appearance-form]');
     if (!form) return;
     const root = document.documentElement;
-    const controls = form.querySelectorAll('[data-preference]');
+    const controls = document.querySelectorAll('[data-preference]');
     const theme = form.querySelector('[name="theme"]');
-    const system = window.matchMedia('(prefers-color-scheme: dark)');
+    let system = null;
+    try {
+        system = window.matchMedia('(prefers-color-scheme: dark)');
+    } catch (error) {
+        // Ręczny podgląd działa również bez preferencji systemowych.
+    }
     let savedTheme = root.dataset.accountTheme;
 
     function preview() {
         for (const control of controls) {
-            const keys = { font_size: 'fontSize', line_height: 'lineHeight', interface_density: 'density' };
+            const keys = {
+                font_size: 'fontSize', line_height: 'lineHeight', interface_density: 'density',
+                high_contrast: 'highContrast', reduced_motion: 'reducedMotion', strong_focus: 'strongFocus',
+                large_controls: 'largeControls', message_text_size: 'messageTextSize', comment_text_size: 'commentTextSize',
+            };
             const key = keys[control.name];
             if (key) root.dataset[key] = control.value;
         }
-        root.dataset.theme = theme.value === 'system' ? (system.matches ? 'dark' : 'light') : theme.value;
+        root.dataset.theme = theme.value === 'system' ? (system?.matches ? 'dark' : 'light') : theme.value;
+        const toggle = document.querySelector('.theme-toggle');
+        if (toggle) {
+            const isDark = root.dataset.theme === 'dark';
+            toggle.setAttribute('aria-pressed', String(isDark));
+            toggle.setAttribute('aria-label', isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw');
+            toggle.title = toggle.getAttribute('aria-label');
+        }
     }
 
     form.addEventListener('change', preview);
-    system.addEventListener('change', () => { if (theme.value === 'system') preview(); });
+    document.querySelector('[data-accessibility-form]')?.addEventListener('change', preview);
+    system?.addEventListener('change', preview);
     // Przełącznik w nawigacji i formularz współdzielą zapisany motyw konta.
     new MutationObserver(() => {
         if (savedTheme === root.dataset.accountTheme) return;

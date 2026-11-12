@@ -28,7 +28,6 @@ final class SettingsController extends AppController
                 http_response_code(403);
                 $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
             } else {
-                $form = [];
                 foreach (PreferencesService::APPEARANCE as $key => $options) {
                     $form[$key] = $this->postString($key);
                 }
@@ -69,6 +68,33 @@ final class SettingsController extends AppController
         $_SESSION['user_theme'] = 'system';
         $_SESSION['settings_notice'] = 'Przywrócono domyślny wygląd.';
         $this->redirect('/settings#appearance');
+    }
+
+    public function accessibility(): void
+    {
+        $user = $this->currentUser($this->users());
+        $form = $this->preferences()->forUser($user['id']);
+        $errors = [];
+        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
+            http_response_code(403);
+            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+        } else {
+            foreach (PreferencesService::ACCESSIBILITY as $key => $options) {
+                $form[$key] = $this->postString($key);
+            }
+            $errors = PreferencesService::validate($form, PreferencesService::ACCESSIBILITY);
+            if ($errors === []) {
+                $this->preferences()->saveAccessibility($user['id'], $form);
+                $_SESSION['settings_notice'] = 'Ustawienia dostępności zostały zapisane.';
+                $this->redirect('/settings#accessibility');
+            }
+            http_response_code(422);
+        }
+        $this->render('settings', [
+            'pageTitle' => 'Ustawienia — AniVibe', 'user' => $user,
+            'form' => $form, 'errors' => $errors,
+            'appearanceChoices' => PreferencesService::APPEARANCE,
+        ]);
     }
 
     private function users(): UserRepository

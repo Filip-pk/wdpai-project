@@ -296,6 +296,7 @@ $routing->post('/moderation/reports/{id}/resolve', CommunityController::class, '
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->get('/settings', SettingsController::class, 'index');
 $routing->post('/settings', SettingsController::class, 'index');
+$routing->post('/settings/accessibility', SettingsController::class, 'accessibility');
 $routing->post('/settings/appearance/reset', SettingsController::class, 'resetAppearance');
 $routing->post('/profile', ProfileController::class, 'index');
 $routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');

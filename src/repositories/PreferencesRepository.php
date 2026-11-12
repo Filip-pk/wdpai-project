@@ -15,7 +15,9 @@ final class PreferencesRepository
     public function forUser(int $userId): array
     {
         $statement = $this->database->prepare(
-            'SELECT theme, font_size, line_height, interface_density FROM users WHERE id = :id'
+            'SELECT theme, font_size, line_height, interface_density,
+                high_contrast, reduced_motion, strong_focus, large_controls,
+                message_text_size, comment_text_size FROM users WHERE id = :id'
         );
         $statement->execute(['id' => $userId]);
         return $statement->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -29,6 +31,20 @@ final class PreferencesRepository
         );
         $statement->execute(['id' => $userId] + array_intersect_key($values, array_flip([
             'theme', 'font_size', 'line_height', 'interface_density',
+        ])));
+    }
+
+    public function saveAccessibility(int $userId, array $values): void
+    {
+        $statement = $this->database->prepare(
+            'UPDATE users SET high_contrast = :high_contrast, reduced_motion = :reduced_motion,
+                strong_focus = :strong_focus, large_controls = :large_controls,
+                message_text_size = :message_text_size, comment_text_size = :comment_text_size
+             WHERE id = :id'
+        );
+        $statement->execute(['id' => $userId] + array_intersect_key($values, array_flip([
+            'high_contrast', 'reduced_motion', 'strong_focus', 'large_controls',
+            'message_text_size', 'comment_text_size',
         ])));
     }
 }

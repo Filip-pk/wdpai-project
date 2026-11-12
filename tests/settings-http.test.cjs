@@ -71,3 +71,28 @@ test('appearance settings enforce auth/CSRF/validation and persist per account a
     assert.equal((await first.client.request('/settings/appearance/reset', { csrfToken: first.token })).status, 303);
     assert.match((await otherSession.request('/settings')).html, /data-account-theme="system" data-font-size="standard" data-line-height="standard" data-density="comfortable"/);
 });
+
+test('accessibility preferences are validated, isolated and retained when appearance is reset', async () => {
+    assert.equal((await browser().request('/settings/accessibility', {})).location, '/login');
+    const first = await account();
+    const second = await account();
+    const fields = {
+        csrfToken: first.token, high_contrast: '1', reduced_motion: '1', strong_focus: '1',
+        large_controls: '1', message_text_size: 'largest', comment_text_size: 'large',
+    };
+    assert.equal((await first.client.request('/settings/accessibility', { ...fields, csrfToken: 'bad' })).status, 403);
+    for (const key of ['high_contrast', 'reduced_motion', 'strong_focus', 'large_controls', 'message_text_size', 'comment_text_size']) {
+        assert.equal((await first.client.request('/settings/accessibility', { ...fields, [key]: 'invalid' })).status, 422);
+    }
+    assert.equal((await first.client.request('/settings/accessibility', fields)).location, '/settings#accessibility');
+    const page = await first.client.request('/settings');
+    assert.match(page.html, /data-high-contrast="1" data-reduced-motion="1" data-strong-focus="1" data-large-controls="1" data-message-text-size="largest" data-comment-text-size="large"/);
+    assert.match((await second.client.request('/settings')).html, /data-high-contrast="0"/);
+    assert.match((await first.client.request('/dashboard')).html, /data-strong-focus="1"/);
+    assert.equal((await first.client.request('/settings/appearance/reset', { csrfToken: first.token })).status, 303);
+    assert.match((await first.client.request('/settings')).html, /data-high-contrast="1"/);
+    const anotherSession = browser();
+    const token = csrf(await anotherSession.request('/login'));
+    await anotherSession.request('/login', { email: first.email, password, csrfToken: token });
+    assert.match((await anotherSession.request('/settings')).html, /data-comment-text-size="large"/);
+});

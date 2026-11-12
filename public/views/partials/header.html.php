@@ -56,7 +56,7 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
 ?>
 
 <!doctype html>
-<html lang="pl"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>" data-font-size="<?= $escape($accountPreferences['font_size'] ?? 'standard') ?>" data-line-height="<?= $escape($accountPreferences['line_height'] ?? 'standard') ?>" data-density="<?= $escape($accountPreferences['interface_density'] ?? 'comfortable') ?>"<?php endif; ?>>
+<html lang="pl"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>" data-font-size="<?= $escape($accountPreferences['font_size'] ?? 'standard') ?>" data-line-height="<?= $escape($accountPreferences['line_height'] ?? 'standard') ?>" data-density="<?= $escape($accountPreferences['interface_density'] ?? 'comfortable') ?>" data-high-contrast="<?= $escape($accountPreferences['high_contrast'] ?? '0') ?>" data-reduced-motion="<?= $escape($accountPreferences['reduced_motion'] ?? '0') ?>" data-strong-focus="<?= $escape($accountPreferences['strong_focus'] ?? '0') ?>" data-large-controls="<?= $escape($accountPreferences['large_controls'] ?? '0') ?>" data-message-text-size="<?= $escape($accountPreferences['message_text_size'] ?? 'standard') ?>" data-comment-text-size="<?= $escape($accountPreferences['comment_text_size'] ?? 'standard') ?>"<?php endif; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
