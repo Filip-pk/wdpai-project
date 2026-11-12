@@ -1,29 +1,117 @@
-.import-panel,
-.import-upload-content,
-.import-entries,
-.import-entry-list,
-.import-entry {
+/* Import listy: wczytanie, podgląd i wynik zapisu. */
+.page-import .import-page {
+    gap: var(--space-5);
+}
+
+.page-import .profile-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.page-import .import-heading-copy {
+    display: grid;
+    flex: 1 1 24rem;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.page-import .profile-heading h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    letter-spacing: -0.04em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.page-import .import-heading-copy > p:last-child {
+    max-width: 46rem;
+    font-size: 0.875rem;
+    line-height: 1.75;
+}
+
+.page-import .import-progress {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+    min-width: 0;
+    margin: 0;
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background-color: var(--color-surface);
+    list-style: none;
+}
+
+.page-import .import-progress > li {
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-3) var(--space-1);
+    border-radius: 0.75rem;
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+    font-weight: 650;
+    line-height: 1.6;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.page-import .import-progress-number {
+    display: grid;
+    place-items: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-surface-raised);
+    font-size: 0.75rem;
+    font-weight: 750;
+}
+
+.page-import .import-progress > li[aria-current="step"] {
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.page-import .import-progress > li[aria-current="step"] .import-progress-number {
+    border-color: var(--color-brand);
+    background-color: var(--color-surface);
+}
+
+.page-import .import-progress > li.is-complete .import-progress-number {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.page-import :is(.import-panel, .import-upload-content, .import-upload-guide, .import-entries, .import-entry-list, .import-entry) {
     display: grid;
     gap: var(--space-4);
     min-width: 0;
 }
 
-.import-panel,
-.import-entry {
-    padding: var(--space-5);
+.page-import :is(.import-panel, .import-entry) {
+    padding: var(--space-4);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-medium);
+    border-radius: 1rem;
     background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
 }
 
-.page-standard .page-content .import-page :where(.import-panel, .import-entry, .import-upload-content, .import-section-heading) > * {
+.page-import .page-content .import-page :where(.import-panel, .import-entry, .import-upload-content, .import-upload-guide, .import-section-heading) > * {
     margin-top: 0;
 }
 
-.import-section-heading,
-.import-entry-heading,
-.import-actions,
-.import-pagination {
+.page-import .import-panel h2,
+.page-import .import-entries h2 {
+    font-size: 1.125rem;
+    letter-spacing: -0.025em;
+}
+
+.page-import :is(.import-section-heading, .import-entry-heading, .import-actions, .import-pagination) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -32,37 +120,41 @@
     min-width: 0;
 }
 
-.import-section-heading > div,
-.import-entry-heading > div {
+.page-import :is(.import-section-heading, .import-entry-heading) > div {
     display: grid;
     gap: var(--space-2);
     min-width: 0;
 }
 
-.import-step,
-.import-private,
-.import-help,
-.import-before,
-.import-entry-reason {
-    font-size: 0.8rem;
-    line-height: 1.6;
+.page-import :is(.import-step, .import-private, .import-help, .import-before, .import-entry-reason) {
+    font-size: 0.75rem;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
 }
 
-.page-standard .page-content .import-step {
+.page-import .page-content .import-step {
     color: var(--color-brand);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.6875rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
-.import-private {
+.page-import .import-private {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: 100%;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
-    color: var(--color-muted);
-    background-color: var(--color-surface-raised);
+    color: var(--color-brand);
+    background-color: var(--color-surface);
 }
 
-.import-counts,
-.import-entry-values {
+.page-import .import-counts,
+.page-import .import-entry-values {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
@@ -70,191 +162,292 @@
     margin: 0;
 }
 
-.import-counts > div {
+.page-import .import-counts > div {
     display: grid;
     gap: var(--space-2);
     min-width: 0;
     padding: var(--space-3);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-small);
     background-color: var(--color-surface-raised);
 }
 
-.import-counts dt,
-.import-entry-values dt {
-    font-size: 0.75rem;
+.page-import :is(.import-counts, .import-entry-values) dt {
+    font-size: 0.6875rem;
     line-height: 1.5;
 }
 
-.import-counts dd {
+.page-import .import-counts dd {
     margin: 0;
     color: var(--color-brand);
-    font-size: 1.6rem;
+    font-size: 1.75rem;
     font-weight: 800;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
 }
 
-.import-policy {
+.page-import .import-counts > div:first-child dd {
+    color: var(--color-accent);
+}
+
+.page-import .import-policy {
     padding: var(--space-3) var(--space-4);
     border-inline-start: 3px solid var(--color-brand);
     border-radius: var(--radius-small);
     background-color: var(--color-surface-raised);
+    font-size: 0.8125rem;
+    line-height: 1.8;
+}
+
+.page-import .import-report {
+    border-top: 2px solid var(--color-success);
+}
+
+.page-import .import-exp {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
     font-size: 0.875rem;
 }
 
-.import-actions {
-    justify-content: flex-start;
+.page-import .import-exp strong {
+    color: var(--color-accent);
 }
 
-.page-standard .import-page :where(.import-confirm-form, .import-cancel-form, .import-upload-form) {
+.page-import .import-actions {
+    justify-content: flex-start;
+    gap: var(--space-2) var(--space-4);
+}
+
+.page-import .import-page :where(.import-confirm-form, .import-cancel-form, .import-upload-form) {
     margin: 0;
 }
 
-.import-confirm-form button,
-.import-upload-form > button {
+.page-import .import-actions > form {
+    flex: 1 1 100%;
+    min-width: 0;
+}
+
+.page-import :is(.import-confirm-form, .import-cancel-form) button,
+.page-import .import-upload-form > button {
+    min-height: 3rem;
+    width: 100%;
+    max-width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.8125rem;
+    font-weight: 750;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.page-import .import-confirm-form button,
+.page-import .import-upload-form > button {
     color: var(--color-button-text);
     border-color: transparent;
     background-image: linear-gradient(110deg, var(--color-button-start), var(--color-button-end));
-    font-weight: 800;
 }
 
-.page-standard .import-page .import-cancel-form button {
+.page-import .import-cancel-form button {
     color: var(--color-text);
     border: 1px solid var(--color-border);
     background: var(--color-surface-raised);
     box-shadow: none;
 }
 
-.import-primary-link {
+.page-import .import-actions a {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
     min-height: 2.75rem;
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-brand);
-    border-radius: var(--radius-small);
-    font-weight: 700;
+    max-width: 100%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
 }
 
-.import-page .import-entry-list {
+.page-import .import-primary-link {
+    justify-content: center;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+    text-decoration: none;
+}
+
+.page-import .import-page .import-entry-list {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.import-entry h3 {
-    font-size: 1rem;
+.page-import .import-entry h3 {
+    font-size: 0.9375rem;
+    line-height: 1.6;
     overflow-wrap: anywhere;
 }
 
-.import-entry-values > div {
+.page-import .import-entry-values > div {
     min-width: 0;
 }
 
-.import-entry-values dd {
+.page-import .import-entry-values dd {
     display: grid;
     gap: var(--space-1);
     margin: var(--space-2) 0 0;
+    font-size: 0.8125rem;
     overflow-wrap: anywhere;
 }
 
-.import-before {
+.page-import .import-before {
     color: var(--color-muted);
 }
 
-.import-action-label {
-    flex: 0 0 auto;
+.page-import .import-action-label {
+    max-width: 100%;
     padding: var(--space-1) var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
     color: var(--color-text);
     background-color: var(--color-surface-raised);
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 700;
+    overflow-wrap: anywhere;
 }
 
-.import-action-label[data-kind="add"],
-.import-action-label[data-kind="update"] {
+.page-import .import-action-label:is([data-kind="add"], [data-kind="update"]) {
     border-color: var(--color-brand);
     color: var(--color-brand);
 }
 
-.import-entry-reason {
+.page-import .import-entry-reason {
     padding-top: var(--space-3);
     border-top: 1px solid var(--color-border);
-    overflow-wrap: anywhere;
 }
 
-.import-pagination {
+.page-import .import-pagination {
     justify-content: center;
     padding-top: var(--space-3);
-    font-size: 0.875rem;
+    font-size: 0.75rem;
 }
 
-.import-pagination a {
+.page-import .import-pagination a {
     display: inline-flex;
     align-items: center;
     min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    font-weight: 600;
+    text-decoration: none;
 }
 
-.import-upload-panel {
+.page-import .import-upload-panel {
     display: block;
 }
 
-.import-upload-panel > summary {
+.page-import .import-upload-panel > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 2.75rem;
     color: var(--color-brand);
+    font-size: 0.8125rem;
     font-weight: 700;
     cursor: pointer;
+    list-style: none;
 }
 
-.import-upload-panel > summary:focus-visible {
-    outline: 3px solid var(--color-focus);
-    outline-offset: 4px;
+.page-import .import-upload-panel > summary::-webkit-details-marker {
+    display: none;
 }
 
-.import-upload-panel[open] .import-upload-content {
+.page-import .import-upload-panel > summary::after {
+    content: "+";
+    font-size: 1.25rem;
+}
+
+.page-import .import-upload-panel[open] > summary::after {
+    content: "−";
+}
+
+.page-import .import-upload-panel[open] .import-upload-content {
     margin-top: var(--space-5);
 }
 
-.import-instructions {
+.page-import .import-upload-guide {
+    align-content: start;
+}
+
+.page-import .import-upload-icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.page-import .import-instructions {
     display: grid;
     gap: var(--space-3);
     margin: 0;
     padding-inline-start: var(--space-5);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    line-height: 1.85;
 }
 
-.import-upload-form {
+.page-import .import-upload-form {
     display: grid;
+    align-content: start;
     gap: var(--space-5);
     min-width: 0;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
 }
 
-.import-upload-form > button {
-    justify-self: start;
-    max-width: 100%;
-    white-space: normal;
+.page-import .import-upload-form .profile-field label {
+    font-size: 0.8125rem;
 }
 
-.import-upload-form input[type="file"] {
+.page-import .import-upload-form input[type="file"] {
     width: 100%;
     min-width: 0;
-    font-size: 0.8rem;
+    padding: var(--space-3);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-input-background);
+    font-size: 1rem;
 }
 
-.import-upload-form input[type="file"]::file-selector-button {
+.page-import .import-upload-form input[type="file"]::file-selector-button {
+    display: block;
     min-height: 2.75rem;
-    margin-inline-end: var(--space-3);
+    max-width: 100%;
+    margin: 0 0 var(--space-2);
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-small);
+    border-radius: 0.5rem;
     color: var(--color-text);
     background-color: var(--color-surface-raised);
     font: inherit;
+    font-size: 0.8125rem;
     cursor: pointer;
 }
 
-.import-policy-choice {
+.page-import .import-upload-form .profile-field > p {
+    font-size: 0.75rem;
+    line-height: 1.75;
+}
+
+.page-import .import-policy-choice {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
     min-width: 0;
     padding: var(--space-4);
     border: 1px solid var(--color-border);
@@ -262,16 +455,17 @@
     background-color: var(--color-surface-raised);
 }
 
-.import-policy-choice label {
+.page-import .import-policy-choice label {
     display: flex;
     align-items: start;
     gap: var(--space-3);
-    font-size: 0.875rem;
+    min-height: 2.75rem;
+    font-size: 0.8125rem;
     font-weight: 700;
     cursor: pointer;
 }
 
-.import-policy-choice input[type="checkbox"] {
+.page-import .import-policy-choice input[type="checkbox"] {
     flex: 0 0 auto;
     width: 1.25rem;
     height: 1.25rem;
@@ -279,16 +473,62 @@
     margin-top: 0.15rem;
 }
 
-.import-policy-choice p {
-    font-size: 0.8rem;
+.page-import .import-policy-choice p {
+    font-size: 0.75rem;
+    line-height: 1.75;
 }
 
-@media (min-width: 42rem) {
-    .import-counts {
+.page-import :where(a, button, input, summary):focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+}
+
+@media (min-width: 40rem) {
+    .page-import .import-progress > li {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-3);
+        font-size: 0.8125rem;
+    }
+
+    .page-import :is(.import-panel, .import-entry) {
+        padding: var(--space-5);
+    }
+
+    .page-import .import-counts {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
-    .import-entry-values {
+    .page-import .import-entry-values {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .page-import .import-actions > form {
+        flex: 0 1 auto;
+    }
+
+    .page-import :is(.import-confirm-form, .import-cancel-form) button,
+    .page-import .import-upload-form > button,
+    .page-import .import-primary-link {
+        width: auto;
+    }
+
+    .page-import .import-upload-form > button {
+        justify-self: start;
+    }
+}
+
+@media (min-width: 75rem) {
+    .page-import .import-upload-content {
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: var(--space-6);
+    }
+
+    .page-import .import-upload-form {
+        padding-top: 0;
+        padding-inline-start: var(--space-6);
+        border-top: 0;
+        border-inline-start: 1px solid var(--color-border);
     }
 }
