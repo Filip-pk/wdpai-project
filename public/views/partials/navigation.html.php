@@ -20,6 +20,7 @@ if ($isModerator) {
     $secondaryNavigation['/moderation'] = 'Moderacja';
 }
 $isNavigationCurrent = static fn (string $url): bool => $currentPath === $url
+    || ($url === '/chat' && str_starts_with((string) $currentPath, '/chat/'))
     || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
     || ($url === '/profile' && (str_starts_with((string) $currentPath, '/profile/') || $isUserProfilePage))
     || ($url === '/messages' && str_starts_with((string) $currentPath, '/messages/'))

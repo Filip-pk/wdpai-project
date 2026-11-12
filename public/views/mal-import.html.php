@@ -12,16 +12,30 @@ $actionLabels = $report !== null
     : ['add' => 'Dodajemy', 'update' => 'Aktualizujemy', 'unchanged' => 'Bez zmian', 'skipped' => 'Pominięte'];
 $hasResult = $preview !== null || $report !== null;
 $visibleRows = $preview !== null ? $previewRows : $reportRows;
+$currentImportStep = $report !== null ? 3 : ($preview !== null ? 2 : 1);
+$importSteps = [1 => 'Wczytaj plik', 2 => 'Sprawdź dane', 3 => 'Zapisano'];
 ?>
 
 <div class="profile-page import-page">
     <?php require __DIR__ . '/partials/profile-tabs.html.php'; ?>
 
     <header class="profile-heading">
-        <p class="eyebrow">Twoja historia oglądania</p>
-        <h1>Import z MyAnimeList</h1>
-        <p>Przenieś swoją listę anime, postępy i oceny. Najpierw sprawdzisz podgląd, a potem zatwierdzisz zapis na swoim koncie.</p>
+        <div class="import-heading-copy">
+            <p class="eyebrow">Twoja historia oglądania</p>
+            <h1>Import z MyAnimeList</h1>
+            <p>Przenieś swoją listę anime, postępy i oceny. Najpierw sprawdzisz podgląd, a potem zatwierdzisz zapis na swoim koncie.</p>
+        </div>
+        <span class="import-private"><span aria-hidden="true">◇</span> Prywatny import</span>
     </header>
+
+    <ol class="import-progress" aria-label="Etapy importu">
+        <?php foreach ($importSteps as $stepNumber => $stepLabel): ?>
+            <li<?= $stepNumber === $currentImportStep ? ' aria-current="step"' : '' ?><?= $stepNumber < $currentImportStep ? ' class="is-complete"' : '' ?>>
+                <span class="import-progress-number" aria-hidden="true"><?= $stepNumber < $currentImportStep ? '✓' : $escape($stepNumber) ?></span>
+                <span><?= $escape($stepLabel) ?></span>
+            </li>
+        <?php endforeach; ?>
+    </ol>
 
     <?php if ($notice !== null): ?>
         <p class="profile-notice" role="status"><?= $escape($notice) ?></p>
@@ -177,12 +191,18 @@ $visibleRows = $preview !== null ? $previewRows : $reportRows;
         <section class="import-panel import-upload-panel" aria-labelledby="import-upload-title">
     <?php endif; ?>
         <div class="import-upload-content">
-            <h2 id="import-upload-title">Przygotuj swoją listę</h2>
-            <ol class="import-instructions">
-                <li>Zaloguj się na MyAnimeList i otwórz <a href="https://myanimelist.net/panel.php?go=export" rel="external noreferrer">eksport listy</a>.</li>
-                <li>Wybierz <span lang="en">Anime List</span>, następnie <span lang="en">Export My List</span> i pobierz plik.</li>
-                <li>Wybierz go poniżej. Plik XML.GZ możesz wgrać bez rozpakowywania.</li>
-            </ol>
+            <div class="import-upload-guide">
+                <span class="import-upload-icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M12 12v6m-3-3 3-3 3 3"/></svg>
+                </span>
+                <h2 id="import-upload-title">Przygotuj swoją listę</h2>
+                <ol class="import-instructions">
+                    <li>Zaloguj się na MyAnimeList i otwórz <a href="https://myanimelist.net/panel.php?go=export" rel="external noreferrer">eksport listy</a>.</li>
+                    <li>Wybierz <span lang="en">Anime List</span>, następnie <span lang="en">Export My List</span> i pobierz plik.</li>
+                    <li>Wybierz go poniżej. Plik XML.GZ możesz wgrać bez rozpakowywania.</li>
+                </ol>
+                <p class="import-help">Przenosimy statusy, postęp i własne oceny. Lista pozostaje prywatna. EXP jest przeliczany na podstawie zapisanych postępów.</p>
+            </div>
             <form action="/profile/import/preview" method="post" enctype="multipart/form-data" class="import-upload-form">
                 <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                 <div class="profile-field">
@@ -199,7 +219,6 @@ $visibleRows = $preview !== null ? $previewRows : $reportRows;
                 </div>
                 <button type="submit">Pokaż podgląd importu</button>
             </form>
-            <p class="import-help">Przenosimy statusy, postęp i własne oceny. Lista pozostaje prywatna. EXP jest przeliczany na podstawie zapisanych postępów.</p>
         </div>
     <?php if ($hasResult): ?></details><?php else: ?></section><?php endif; ?>
 </div>
