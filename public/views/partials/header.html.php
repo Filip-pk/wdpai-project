@@ -144,6 +144,9 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isLibraryPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/library.css') ?>">
     <?php endif; ?>
+    <?php if ($isCollectionsPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/collections-library.css') ?>">
+    <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?>">
     <a href="#main-content" class="skip-link">
