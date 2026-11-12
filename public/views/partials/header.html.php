@@ -26,13 +26,20 @@ $isErrorPage = $isErrorPage ?? false;
 $isWelcome = !$isErrorPage && $currentPath === '/';
 $isAuthPage = !$isErrorPage && in_array($currentPath, ['/login', '/register'], true);
 $isWorkspace = !$isWelcome && !$isAuthPage && !$isErrorPage;
-$isAnimeDetailsPage = !$isErrorPage && preg_match('~^/anime/[1-9][0-9]*(?:/|$)~', (string) $currentPath) === 1;
+$isCommentThreadPage = !$isErrorPage && ($threadMode ?? false) === true;
+$isSocialFormsPage = !$isErrorPage && ($currentPath === '/messages/blocked'
+    || $currentPath === '/notifications/comments'
+    || str_starts_with((string) $currentPath, '/reports/'));
+$isCommunityPage = !$isErrorPage && ($isCommentThreadPage || $isSocialFormsPage
+    || $currentPath === '/messages' || str_starts_with((string) $currentPath, '/messages/'));
+$isAnimeDetailsPage = !$isErrorPage && !$isCommentThreadPage
+    && preg_match('~^/anime/[1-9][0-9]*(?:/|$)~', (string) $currentPath) === 1;
 $isDiscoveryPage = !$isErrorPage && (in_array($currentPath, ['/dashboard', '/anime', '/watchlist', '/watchlist/remove'], true)
     || $isAnimeDetailsPage);
 $isLibraryPage = !$isErrorPage && (str_starts_with((string) $currentPath, '/profile/collections')
     || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
 $isRedesignPage = $isWelcome || $isAuthPage
-    || $isDiscoveryPage || $isLibraryPage || $isErrorPage
+    || $isDiscoveryPage || $isLibraryPage || $isErrorPage || $isCommunityPage
     || in_array($currentPath, ['/profile', '/profile/avatar'], true)
     || str_starts_with((string) $currentPath, '/users/');
 $isProjectsPage = $currentPath === '/projects'
@@ -130,7 +137,16 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php if ($isImportPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/import.css') ?>">
     <?php endif; ?>
-    <?php if ($currentPath === '/messages' || str_starts_with((string) $currentPath, '/messages/')): ?>
+    <?php if ($isCommunityPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/social.css') ?>">
+    <?php endif; ?>
+    <?php if ($isSocialFormsPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/community-pages.css') ?>">
+    <?php endif; ?>
+    <?php if ($isCommentThreadPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/discussion.css') ?>">
+    <?php endif; ?>
+    <?php if ($isCommunityPage && !$isSocialFormsPage && !$isCommentThreadPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/messages.css') ?>">
     <?php endif; ?>
     <?php if ($isDiscoveryPage): ?>
@@ -155,7 +171,7 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
         <link rel="stylesheet" href="<?= $assetUrl('/css/error.css') ?>">
     <?php endif; ?>
 </head>
-<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?>">
+<body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?><?= $isCommunityPage ? ' page-community' : '' ?>">
     <a href="#main-content" class="skip-link">
         Przejdź do treści
     </a>

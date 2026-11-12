@@ -1,0 +1,193 @@
+/* Wątek komentarza i odpowiedzi. */
+.page-community .comment-thread-page {
+    gap: var(--space-5);
+}
+
+.page-community .comment-thread-heading {
+    align-items: flex-start;
+}
+
+.discussion-anime {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface);
+}
+
+.discussion-anime-icon {
+    display: grid;
+    flex: 0 0 2.5rem;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    color: var(--color-brand);
+    background-color: var(--color-surface-raised);
+}
+
+.discussion-anime-copy {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    font-size: 0.8125rem;
+}
+
+.discussion-anime-copy > span {
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+}
+
+.discussion-anime-copy > a {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    min-width: 0;
+    color: var(--color-text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.discussion-anime-copy > a:hover {
+    color: var(--color-brand);
+}
+
+.page-community .comment-thread-root {
+    gap: var(--space-3);
+}
+
+.discussion-section-label {
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.page-community .comment-card,
+.page-community .comment-form {
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: 1rem;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+}
+
+.page-community .comment-thread-root .comment-card {
+    border-top: 2px solid var(--color-brand);
+}
+
+.page-community .comment-avatar {
+    flex-basis: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+}
+
+.page-community .comment-author-name {
+    font-size: 0.8125rem;
+}
+
+.page-community .comment-dates {
+    font-size: 0.6875rem;
+}
+
+.page-community .comment-body {
+    font-size: 0.875rem;
+    line-height: 1.85;
+}
+
+.page-community .comment-reactions {
+    gap: var(--space-2);
+}
+
+.page-community .comment-reaction-form button,
+.page-community .comment-reaction-total {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-raised);
+    font-size: 0.75rem;
+}
+
+.page-community .comment-card-actions {
+    gap: var(--space-2) var(--space-4);
+}
+
+.page-community .comment-card-actions > a,
+.page-community .comment-delete summary {
+    font-size: 0.75rem;
+}
+
+.page-community .comment-thread-replies {
+    gap: var(--space-4);
+    padding-top: var(--space-3);
+}
+
+.page-community .comment-thread-replies h2,
+.page-community .comment-form h2 {
+    font-size: 1.125rem;
+    letter-spacing: -0.025em;
+}
+
+.page-community .comment-thread-replies .comment-replies-list {
+    gap: var(--space-4);
+    padding-inline-start: var(--space-3);
+    border-inline-start-color: var(--color-brand);
+}
+
+.page-community .comment-field {
+    gap: var(--space-3);
+}
+
+.page-community .comment-field textarea {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.page-community .comment-field > p {
+    font-size: 0.75rem;
+}
+
+.page-community .comment-form-actions > button {
+    min-height: 3rem;
+    width: 100%;
+    font-size: 0.8125rem;
+}
+
+.page-community :is(.comment-notice, .comments-empty, .comments-login) {
+    background-color: var(--color-surface);
+    font-size: 0.8125rem;
+}
+
+.page-community .comments-pagination {
+    font-size: 0.75rem;
+}
+
+.page-community .comments-pagination a {
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+@media (min-width: 48rem) {
+    .page-community .comment-card,
+    .page-community .comment-form {
+        padding: var(--space-5);
+    }
+
+    .page-community .comment-thread-replies .comment-replies-list {
+        padding-inline-start: var(--space-5);
+    }
+
+    .page-community .comment-form-actions > button {
+        width: auto;
+        padding-inline: var(--space-5);
+    }
+}
