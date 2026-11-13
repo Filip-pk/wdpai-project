@@ -195,14 +195,14 @@ final class CommunityRepository
             return null;
         }
 
-        $total = (int) $this->connection->query("SELECT COUNT(*) FROM community_reports WHERE status = 'open'")->fetchColumn();
+        $total = (int) $this->connection->query("SELECT COUNT(*) FROM community_reports WHERE status = 'open' AND target_type = 'comment'")->fetchColumn();
         $paging = $this->pagination($total, $page, $perPage);
         $statement = $this->connection->prepare(
             "SELECT r.id, r.target_type, r.target_id, r.snapshot, r.reason, r.status,
                     r.created_at, reporter.name AS reporter_name, author.name AS author_name
              FROM community_reports r JOIN users reporter ON reporter.id = r.reporter_id
              LEFT JOIN users author ON author.id = r.reported_user_id
-             WHERE r.status = 'open' ORDER BY r.created_at ASC, r.id ASC LIMIT :limit OFFSET :offset"
+             WHERE r.status = 'open' AND r.target_type = 'comment' ORDER BY r.created_at ASC, r.id ASC LIMIT :limit OFFSET :offset"
         );
         $statement->bindValue('limit', $paging['perPage'], PDO::PARAM_INT);
         $statement->bindValue('offset', ($paging['page'] - 1) * $paging['perPage'], PDO::PARAM_INT);
@@ -231,7 +231,7 @@ final class CommunityRepository
                 return false;
             }
 
-            $lookup = $this->connection->prepare('SELECT target_type, target_id FROM community_reports WHERE id = :id');
+            $lookup = $this->connection->prepare("SELECT target_type, target_id FROM community_reports WHERE id = :id AND target_type = 'comment'");
             $lookup->execute(['id' => $reportId]);
             $target = $lookup->fetch(PDO::FETCH_ASSOC);
 
@@ -251,12 +251,7 @@ final class CommunityRepository
             }
 
             if ($action === 'remove') {
-                $table = match ($target['target_type']) {
-                    'comment' => 'anime_comments',
-                    'message' => 'private_messages',
-                    default => throw new InvalidArgumentException('Nieprawidłowy typ zgłoszenia.'),
-                };
-                $hide = $this->connection->prepare('UPDATE ' . $table . ' SET moderated_at = COALESCE(moderated_at, clock_timestamp()) WHERE id = :id');
+                $hide = $this->connection->prepare('UPDATE anime_comments SET moderated_at = COALESCE(moderated_at, clock_timestamp()) WHERE id = :id');
                 $hide->execute(['id' => $target['target_id']]);
                 $resolve = $this->connection->prepare(
                     "UPDATE community_reports SET status = 'removed', resolved_by = :moderator, resolved_at = clock_timestamp()
