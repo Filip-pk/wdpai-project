@@ -185,8 +185,14 @@ final class ModerationRepository
     {
         // Reject moderator targets before waiting for an exclusive request lock. This also
         // prevents two invalid moderator-to-moderator attempts from forming a lock cycle.
-        if (!in_array($durationSeconds, self::BAN_DURATIONS, true) || $actor === $userId
-            || !$this->canModerate($actor) || $this->isModerator($userId)) {
+        if ($userId <= 0 || !in_array($durationSeconds, self::BAN_DURATIONS, true) || $actor === $userId
+            || !$this->canModerate($actor)) {
+            return false;
+        }
+        $lookup = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
+        $lookup->execute(['id' => $userId]);
+        $target = $lookup->fetch();
+        if ($target === false || in_array($target['is_moderator'], [true, 1, '1', 't'], true)) {
             return false;
         }
         return $this->exclusiveUserMutation($userId, fn (): bool => $this->decision($actor, $userId, $reason, $key, function (array $user, string $reason) use ($actor, $userId, $durationSeconds, $key): bool {
@@ -241,17 +247,16 @@ final class ModerationRepository
 
     public function dismissReport(int $actor, int $reportId, string $reason, string $key): bool
     {
-        $lookup = $this->connection->prepare("SELECT c.id, c.user_id FROM community_reports r JOIN anime_comments c ON c.id = r.target_id WHERE r.id = :id AND r.target_type = 'comment'");
+        $lookup = $this->connection->prepare("SELECT r.target_id AS id, COALESCE(c.user_id, r.reported_user_id) AS user_id
+            FROM community_reports r LEFT JOIN anime_comments c ON c.id = r.target_id
+            WHERE r.id = :id AND r.target_type = 'comment'");
         $lookup->execute(['id' => $reportId]);
         $target = $lookup->fetch();
-        if ($target === false) {
+        if ($target === false || $target['user_id'] === null) {
             return false;
         }
         return $this->decision($actor, (int) $target['user_id'], $reason, $key, function (array $user, string $reason) use ($actor, $reportId, $key, $target): bool {
             $comment = $this->comment((int) $target['id'], true);
-            if ($comment === null) {
-                return false;
-            }
             $update = $this->connection->prepare("UPDATE community_reports SET status = 'dismissed', resolved_by = :actor, resolved_at = clock_timestamp() WHERE id = :id AND target_type = 'comment' AND status = 'open'");
             $update->execute(['actor' => $actor, 'id' => $reportId]);
             if ($update->rowCount() !== 1) {
@@ -301,7 +306,8 @@ final class ModerationRepository
         // connection until its transaction commits. A ban therefore waits for older
         // writes, and all following requests see the committed ban before writing.
         return (new CommunityRepository($this->connection))->withUsersLocked([], function () use ($userId, $callback): bool {
-            $lock = $this->connection->prepare('SELECT pg_advisory_xact_lock(74123, CAST(:user AS integer))');
+            // The shared HTTP guard reserves the same negative bigint account key.
+            $lock = $this->connection->prepare('SELECT pg_advisory_xact_lock(-CAST(:user AS bigint))');
             $lock->execute(['user' => $userId]);
             $lock->fetchColumn();
             return $callback();

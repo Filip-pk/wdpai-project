@@ -136,6 +136,7 @@ try {
         }
         $assert(!$repository->banUser(101, 101, 'Własne konto', 3600, $key()));
         $assert(!$repository->banUser(101, 404, 'Inny moderator', 3600, $key()));
+        $assert(!$repository->banUser(101, PHP_INT_MAX, 'Nieistniejące konto o dużym ID', 3600, $key()));
         $assert(!$repository->banUser(101, 202, 'Brak poprawnego klucza', 3600, 'invalid'));
         $assert($count('user_bans') === 0 && $count('moderation_actions') === 0);
     });

@@ -28,8 +28,8 @@ if (($argv[1] ?? '') === 'worker') {
     try {
         $schema = $argv[2] ?? '';
         $operation = $argv[3] ?? '';
-        $actor = filter_var($argv[4] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 2147483647]]);
-        $target = filter_var($argv[5] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 2147483647]]);
+        $actor = filter_var($argv[4] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX]]);
+        $target = filter_var($argv[5] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX]]);
         if ($actor === false || $target === false || !in_array($operation, ['ban', 'write', 'write_rr'], true)) {
             throw new RuntimeException('Invalid concurrency worker arguments.');
         }
@@ -87,10 +87,11 @@ $launch = static function (string $operation, int $actor, int $target) use ($sch
     return $worker;
 };
 $awaitBlocked = static function (PDO $connection, array $worker) use ($assert): void {
-    $lookup = $connection->prepare("SELECT EXISTS (SELECT 1 FROM pg_locks WHERE pid = :pid AND locktype = 'advisory' AND classid = :namespace AND NOT granted)");
+    $lookup = $connection->prepare("SELECT EXISTS (SELECT 1 FROM pg_locks WHERE pid = :pid AND locktype = 'advisory'
+        AND objsubid = 1 AND classid >= 2147483648 AND NOT granted)");
     $deadline = microtime(true) + 3;
     do {
-        $lookup->execute(['pid' => $worker['pid'], 'namespace' => AccountAccessGuard::LOCK_NAMESPACE]);
+        $lookup->execute(['pid' => $worker['pid']]);
         if ($lookup->fetchColumn() === true) {
             return;
         }
@@ -120,12 +121,13 @@ try {
     $connection->exec('ALTER TABLE users ALTER COLUMN id DROP DEFAULT');
     $migration = file_get_contents(dirname(__DIR__) . '/database/23-moderation-and-timed-bans.sql');
     $connection->exec(preg_replace('/\b(?:BEGIN|COMMIT);/', '', $migration));
-    $baseId = random_int(1500000000, 2000000000);
-    $actor = $baseId;
+    // Exercise real BIGINT fixture rows, including PHP/PG's largest positive ID.
+    $baseId = random_int(4294967296, 8589934500);
+    $actor = PHP_INT_MAX;
     $target = $baseId + 1;
     $otherModerator = $baseId + 2;
-    $live = $connection->prepare('SELECT count(*) FROM public.users WHERE id BETWEEN :first AND :last');
-    $live->execute(['first' => $actor, 'last' => $otherModerator]);
+    $live = $connection->prepare('SELECT count(*) FROM public.users WHERE id IN (:actor, :target, :other)');
+    $live->execute(['actor' => $actor, 'target' => $target, 'other' => $otherModerator]);
     $assert((int) $live->fetchColumn() === 0, 'Advisory test IDs must not belong to real accounts.');
     $fixture = $connection->prepare('INSERT INTO users (id, name, email, password_hash, is_moderator) VALUES (:id, :name, :email, :hash, :moderator)');
     foreach ([[$actor, 'Moderator', true], [$target, 'Original user', false], [$otherModerator, 'Other moderator', true]] as [$id, $name, $moderator]) {
@@ -193,23 +195,23 @@ try {
     $name->execute(['id' => $target]);
     $assert($name->fetchColumn() === $before, 'Repeatable-read import must retain its original snapshot.');
     AccountAccessGuard::finish();
-    $assert((int) $connection->query("SELECT count(*) FROM pg_locks WHERE pid = pg_backend_pid() AND locktype = 'advisory' AND classid = 74123")->fetchColumn() === 0, 'Finishing the import must release both session and transaction advisory locks.');
+    $assert((int) $connection->query("SELECT count(*) FROM pg_locks WHERE pid = pg_backend_pid() AND locktype = 'advisory' AND objsubid = 1 AND classid >= 2147483648")->fetchColumn() === 0, 'Finishing the import must release both session and transaction advisory locks.');
     $name->execute(['id' => $target]);
     $assert($name->fetchColumn() === 'Queued write must be rejected', 'A later request must observe the concurrently committed update.');
     echo '[OK] Import zachowuje jeden snapshot i zwalnia wszystkie blokady po zakończeniu.' . PHP_EOL;
     $passed++;
 
     $probe = $open($schema);
-    $tryLock = $probe->prepare('SELECT pg_try_advisory_xact_lock(:namespace, :user)');
+    $tryLock = $probe->prepare('SELECT pg_try_advisory_xact_lock(-CAST(:user AS bigint))');
     foreach ([true, false] as $success) {
         AccountAccessGuard::begin($connection, $target, true);
         $probe->beginTransaction();
-        $tryLock->execute(['namespace' => AccountAccessGuard::LOCK_NAMESPACE, 'user' => $target]);
+        $tryLock->execute(['user' => $target]);
         $assert($tryLock->fetchColumn() === false, 'A separate connection cannot ban while the import shared lock is held.');
         $probe->rollBack();
         AccountAccessGuard::finish($success);
         $probe->beginTransaction();
-        $tryLock->execute(['namespace' => AccountAccessGuard::LOCK_NAMESPACE, 'user' => $target]);
+        $tryLock->execute(['user' => $target]);
         $assert($tryLock->fetchColumn() === true, 'Both commit and rollback must release the session shared lock for another connection.');
         $probe->rollBack();
     }
@@ -219,7 +221,12 @@ try {
     $first = $launch('ban', $actor, $otherModerator);
     $second = $launch('ban', $otherModerator, $actor);
     $assert($result($first)['result'] === false && $result($second)['result'] === false, 'Mutual moderator-ban attempts must reject without an advisory deadlock.');
-    echo '[OK] Równoległe próby banowania moderatorów są odrzucane bez zakleszczenia.' . PHP_EOL;
+    $demote = $connection->prepare('UPDATE users SET is_moderator = false WHERE id = :id');
+    $demote->execute(['id' => $actor]);
+    $assert($repository->banUser($otherModerator, PHP_INT_MAX, 'Full BIGINT range fixture', 3600, bin2hex(random_bytes(32))), 'The largest positive PostgreSQL BIGINT ID must support an exclusive ban lock.');
+    $assert(AccountAccessGuard::begin($connection, PHP_INT_MAX, true) !== null, 'The largest positive PostgreSQL BIGINT ID must support the shared import guard and see its ban.');
+    AccountAccessGuard::finish(false);
+    echo '[OK] Równoległe bany moderatorów nie zakleszczają się, a blokady obsługują pełny zakres BIGINT.' . PHP_EOL;
     $passed++;
 } catch (Throwable $exception) {
     $failed++;
