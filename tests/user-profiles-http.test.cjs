@@ -53,7 +53,7 @@ function privateDataHidden(page, user) {
     assert.equal(page.status, 200);
     assert.ok(page.html.includes(`data-profile-user-id="${user.id}"`));
     assert.ok(!page.html.includes(user.email), 'The account email remains private');
-    assert.doesNotMatch(page.html, /data-user-rating=|name="currentPassword"|name="email"|name="theme"/);
+    assert.doesNotMatch(page.html, /data-user-rating=|data-profile-rating=|name="currentPassword"|name="email"|name="theme"/);
     assert.doesNotMatch(page.html, /<form\b[^>]*action="\/(?:watchlist(?:\/remove)?|profile(?:\/avatar)?)"/);
 }
 

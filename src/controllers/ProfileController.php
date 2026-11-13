@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Repository\AnimeRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
+use App\Repository\PrivacySettingsRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
@@ -32,6 +33,7 @@ final class ProfileController extends AppController
         private RatingRepository|Closure $ratings,
         private ExperienceRepository|Closure $experience,
         private CommunityRepository|Closure|null $community = null,
+        private PrivacySettingsRepository|Closure|null $privacy = null,
     ) {
     }
 
@@ -91,12 +93,24 @@ final class ProfileController extends AppController
         ]);
         $result = $this->watchlists()->findPageForUser($id, $page === false ? 1 : $page, status: $statusFilter);
         $animeIds = array_column($result['entries'], 'animeId');
+        $isOwnProfile = ($_SESSION['user_id'] ?? null) === $id;
+        $privacy = $this->privacy();
+        $settings = $privacy?->findForUser($id)
+            ?? ['messagePolicy' => 'everyone', 'publicRatings' => false, 'publicStatistics' => true];
+        $showRatings = $isOwnProfile || $settings['publicRatings'];
+        $showStatistics = $isOwnProfile || $settings['publicStatistics'];
 
         $this->render('user-profile', [
             'pageTitle' => $profileUser['name'] . ' — Profil użytkownika — AniVibe',
             'profileUser' => $profileUser,
             'profilePath' => '/users/' . $id,
-            'isOwnProfile' => ($_SESSION['user_id'] ?? null) === $id,
+            'isOwnProfile' => $isOwnProfile,
+            'showRatings' => $showRatings,
+            'showStatistics' => $showStatistics,
+            'profileRatings' => $showRatings ? $this->ratings()->findByAnimeIdsForUser($id, $animeIds) : [],
+            'canMessageProfile' => $settings['messagePolicy'] === 'everyone'
+                || ($settings['messagePolicy'] === 'existing' && is_int($_SESSION['user_id'] ?? null)
+                    && $privacy?->hasConversation($_SESSION['user_id'], $id)),
             'blockState' => is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] !== $id
                 ? ($this->community()?->blockStateForUser($_SESSION['user_id'], $id)
                     ?? ['blockedByMe' => false, 'blockedEitherWay' => false])
@@ -106,8 +120,8 @@ final class ProfileController extends AppController
                 ($_GET['unblocked'] ?? null) === '1' => 'Użytkownik został odblokowany.',
                 default => null,
             },
-            'experience' => ExperienceService::progress($this->experience()->totalForUser($id)),
-            'statistics' => $this->watchlists()->statisticsForUser($id),
+            'experience' => $showStatistics ? ExperienceService::progress($this->experience()->totalForUser($id)) : null,
+            'statistics' => $showStatistics ? $this->watchlists()->statisticsForUser($id) : null,
             'animes' => $this->animes()->findByIds($animeIds),
             'communityRatings' => $this->ratings()->communityForAnimeIds($animeIds),
             'visibleWatchlist' => $result['entries'],
@@ -325,6 +339,14 @@ final class ProfileController extends AppController
             $this->community = ($this->community)();
         }
         return $this->community;
+    }
+
+    private function privacy(): ?PrivacySettingsRepository
+    {
+        if ($this->privacy instanceof Closure) {
+            $this->privacy = ($this->privacy)();
+        }
+        return $this->privacy;
     }
 
     private function users(): UserRepository

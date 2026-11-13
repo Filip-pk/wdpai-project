@@ -134,7 +134,7 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                 </header>
 
                 <?php if (!$canSend): ?>
-                    <p class="messages-notice" role="status">Wysyłanie wiadomości w tej rozmowie jest niedostępne z powodu blokady użytkownika.</p>
+                    <p class="messages-notice" role="status">Wysyłanie wiadomości do tego konta jest niedostępne.</p>
                 <?php endif; ?>
 
                 <section id="message-history" class="message-history" aria-labelledby="message-history-title">

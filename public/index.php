@@ -21,6 +21,7 @@ use App\Controller\RankingController;
 use App\Controller\ReplyNotificationController;
 use App\Controller\SettingsController;
 use App\Controller\SecuritySettingsController;
+use App\Controller\PrivacySettingsController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\AnimeRankingRepository;
@@ -38,6 +39,7 @@ use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
 use App\Repository\PreferencesRepository;
 use App\Repository\SecuritySettingsRepository;
+use App\Repository\PrivacySettingsRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\MailService;
@@ -63,6 +65,16 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Cache-Control: no-store');
 
 $createController = static function (string $controllerClass): AppController {
+    if ($controllerClass === PrivacySettingsController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        return new PrivacySettingsController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
+        );
+    }
     if ($controllerClass === SecuritySettingsController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -83,6 +95,7 @@ $createController = static function (string $controllerClass): AppController {
         return new SettingsController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): PreferencesRepository => new PreferencesRepository($connect()),
+            static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
         );
     }
     if ($controllerClass === AnimeRankingController::class) {
@@ -191,6 +204,7 @@ $createController = static function (string $controllerClass): AppController {
             static fn (): RatingRepository => new RatingRepository($connect()),
             static fn (): ExperienceRepository => new ExperienceRepository($connect()),
             static fn (): CommunityRepository => new CommunityRepository($connect()),
+            static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
         );
     }
 
@@ -315,6 +329,7 @@ $routing->post('/settings/password', SecuritySettingsController::class, 'changeP
 $routing->post('/settings/email', SecuritySettingsController::class, 'requestEmailChange');
 $routing->get('/settings/email/confirm', SecuritySettingsController::class, 'confirmEmail');
 $routing->post('/settings/email/confirm', SecuritySettingsController::class, 'confirmEmail');
+$routing->post('/settings/privacy', PrivacySettingsController::class, 'save');
 $routing->post('/settings/appearance/reset', SettingsController::class, 'resetAppearance');
 $routing->post('/profile', ProfileController::class, 'index');
 $routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');

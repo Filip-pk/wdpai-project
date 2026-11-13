@@ -6,6 +6,12 @@
         <h1>Ustawienia</h1>
         <p>Dostosuj AniVibe do siebie. Preferencje są zapisane na Twoim koncie.</p>
     </header>
+    <nav class="settings-section-links" aria-label="Sekcje ustawień">
+        <a href="#appearance">Wygląd</a>
+        <a href="#accessibility">Dostępność</a>
+        <a href="#security">Konto i bezpieczeństwo</a>
+        <a href="#privacy">Prywatność</a>
+    </nav>
     <?php if (isset($_SESSION['settings_notice'])): ?>
         <p class="settings-notice" role="status"><?= $escape($_SESSION['settings_notice']) ?></p>
         <?php unset($_SESSION['settings_notice']); ?>
@@ -51,7 +57,7 @@
                             <div class="settings-field">
                                 <label for="settings-<?= $escape($key) ?>"><?= $escape($label) ?></label>
                                 <select id="settings-<?= $escape($key) ?>" name="<?= $escape($key) ?>" data-preference="<?= $escape($key) ?>">
-                                    <?php foreach (\App\Service\PreferencesService::ACCESSIBILITY[$key] as $value => $choice): ?>
+                                    <?php foreach ($accessibilityChoices[$key] as $value => $choice): ?>
                                         <option value="<?= $escape($value) ?>"<?= ($form[$key] ?? '') === (string) $value ? ' selected' : '' ?>><?= $escape($choice) ?></option>
                                     <?php endforeach; ?>
                                 </select>
@@ -63,6 +69,7 @@
                 </form>
             </section>
             <?php require __DIR__ . '/partials/settings-security.html.php'; ?>
+            <?php require __DIR__ . '/partials/settings-privacy.html.php'; ?>
         </div>
 
         <aside class="settings-preview settings-card" aria-labelledby="preview-title">

@@ -29,6 +29,12 @@ Sprawdź klawiszem Tab widoczność fokusu, osobne teksty wiadomości i komentar
 
 Zastosuj też migrację `20` według [instrukcji bezpieczeństwa konta](account-security-settings.md). Formularze zmieniają hasło po potwierdzeniu obecnego oraz adres e-mail po potwierdzeniu obecnego hasła i kodu wysłanego na nową skrzynkę. Na lokalnym środowisku kod znajdziesz w [Mailpit](http://localhost:8025). Stary adres pozostaje aktywny do zatwierdzenia kodu.
 
+## Prywatność
+
+Zastosuj migrację `21` według [instrukcji prywatności](privacy-settings.md). Ustawienia obejmują wiadomości przychodzące, oceny oraz statystyki na publicznym profilu. Ograniczenia wiadomości obowiązują także przy bezpośrednim POST. „Nikt” zatrzymuje wszystkie nowe wiadomości przychodzące, również w już istniejącej rozmowie. Historia pozostaje dostępna.
+
+Do ręcznej weryfikacji użyj dwóch kont w osobnych profilach przeglądarki. Sprawdź kolejno „Wszyscy”, „Tylko istniejące rozmowy” i „Nikt”, a ukrycie ocen/statystyk obejrzyj na publicznym profilu w trybie prywatnym. Sprawdź skrót do zablokowanych użytkowników.
+
 ```cmd
 node --test tests/settings-http.test.cjs tests/theme.test.cjs tests/assets.test.cjs
 ```

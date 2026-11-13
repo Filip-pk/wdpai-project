@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\PreferencesRepository;
+use App\Repository\PrivacySettingsRepository;
 use App\Repository\UserRepository;
 use App\Service\PreferencesService;
 use Closure;
@@ -14,6 +15,7 @@ final class SettingsController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private PreferencesRepository|Closure $preferences,
+        private PrivacySettingsRepository|Closure $privacy,
     ) {
     }
 
@@ -42,13 +44,7 @@ final class SettingsController extends AppController
             }
         }
 
-        $this->render('settings', [
-            'pageTitle' => 'Ustawienia — AniVibe',
-            'user' => $user,
-            'form' => $form,
-            'errors' => $errors,
-            'appearanceChoices' => PreferencesService::APPEARANCE,
-        ]);
+        $this->renderSettings($user, $form, $errors);
     }
 
     public function resetAppearance(): void
@@ -56,11 +52,8 @@ final class SettingsController extends AppController
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->render('settings', [
-                'pageTitle' => 'Ustawienia — AniVibe', 'user' => $user,
-                'form' => $this->preferences()->forUser($user['id']),
-                'appearanceChoices' => PreferencesService::APPEARANCE,
-                'errors' => ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'],
+            $this->renderSettings($user, $this->preferences()->forUser($user['id']), [
+                'Formularz wygasł. Odśwież stronę i spróbuj ponownie.',
             ]);
             return;
         }
@@ -90,10 +83,20 @@ final class SettingsController extends AppController
             }
             http_response_code(422);
         }
+        $this->renderSettings($user, $form, $errors);
+    }
+
+    private function renderSettings(array $user, array $form, array $errors): void
+    {
+        if ($this->privacy instanceof Closure) {
+            $this->privacy = ($this->privacy)();
+        }
         $this->render('settings', [
             'pageTitle' => 'Ustawienia — AniVibe', 'user' => $user,
             'form' => $form, 'errors' => $errors,
             'appearanceChoices' => PreferencesService::APPEARANCE,
+            'accessibilityChoices' => PreferencesService::ACCESSIBILITY,
+            'privacySettings' => $this->privacy->findForUser($user['id']),
         ]);
     }
 
