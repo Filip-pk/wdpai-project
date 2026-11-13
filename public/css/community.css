@@ -262,3 +262,15 @@
         align-items: end;
     }
 }
+/* Decisions remain visible until the account owner acknowledges them. */
+.moderation-notice-banner {
+    margin-block-end: 1.25rem;
+    padding: 1rem;
+    border: 1px solid currentColor;
+    border-radius: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.moderation-notice-banner p {
+    margin-block: 0 0.75rem;
+}

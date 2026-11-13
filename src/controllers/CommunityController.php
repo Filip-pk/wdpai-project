@@ -176,50 +176,6 @@ final class CommunityController extends AppController
         ]);
     }
 
-    public function moderation(): void
-    {
-        $this->requireLogin();
-        $user = $this->currentUser($this->users());
-        $reports = $this->community()->reportsPageForModerator($user['id'], $this->page($_GET['page'] ?? '1'));
-        if ($reports === null) {
-            $this->fail(403, Translator::current()->translate('message.moderation.section'));
-            return;
-        }
-        $this->render('moderation', [
-            'pageTitle' => Translator::current()->translate('message.page.moderation'),
-            'reports' => $reports + [
-                'previousUrl' => $reports['page'] > 1 ? '/moderation?page=' . ($reports['page'] - 1) : null,
-                'nextUrl' => $reports['page'] < $reports['totalPages'] ? '/moderation?page=' . ($reports['page'] + 1) : null,
-            ],
-            'errors' => [],
-            'notice' => ($_GET['resolved'] ?? null) === '1' ? Translator::current()->translate('message.report.resolved') : null,
-        ]);
-    }
-
-    public function resolve(int $id): void
-    {
-        $this->requireLogin();
-        $user = $this->currentUser($this->users());
-        if (!$this->community()->navigationStateForUser($user['id'])['isModerator']) {
-            $this->fail(403, Translator::current()->translate('message.moderation.operation'));
-            return;
-        }
-        if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, Translator::current()->translate('message.csrf_expired'));
-            return;
-        }
-        $action = $this->postString('action');
-        if (!in_array($action, ['remove', 'dismiss'], true)) {
-            $this->fail(422, Translator::current()->translate('message.moderation.choose'));
-            return;
-        }
-        if (!$this->community()->resolveReportForModerator($user['id'], $id, $action)) {
-            $this->fail(404, Translator::current()->translate('message.report.no_open'));
-            return;
-        }
-        $this->redirect('/moderation?page=' . $this->page($_POST['page'] ?? '1') . '&resolved=1');
-    }
-
     private function fail(int $status, string $message): void
     {
         http_response_code($status);

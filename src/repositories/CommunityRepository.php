@@ -220,53 +220,16 @@ final class CommunityRepository
         return ['entries' => $entries] + $paging;
     }
 
-    public function resolveReportForModerator(int $moderatorId, int $reportId, string $action): bool
-    {
-        if (!in_array($action, ['dismiss', 'remove'], true)) {
-            return false;
-        }
-
-        return $this->withUsersLocked([$moderatorId], function () use ($moderatorId, $reportId, $action): bool {
-            if (!$this->isModerator($moderatorId)) {
-                return false;
-            }
-
-            $lookup = $this->connection->prepare("SELECT target_type, target_id FROM community_reports WHERE id = :id AND target_type = 'comment'");
-            $lookup->execute(['id' => $reportId]);
-            $target = $lookup->fetch(PDO::FETCH_ASSOC);
-
-            if ($target === false) {
-                return false;
-            }
-
-            // Lock reports for this target in one order, including when different moderators resolve them.
-            $lock = $this->connection->prepare('SELECT id FROM community_reports WHERE target_type = :type AND target_id = :target ORDER BY id FOR UPDATE');
-            $lock->execute(['type' => $target['target_type'], 'target' => $target['target_id']]);
-            $lock->fetchAll(PDO::FETCH_COLUMN);
-            $status = $this->connection->prepare('SELECT status FROM community_reports WHERE id = :id');
-            $status->execute(['id' => $reportId]);
-
-            if ($status->fetchColumn() !== 'open') {
-                return false;
-            }
-
-            if ($action === 'remove') {
-                $hide = $this->connection->prepare('UPDATE anime_comments SET moderated_at = COALESCE(moderated_at, clock_timestamp()) WHERE id = :id');
-                $hide->execute(['id' => $target['target_id']]);
-                $resolve = $this->connection->prepare(
-                    "UPDATE community_reports SET status = 'removed', resolved_by = :moderator, resolved_at = clock_timestamp()
-                     WHERE target_type = :type AND target_id = :target AND status = 'open'"
-                );
-                $resolve->execute(['moderator' => $moderatorId, 'type' => $target['target_type'], 'target' => $target['target_id']]);
-            } else {
-                $resolve = $this->connection->prepare(
-                    "UPDATE community_reports SET status = 'dismissed', resolved_by = :moderator, resolved_at = clock_timestamp() WHERE id = :id AND status = 'open'"
-                );
-                $resolve->execute(['moderator' => $moderatorId, 'id' => $reportId]);
-            }
-
-            return true;
-        });
+    public function resolveReportForModerator(
+        int $moderatorId,
+        int $reportId,
+        string $action,
+        string $reason = '',
+        string $requestKey = '',
+    ): bool {
+        return (new ModerationRepository($this->connection))->resolveReportForModerator(
+            $moderatorId, $reportId, $action, $reason, $requestKey,
+        );
     }
 
     public function setModerator(int $userId, bool $enabled): bool
