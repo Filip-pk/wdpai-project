@@ -68,7 +68,8 @@ foreach (['src', 'public/views', 'translations'] as $directory) {
 foreach ($files as $file) {
     $contents = file_get_contents($file);
     token_get_all($contents, TOKEN_PARSE);
-    preg_match_all('/(?:\$t|->translate)\(\s*[\'"]([^\'"]+)[\'"]/', $contents, $matches);
+    // Concatenated expressions are dynamic keys; check their complete families below.
+    preg_match_all('/(?:\$t|->translate)\(\s*[\'"]([^\'"]+)[\'"](?!\s*\.)/', $contents, $matches);
     foreach ($matches[1] as $key) {
         $assert(array_key_exists($key, $source), 'Unknown translation key: ' . $key . ' in ' . $file);
     }
@@ -80,6 +81,30 @@ foreach (glob($root . '/public/js/*.js') as $file) {
     }
 }
 echo '[OK] PHP syntax and literal translation keys: ' . count($files) . " files\n";
+
+foreach (Translator::LANGUAGES as $locale => $name) {
+    $translator = new Translator($locale);
+    Translator::setCurrent($translator);
+    foreach (['comment_removed', 'warning', 'ban', 'ban_revoked', 'report_dismissed'] as $action) {
+        $key = 'moderation.decision.' . $action;
+        $assert($translator->translate($key) !== $key, 'Missing decision label: ' . $locale . ' / ' . $action);
+    }
+    foreach (['reports', 'comments', 'users', 'history', 'all', 'open', 'dismissed', 'removed', 'active', 'deleted'] as $label) {
+        $key = 'moderation.' . $label;
+        $assert($translator->translate($key) !== $key, 'Missing dynamic moderation label: ' . $locale . ' / ' . $label);
+    }
+    foreach (['comment_removed', 'warning', 'ban', 'ban_revoked'] as $action) {
+        $message = \App\Service\ModerationNoticeFormatter::message([
+            'actionType' => $action, 'reason' => '<script>reason</script>',
+            'animeTitle' => 'Naruto <anime>', 'endsAt' => '2026-11-15 10:00:00+00',
+        ]);
+        $assert(str_contains($message, '<script>reason</script>'), 'Reason must be retained for escaping by the view.');
+        $assert(!str_contains($message, 'moderation.') && preg_match('/\{(?:anime|reason|ends)\}/', $message) !== 1,
+            'Untranslated moderation notice: ' . $locale . ' / ' . $action);
+    }
+}
+Translator::setCurrent(new Translator('pl'));
+echo "[OK] Moderation decision labels and notice templates in all six languages\n";
 
 // Reports stored before reasonParts was introduced must also follow the selected language.
 $previousSession = $_SESSION ?? [];

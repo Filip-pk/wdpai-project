@@ -79,16 +79,85 @@ odrzucane. Jedna osoba może zgłosić dany wpis raz. Ponowienie tego samego
 zgłoszenia nie tworzy duplikatu ani nie zużywa kolejnego limitu.
 
 Zgłoszenie zachowuje kopię treści z chwili zgłaszania. Panel `/moderation`
-pokazuje po 20 oczekujących zgłoszeń na stronę, powód, zgłaszającego
-i autora. W przypadku prywatnej wiadomości moderator widzi wyłącznie
-zgłoszony fragment; rola nie daje dostępu do całej cudzej rozmowy.
+udostępnia wyłącznie zgłoszenia publicznych komentarzy i odpowiedzi.
+Prywatne wiadomości są wykluczone z zapytań, liczników i decyzji moderatora.
+Podanie ID zgłoszenia wiadomości bezpośrednio w żądaniu również nie pozwala
+go rozpatrzyć. Rola moderatora nie daje dostępu do cudzej rozmowy ani do
+zgłoszonego fragmentu. Moderator korzysta ze swoich rozmów na takich samych
+zasadach jak inni użytkownicy. Historyczne zgłoszenia wiadomości pozostają
+w bazie, ale nie są ujawniane moderatorom ani obsługiwane przez ich panel.
 
-Moderator może odrzucić zgłoszenie lub usunąć wskazaną treść z widoków.
-Usunięcie zastępuje komentarz lub wiadomość informacją o moderacji,
-również w podglądzie ostatniej wiadomości, i rozpatruje wszystkie otwarte
-zgłoszenia dotyczące tego wpisu. Autor nie może przywrócić ukrytego
-komentarza przez edycję; nadal może usunąć własny wpis. Zapisana kopia
-zgłoszenia pozostaje w bazie po usunięciu oryginalnego komentarza.
+Panel ma zakładki „Zgłoszenia komentarzy”, „Najnowsze komentarze”,
+„Użytkownicy” i „Historia decyzji”. Listy zawierają po 20 pozycji; filtry
+pozwalają szukać autora, anime i statusu komentarza. Można działać bez
+wcześniejszego zgłoszenia. Usunięcie komentarza, wystawienie ostrzeżenia,
+nałożenie i cofnięcie bana oraz odrzucenie zgłoszenia wymagają osobnego
+powodu. Każda z tych decyzji tworzy wpis w historii moderacji.
+
+Usunięcie ustawia `anime_comments.moderated_at`, zachowuje strukturę dyskusji
+i rozpatruje wszystkie otwarte zgłoszenia dotyczące komentarza. Usunięty
+komentarz pozostaje zastąpiony informacją o moderacji. Autor nie może
+przywrócić go przez edycję; nadal może usunąć własny wpis. Decyzja i trwały
+komunikat dla autora są zapisywane w tej samej transakcji. Ostrzeżenie jest
+osobną decyzją i samo nie blokuje konta.
+
+## Migracja banów i wdrożenie
+
+Na istniejącej bazie stosującej migracje `01`–`22` wykonaj raz:
+
+```cmd
+docker compose exec -T php php -r "require 'vendor/autoload.php'; (new App\Database())->connect()->exec(file_get_contents('database/23-moderation-and-timed-bans.sql'));"
+```
+
+Migracja dodaje `user_bans`, `moderation_actions` i `moderation_notices`.
+Historia zapisuje moderatora, użytkownika, typ decyzji, powód i migawkę
+tytułu anime; nie kopiuje treści prywatnych wiadomości. Zawiera też unikalny
+klucz formularza `request_key`: ponowienie tej samej decyzji nie dopisuje
+drugiej akcji ani komunikatu. Ponowne usunięcie już ukrytego komentarza
+i cofnięcie nieaktywnej blokady również nie tworzą drugiej decyzji.
+
+Kolejność wdrożenia: najpierw kod odbierający moderatorom dostęp do prywatnych
+wiadomości, następnie migracja `23`, kontrola banów przy każdym żądaniu,
+a na końcu panel oraz komunikaty. Po wdrożeniu kod korzystający z nowych
+tabel wymaga migracji; samego ograniczenia dostępu do wiadomości można użyć
+wcześniej. Nie uruchamiaj migracji ponownie na tej samej bazie.
+
+## Bany czasowe
+
+Ban blokuje korzystanie z konta na godzinę, dobę, 3, 7 albo 30 dni.
+Moderator nie może zablokować siebie ani innego moderatora. Nadanie roli
+nadal odbywa się wyłącznie skryptem CLI. Decyzje ponownie sprawdzają rolę
+i stan konta w bazie, również gdy formularz został otwarty przed odebraniem
+uprawnień.
+
+Po poprawnej weryfikacji hasła zbanowany użytkownik trafia na
+`/account/banned`, gdzie widzi powód i termin końca blokady. Kontrola działa
+przy każdym żądaniu sesji, również otwartej przed nałożeniem bana.
+Zbanowane konto może przeglądać własne decyzje (`/account/notices`),
+potwierdzać ich przeczytanie, zmienić język i się wylogować. Pozostałe strony
+przekierowują na ekran blokady; żądania POST i żądania JSON otrzymują `403`,
+a odpowiedź JSON zawiera adres przekierowania. Po wylogowaniu publiczne
+strony pozostają dostępne.
+
+Zapisy odbywają się w transakcji ze sprawdzeniem blokady i synchronizacją
+z nakładaniem bana. Żądanie równoległe do decyzji nie może zapisać danych
+po jej zatwierdzeniu bez ponownej kontroli. Termin jest porównywany
+z `clock_timestamp()` bazy; wygaśnięcie i cofnięcie działają przy następnym
+żądaniu bez wylogowania i bez zadania okresowego. Historia pozostaje
+zachowana po wygaśnięciu lub cofnięciu blokady.
+
+## Trwałe komunikaty dotyczące konta
+
+Po logowaniu oczekujące komunikaty są widoczne w interfejsie; wszystkie
+decyzje dotyczące konta można odczytać pod `/account/notices`.
+Usunięcie komentarza, ostrzeżenie, nałożenie i cofnięcie bana tworzą
+komunikat w tej samej transakcji co decyzja. Przeczytanie zapisuje datę
+`read_at`, ale nie usuwa historii. Lista i potwierdzanie zawsze korzystają
+z ID zalogowanego właściciela; przekazanie cudzego ID konta lub powiadomienia
+nie daje do niego dostępu. Wszystkie etykiety i szablony komunikatów
+obsługują polski, angielski, niemiecki, francuski, hiszpański i rosyjski.
+Tytuły anime i powody pozostają w oryginalnym brzmieniu oraz są escapowane
+przy wyświetlaniu.
 
 ### Nadanie roli moderatora
 
@@ -142,17 +211,40 @@ i przed wysłaniem nowej wiadomości po zatwierdzonej blokadzie.
 
 ```cmd
 docker compose exec -T php php tests/community-repository.test.php
+docker compose exec -T php php tests/moderation-repository.test.php
+docker compose exec -T php php tests/moderation-concurrency.test.php
+docker compose exec -T php php tests/translations.test.php
 node --test --test-concurrency=1 tests/community-http.test.cjs
+node --test --test-concurrency=1 tests/moderation-http.test.cjs
+node --test tests/moderation-responsive.test.cjs
 node --test tests/notifications.test.cjs
 ```
 
 Test repozytorium używa tabel tymczasowych i nie zmienia danych aplikacji.
 Test HTTP tworzy losowe konta testowe i prywatne wiadomości; usuwa własne
 komentarze testowe i odbiera tymczasową rolę moderatora w sekcji kończącej.
-Konta i prywatne rozmowy pozostają w lokalnej bazie, tak jak w pozostałych
-testach HTTP projektu.
+Konta i prywatne rozmowy z dotychczasowego testu społeczności pozostają
+w lokalnej bazie. Nowy test HTTP moderacji tworzy własny tytuł anime oraz
+losowe konta z jednoznacznymi adresami `moderation-…@example.test`
+i usuwa je w sekcji kończącej po ponownym sprawdzeniu ID i adresu e-mail.
+Testy HTTP korzystające z najnowszych wpisów katalogu uruchamiaj kolejno,
+aby sprzątanie danych jednego zestawu nie usunęło tytułu wybranego przez drugi.
+
+Sześć scenariuszy współbieżności używa własnego schematu PostgreSQL,
+oddzielnych połączeń i procesów. Weryfikują kolejność zapisu i bana,
+oczekujące zapisy po blokadzie, snapshot importu, zwolnienie blokad po
+zatwierdzeniu i wycofaniu oraz równoległe niedozwolone próby banowania
+moderatorów. Schemat jest usuwany po zakończeniu testu. Test responsywności
+korzysta z lokalnego Chrome lub Edge; nie wymaga nowej zależności projektu.
+
+Testy obejmują odebraną rolę, sesję otwartą przed banem, wszystkie kategorie
+zapisów oraz żądania JSON, wygaśnięcie i cofnięcie blokady, CSRF,
+powtórzenie decyzji, odczyt cudzych komunikatów i zgłoszenie prywatnej
+wiadomości przekazane bezpośrednio przez ID.
 
 Przy kontroli widoków sprawdź jasny i ciemny motyw przy 375 i 1280 px,
 obsługę klawiatury, odczyt starszej strony historii przy nowszej wiadomości,
 blokadę z obu stron, zgłoszenie wiadomości i komentarza oraz odmowę dostępu
-z konta nieuczestniczącego w rozmowie i bez roli moderatora.
+z konta nieuczestniczącego w rozmowie i bez roli moderatora. Panel moderacji,
+ekran bana i historię komunikatów sprawdź także przy szerokości 375 px oraz
+po zmianie języka w trakcie blokady.

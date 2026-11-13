@@ -1,5 +1,27 @@
 <?php
 
+if ($restrictedAccount ?? false): ?>
+<nav class="site-navigation account-restricted-navigation" aria-label="<?= $escape($t('navigation.main')) ?>">
+    <a href="/account/banned"><?= $escape($t('moderation.banned')) ?></a>
+    <a href="/account/notices"><?= $escape($t('moderation.notices')) ?></a>
+    <form method="post" action="/language" class="language-switcher">
+        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+        <input type="hidden" name="returnTo" value="<?= $escape($currentPath) ?>">
+        <label for="restricted-language"><?= $escape($t('language.label')) ?></label>
+        <select id="restricted-language" name="language">
+            <?php foreach ($languages as $code => $name): ?>
+                <option value="<?= $escape($code) ?>" lang="<?= $escape($code) ?>"<?= $locale === $code ? ' selected' : '' ?>><?= $escape($name) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit"><?= $escape($t('language.save')) ?></button>
+    </form>
+    <form method="post" action="/logout">
+        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+        <button type="submit"><?= $escape($t('navigation.logout')) ?></button>
+    </form>
+</nav>
+<?php return; endif;
+
 $primaryNavigation = [
     '/dashboard' => $t('navigation.discover'),
     '/chat' => $t('navigation.chat'),
@@ -15,6 +37,7 @@ $secondaryNavigation = [
 ];
 if ($isLoggedIn) {
     $secondaryNavigation['/notifications/comments'] = $t('navigation.notifications');
+    $secondaryNavigation['/account/notices'] = $t('moderation.notices');
     $secondaryNavigation['/settings'] = $t('navigation.settings');
 }
 if ($isModerator) {

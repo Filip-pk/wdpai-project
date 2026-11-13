@@ -195,14 +195,14 @@ final class CommunityRepository
             return null;
         }
 
-        $total = (int) $this->connection->query("SELECT COUNT(*) FROM community_reports WHERE status = 'open'")->fetchColumn();
+        $total = (int) $this->connection->query("SELECT COUNT(*) FROM community_reports WHERE status = 'open' AND target_type = 'comment'")->fetchColumn();
         $paging = $this->pagination($total, $page, $perPage);
         $statement = $this->connection->prepare(
             "SELECT r.id, r.target_type, r.target_id, r.snapshot, r.reason, r.status,
                     r.created_at, reporter.name AS reporter_name, author.name AS author_name
              FROM community_reports r JOIN users reporter ON reporter.id = r.reporter_id
              LEFT JOIN users author ON author.id = r.reported_user_id
-             WHERE r.status = 'open' ORDER BY r.created_at ASC, r.id ASC LIMIT :limit OFFSET :offset"
+             WHERE r.status = 'open' AND r.target_type = 'comment' ORDER BY r.created_at ASC, r.id ASC LIMIT :limit OFFSET :offset"
         );
         $statement->bindValue('limit', $paging['perPage'], PDO::PARAM_INT);
         $statement->bindValue('offset', ($paging['page'] - 1) * $paging['perPage'], PDO::PARAM_INT);
@@ -220,58 +220,16 @@ final class CommunityRepository
         return ['entries' => $entries] + $paging;
     }
 
-    public function resolveReportForModerator(int $moderatorId, int $reportId, string $action): bool
-    {
-        if (!in_array($action, ['dismiss', 'remove'], true)) {
-            return false;
-        }
-
-        return $this->withUsersLocked([$moderatorId], function () use ($moderatorId, $reportId, $action): bool {
-            if (!$this->isModerator($moderatorId)) {
-                return false;
-            }
-
-            $lookup = $this->connection->prepare('SELECT target_type, target_id FROM community_reports WHERE id = :id');
-            $lookup->execute(['id' => $reportId]);
-            $target = $lookup->fetch(PDO::FETCH_ASSOC);
-
-            if ($target === false) {
-                return false;
-            }
-
-            // Lock reports for this target in one order, including when different moderators resolve them.
-            $lock = $this->connection->prepare('SELECT id FROM community_reports WHERE target_type = :type AND target_id = :target ORDER BY id FOR UPDATE');
-            $lock->execute(['type' => $target['target_type'], 'target' => $target['target_id']]);
-            $lock->fetchAll(PDO::FETCH_COLUMN);
-            $status = $this->connection->prepare('SELECT status FROM community_reports WHERE id = :id');
-            $status->execute(['id' => $reportId]);
-
-            if ($status->fetchColumn() !== 'open') {
-                return false;
-            }
-
-            if ($action === 'remove') {
-                $table = match ($target['target_type']) {
-                    'comment' => 'anime_comments',
-                    'message' => 'private_messages',
-                    default => throw new InvalidArgumentException('Nieprawidłowy typ zgłoszenia.'),
-                };
-                $hide = $this->connection->prepare('UPDATE ' . $table . ' SET moderated_at = COALESCE(moderated_at, clock_timestamp()) WHERE id = :id');
-                $hide->execute(['id' => $target['target_id']]);
-                $resolve = $this->connection->prepare(
-                    "UPDATE community_reports SET status = 'removed', resolved_by = :moderator, resolved_at = clock_timestamp()
-                     WHERE target_type = :type AND target_id = :target AND status = 'open'"
-                );
-                $resolve->execute(['moderator' => $moderatorId, 'type' => $target['target_type'], 'target' => $target['target_id']]);
-            } else {
-                $resolve = $this->connection->prepare(
-                    "UPDATE community_reports SET status = 'dismissed', resolved_by = :moderator, resolved_at = clock_timestamp() WHERE id = :id AND status = 'open'"
-                );
-                $resolve->execute(['moderator' => $moderatorId, 'id' => $reportId]);
-            }
-
-            return true;
-        });
+    public function resolveReportForModerator(
+        int $moderatorId,
+        int $reportId,
+        string $action,
+        string $reason = '',
+        string $requestKey = '',
+    ): bool {
+        return (new ModerationRepository($this->connection))->resolveReportForModerator(
+            $moderatorId, $reportId, $action, $reason, $requestKey,
+        );
     }
 
     public function setModerator(int $userId, bool $enabled): bool

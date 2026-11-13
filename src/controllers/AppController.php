@@ -6,7 +6,9 @@ namespace App\Controller;
 
 use App\Repository\CommunityRepository;
 use App\Repository\PreferencesRepository;
+use App\Repository\ModerationRepository;
 use App\Repository\UserRepository;
+use App\Service\AccountAccessGuard;
 use App\Service\Translator;
 use Closure;
 
@@ -15,6 +17,20 @@ abstract class AppController
     private CommunityRepository|Closure|null $communityRepository = null;
     private PreferencesRepository|Closure|null $preferencesRepository = null;
     private ?array $loadedPreferences = null;
+    private ModerationRepository|Closure|null $moderationRepository = null;
+
+    public function setModerationRepository(ModerationRepository|Closure $repository): void
+    {
+        $this->moderationRepository = $repository;
+    }
+
+    protected function accountModeration(): ?ModerationRepository
+    {
+        if ($this->moderationRepository instanceof Closure) {
+            $this->moderationRepository = ($this->moderationRepository)();
+        }
+        return $this->moderationRepository;
+    }
 
     public function setPreferencesRepository(PreferencesRepository|Closure $repository): void
     {
@@ -83,6 +99,7 @@ abstract class AppController
 
     protected function redirect(string $path): never
     {
+        AccountAccessGuard::finish();
         header('Location: ' . $path, true, 303);
         exit;
     }
@@ -141,7 +158,14 @@ abstract class AppController
         $unreadMessageCount = 0;
         $unreadReplyCount = 0;
         $isModerator = false;
-        if ($isLoggedIn && $this->communityRepository !== null) {
+        $moderationNotices = [];
+        $restrictedAccount = ($variables['restrictedAccount'] ?? false) === true;
+        if ($isLoggedIn && $this->moderationRepository !== null) {
+            $moderation = $this->accountModeration();
+            $restrictedAccount = $restrictedAccount || $moderation->activeBanForUser($accountId) !== null;
+            $moderationNotices = $moderation->unreadNoticesForUser($accountId);
+        }
+        if ($isLoggedIn && !$restrictedAccount && $this->communityRepository !== null) {
             if ($this->communityRepository instanceof Closure) {
                 $this->communityRepository = ($this->communityRepository)();
             }

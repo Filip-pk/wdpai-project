@@ -120,6 +120,10 @@ INSERT INTO anime_comments (id, anime_id, user_id, body) VALUES
     (501, 201, 102, 'Public comment'), (502, 201, 101, 'Own comment'), (503, 201, 103, 'Another comment');
 SQL);
 
+    $migration = file_get_contents(dirname(__DIR__) . '/database/23-moderation-and-timed-bans.sql');
+    $migration = preg_replace('/\b(?:BEGIN|COMMIT);/', '', $migration);
+    $connection->exec(str_replace('CREATE TABLE ', 'CREATE TEMP TABLE ', $migration));
+
     foreach (['users', 'anime', 'private_conversations', 'private_messages', 'anime_comments', 'private_message_reads', 'user_blocks', 'community_activity', 'community_reports'] as $table) {
         $statement = $connection->prepare('SELECT to_regclass(:table) = to_regclass(:temp)');
         $statement->execute(['table' => $table, 'temp' => 'pg_temp.' . $table]);
@@ -234,13 +238,18 @@ SQL);
         $assert($repository->createReportForUser(101, 'comment', 502, 'Własny wpis') === null, 'Write path rejects own comment');
     };
 
-    $tests['moderator queue checks live DB privilege and exposes only report snapshots'] = static function () use ($repository, $assert): void {
+    $tests['moderator queue checks live DB privilege and excludes private report snapshots and counts'] = static function () use ($repository, $assert): void {
         $id = $repository->createReportForUser(101, 'message', 401, 'Nękanie');
         $assert($repository->reportsPageForModerator(105) === null, 'Normal user cannot inspect queue');
         $assert(!$repository->resolveReportForModerator(105, $id, 'remove'), 'Normal user cannot moderate');
         $assert($repository->setModerator(105, true), 'Operator can grant role');
+        $assert($repository->reportsPageForModerator(105)['total'] === 0, 'Private reports do not increase queue counts');
+        $assert($repository->reportsPageForModerator(105)['entries'] === [], 'Moderator cannot inspect reported private fragments');
+        $assert(!$repository->resolveReportForModerator(105, $id, 'remove'), 'Direct private report ID cannot hide a message');
+        $assert(!$repository->resolveReportForModerator(105, $id, 'dismiss'), 'Direct private report ID cannot resolve a message report');
+        $repository->createReportForUser(101, 'comment', 501, 'Public report');
         $entry = $repository->reportsPageForModerator(105)['entries'][0];
-        $assert($entry['snapshot'] === 'First received message', 'Reported message snapshot visible');
+        $assert($entry['snapshot'] === 'Public comment' && $entry['targetType'] === 'comment', 'Only public comment reports are exposed');
         $assert(array_keys($entry) === ['id', 'targetType', 'targetId', 'snapshot', 'reason', 'status', 'reporterName', 'authorName', 'createdAt'], 'Queue has no conversation, other messages, email or secret columns');
         $repository->setModerator(105, false);
         $assert($repository->reportsPageForModerator(105) === null, 'Revoked role is immediately effective');
@@ -251,7 +260,7 @@ SQL);
         $repository->setModerator(105, true);
         $first = $repository->createReportForUser(101, 'comment', 501, 'Spam');
         $repository->createReportForUser(104, 'comment', 501, 'Powtórzony spam');
-        $assert($repository->resolveReportForModerator(105, $first, 'remove'), 'Moderator can hide comment');
+        $assert($repository->resolveReportForModerator(105, $first, 'remove', 'Spam', str_repeat('a', 64)), 'Moderator can hide comment');
         $row = $connection->query('SELECT body, moderated_at FROM anime_comments WHERE id = 501')->fetch(PDO::FETCH_ASSOC);
         $assert($row['body'] === 'Public comment' && $row['moderated_at'] !== null, 'Original body remains for audit but target is hidden');
         $assert((int) $connection->query("SELECT COUNT(*) FROM community_reports WHERE status = 'removed'")->fetchColumn() === 2, 'All open reports of same target resolved');
@@ -259,13 +268,14 @@ SQL);
         $assert($repository->reportsPageForModerator(105)['total'] === 0, 'Resolved reports leave queue');
     };
 
-    $tests['removed message still participates in read cursor and unread count'] = static function () use ($repository, $connection, $assert): void {
+    $tests['private report IDs never permit moderation and participants retain their history'] = static function () use ($repository, $connection, $assert): void {
         $repository->setModerator(105, true);
         $id = $repository->createReportForUser(101, 'message', 401, 'Nękanie');
-        $assert($repository->resolveReportForModerator(105, $id, 'remove'), 'Message can be hidden');
-        $assert($repository->unreadCountForUser(101) === 3, 'Hidden placeholder is still an unread received message');
-        $assert($repository->markReadForUser(101, 301, 401), 'Hidden placeholder can be marked read');
-        $assert($repository->unreadCountForUser(101) === 2, 'Placeholder cursor advances normally');
+        $assert(!$repository->resolveReportForModerator(105, $id, 'remove'), 'Moderator cannot hide private messages');
+        $assert($connection->query('SELECT moderated_at FROM private_messages WHERE id = 401')->fetchColumn() === null, 'Private message is not moderated');
+        $assert($repository->unreadCountForUser(101) === 3, 'Received message remains unread');
+        $assert($repository->markReadForUser(101, 301, 401), 'Participant can still mark own conversation read');
+        $assert($repository->unreadCountForUser(101) === 2, 'Participant cursor advances normally');
         $assert($connection->query('SELECT body FROM private_messages WHERE id = 401')->fetchColumn() === 'First received message', 'Original text preserved');
     };
 
@@ -273,10 +283,10 @@ SQL);
         $repository->setModerator(105, true);
         $first = $repository->createReportForUser(101, 'comment', 501, 'Pierwsze');
         $second = $repository->createReportForUser(104, 'comment', 501, 'Drugie');
-        $assert($repository->resolveReportForModerator(105, $first, 'dismiss'), 'One report dismissed');
+        $assert($repository->resolveReportForModerator(105, $first, 'dismiss', 'Brak naruszenia', str_repeat('b', 64)), 'One report dismissed');
         $assert($repository->reportsPageForModerator(105)['total'] === 1, 'Other report remains open');
         $connection->exec('DELETE FROM anime_comments WHERE id = 501');
-        $assert($repository->resolveReportForModerator(105, $second, 'remove'), 'Report can be resolved after author deletes target');
+        $assert($repository->resolveReportForModerator(105, $second, 'dismiss', 'Autor usunął komentarz', str_repeat('c', 64)), 'Report can be dismissed after author deletes target');
         $assert((int) $connection->query('SELECT COUNT(*) FROM community_reports')->fetchColumn() === 2, 'Snapshots survive target deletion');
     };
 

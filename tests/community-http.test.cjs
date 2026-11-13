@@ -144,7 +144,7 @@ test('notifications, blocking, reports and spam limits protect the complete comm
             await send(first, route, marker + ' po odblokowaniu <script>alert(1)</script>');
         });
 
-        await t.test('only recipients can report a private message and moderators see its snapshot only', async () => {
+        await t.test('only recipients can report a private message and moderators cannot see or resolve its snapshot', async () => {
             const snapshot = marker + ' po odblokowaniu <script>alert(1)</script>';
             lastMessage = entries(await second.client.request(route), 'message').at(-1).id;
             const endpoint = '/reports/message/' + lastMessage;
@@ -156,16 +156,13 @@ test('notifications, blocking, reports and spam limits protect the complete comm
             redirected(await second.client.request(endpoint, { reason: 'Ten sam wpis', csrfToken: second.token }));
             moderatorRole(moderator, true); promoted = true;
             const queue = await moderator.client.request('/moderation');
-            assert.ok(queue.html.includes(escape(snapshot)));
+            assert.ok(!queue.html.includes(escape(snapshot)), 'Reported private fragments are excluded from moderation');
             assert.ok(!queue.html.includes(marker + ' pierwsza wiadomość') && !queue.html.includes(marker + ' druga wiadomość'));
             assert.doesNotMatch(queue.html, /<script>alert\(1\)<\/script>|<img src=x/);
             assert.equal((await moderator.client.request(route)).status, 404, 'Moderator role does not reveal the whole conversation');
-            const id = await reportId(snapshot);
-            redirected(await moderator.client.request('/moderation/reports/' + id + '/resolve', { action: 'remove', csrfToken: moderator.token }));
             const history = await second.client.request(route);
-            assert.ok(!history.html.includes(escape(snapshot)));
-            assert.match(history.html, /ukryta przez moderację/);
-            assert.ok(!(await second.client.request('/messages')).html.includes(escape(snapshot)));
+            assert.ok(history.html.includes(escape(snapshot)), 'Moderation does not hide private messages');
+            assert.ok((await second.client.request('/messages')).html.includes(escape(snapshot)));
         });
 
         await t.test('comment reports support dismissal, hiding and author cleanup without restoring hidden text', async () => {
@@ -174,11 +171,11 @@ test('notifications, blocking, reports and spam limits protect the complete comm
             assert.equal((await first.client.request('/reports/comment/' + id)).status, 404);
             redirected(await second.client.request('/reports/comment/' + id, { reason: 'Do sprawdzenia', csrfToken: second.token }));
             let report = await reportId(body);
-            redirected(await moderator.client.request('/moderation/reports/' + report + '/resolve', { action: 'dismiss', csrfToken: moderator.token }));
+            redirected(await moderator.client.request('/moderation/reports/' + report + '/resolve', { action: 'dismiss', reason: 'Zgłoszenie niezasadne', requestKey: randomUUID().replaceAll('-', ''), csrfToken: moderator.token }));
             assert.ok((await guest.request(animeRoute)).html.includes(escape(body)));
             redirected(await third.client.request('/reports/comment/' + id, { reason: 'Spam', csrfToken: third.token }));
             report = await reportId(body);
-            redirected(await moderator.client.request('/moderation/reports/' + report + '/resolve', { action: 'remove', csrfToken: moderator.token }));
+            redirected(await moderator.client.request('/moderation/reports/' + report + '/resolve', { action: 'remove', reason: 'Spam', requestKey: randomUUID().replaceAll('-', ''), csrfToken: moderator.token }));
             assert.ok(!(await guest.request(animeRoute)).html.includes(escape(body)));
             assert.equal((await first.client.request(animeRoute + '?editComment=' + id)).status, 404);
             assert.equal((await first.client.request(animeRoute + '/comments/' + id + '/edit', { body: 'Przywróć', csrfToken: first.token })).status, 404);
@@ -208,7 +205,7 @@ test('notifications, blocking, reports and spam limits protect the complete comm
                 try {
                     const queue = await moderator.client.request('/moderation');
                     for (const report of entries(queue, 'report').filter(item => item.html.includes(marker))) {
-                        redirected(await moderator.client.request('/moderation/reports/' + report.id + '/resolve', { action: 'dismiss', csrfToken: moderator.token }));
+                        redirected(await moderator.client.request('/moderation/reports/' + report.id + '/resolve', { action: 'dismiss', reason: 'Porządkowanie własnych danych testowych', requestKey: randomUUID().replaceAll('-', ''), csrfToken: moderator.token }));
                     }
                 } finally {
                     moderatorRole(moderator, false);

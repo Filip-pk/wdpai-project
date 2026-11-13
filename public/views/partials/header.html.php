@@ -32,7 +32,8 @@ $isProjectsPage = !$isErrorPage && ($currentPath === '/projects'
     || str_starts_with((string) $currentPath, '/projects/'));
 $isImportPage = !$isErrorPage && str_starts_with((string) $currentPath, '/profile/import');
 $isModerationPage = !$isErrorPage && ($currentPath === '/moderation'
-    || str_starts_with((string) $currentPath, '/moderation/'));
+    || str_starts_with((string) $currentPath, '/moderation/')
+    || in_array($currentPath, ['/account/banned', '/account/notices'], true));
 $isCommentThreadPage = !$isErrorPage && ($threadMode ?? false) === true;
 $isSocialFormsPage = !$isErrorPage && ($currentPath === '/messages/blocked'
     || $currentPath === '/notifications/comments'
@@ -126,7 +127,7 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
     <?php if ($currentPath === '/anime/ranking'): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/anime-ranking.css') ?>">
     <?php endif; ?>
-    <?php if ($isLoggedIn): ?>
+    <?php if ($isLoggedIn && !($restrictedAccount ?? false)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/community.css') ?>">
         <script src="<?= $assetUrl('/js/notifications.js') ?>" defer></script>
     <?php endif; ?>
@@ -208,6 +209,7 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
 
         <?php require __DIR__ . '/navigation.html.php'; ?>
 
+        <?php if (!($restrictedAccount ?? false)): ?>
         <div class="theme-controls" role="group" aria-label="<?= $escape($t('header.theme')) ?>">
             <button
                 class="theme-toggle"
@@ -253,6 +255,15 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
             </button>
             <p class="theme-save-status" role="status" hidden></p>
         </div>
+        <?php endif; ?>
     </header>
 
     <main id="main-content" class="page-content" tabindex="-1">
+        <?php if (($moderationNotices ?? []) !== [] && $currentPath !== '/account/notices'): ?>
+            <aside class="moderation-notice-banner" aria-label="<?= $escape($t('moderation.notices')) ?>" role="status">
+                <?php foreach ($moderationNotices as $moderationNotice): ?>
+                    <p><?= $escape(\App\Service\ModerationNoticeFormatter::message($moderationNotice)) ?></p>
+                <?php endforeach; ?>
+                <a href="/account/notices"><?= $escape($t('moderation.view_notices')) ?></a>
+            </aside>
+        <?php endif; ?>

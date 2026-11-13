@@ -16,6 +16,7 @@ use App\Controller\DefaultController;
 use App\Controller\MalImportController;
 use App\Controller\LanguageController;
 use App\Controller\MessageController;
+use App\Controller\ModerationController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
 use App\Controller\RankingController;
@@ -33,6 +34,7 @@ use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\MalImportRepository;
 use App\Repository\MessageRepository;
+use App\Repository\ModerationRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RatingRepository;
 use App\Repository\RecommendationRepository;
@@ -43,6 +45,7 @@ use App\Repository\SecuritySettingsRepository;
 use App\Repository\PrivacySettingsRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
+use App\Service\AccountAccessGuard;
 use App\Service\MailService;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
@@ -69,27 +72,30 @@ Translator::setCurrent(new Translator(
     is_string($_COOKIE['anivibe_language'] ?? null) ? $_COOKIE['anivibe_language'] : 'pl',
 ));
 
-$createController = static function (string $controllerClass): AppController {
+$connection = null;
+$connect = static function () use (&$connection): PDO {
+    return $connection ??= (new Database())->connect();
+};
+
+$createController = static function (string $controllerClass) use ($connect): AppController {
+    if ($controllerClass === ModerationController::class) {
+        return new ModerationController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): ModerationRepository => new ModerationRepository($connect()),
+        );
+    }
     if ($controllerClass === LanguageController::class) {
         return new LanguageController(
-            static fn (): PreferencesRepository => new PreferencesRepository((new Database())->connect()),
+            static fn (): PreferencesRepository => new PreferencesRepository($connect()),
         );
     }
     if ($controllerClass === PrivacySettingsController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new PrivacySettingsController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
         );
     }
     if ($controllerClass === SecuritySettingsController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
         return new SecuritySettingsController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -98,10 +104,6 @@ $createController = static function (string $controllerClass): AppController {
         );
     }
     if ($controllerClass === SettingsController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new SettingsController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): PreferencesRepository => new PreferencesRepository($connect()),
@@ -109,10 +111,6 @@ $createController = static function (string $controllerClass): AppController {
         );
     }
     if ($controllerClass === AnimeRankingController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new AnimeRankingController(
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): AnimeRankingRepository => new AnimeRankingRepository($connect()),
@@ -120,10 +118,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === AnimeController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
 
         return new AnimeController(
             static fn (): AnimeRepository => new AnimeRepository($connect()),
@@ -138,10 +132,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === CollectionController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
 
         return new CollectionController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -153,10 +143,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === MessageController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
 
         return new MessageController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -166,10 +152,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === CommunityController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new CommunityController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): CommunityRepository => new CommunityRepository($connect()),
@@ -178,10 +160,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === CommentReactionController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new CommentReactionController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): CommentRepository => new CommentRepository($connect()),
@@ -191,10 +169,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === ReplyNotificationController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new ReplyNotificationController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): ReplyNotificationRepository => new ReplyNotificationRepository($connect()),
@@ -202,10 +176,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === ProfileController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
 
         return new ProfileController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -219,10 +189,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === MalImportController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
 
         return new MalImportController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -231,10 +197,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === RankingController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
 
         return new RankingController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -243,10 +205,6 @@ $createController = static function (string $controllerClass): AppController {
     }
 
     if ($controllerClass === DashboardController::class) {
-        $connection = null;
-        $connect = static function () use (&$connection): PDO {
-            return $connection ??= (new Database())->connect();
-        };
         return new DashboardController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): AnimeRepository => new AnimeRepository($connect()),
@@ -259,27 +217,30 @@ $createController = static function (string $controllerClass): AppController {
         $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
 
         return new AuthController(
-            static fn (): UserRepository => new UserRepository((new Database())->connect()),
+            static fn (): UserRepository => new UserRepository($connect()),
             new MailService(...$mailConfiguration),
         );
     }
 
     if ($controllerClass === ProjectController::class) {
         return new ProjectController(
-            static fn (): ProjectRepository => new ProjectRepository((new Database())->connect()),
+            static fn (): ProjectRepository => new ProjectRepository($connect()),
         );
     }
 
     return new $controllerClass();
 };
 
-$routing = new Routing(static function (string $controllerClass) use ($createController): AppController {
+$routing = new Routing(static function (string $controllerClass) use ($createController, $connect): AppController {
     $controller = $createController($controllerClass);
+    $controller->setModerationRepository(
+        static fn (): ModerationRepository => new ModerationRepository($connect()),
+    );
     $controller->setCommunityRepository(
-        static fn (): CommunityRepository => new CommunityRepository((new Database())->connect()),
+        static fn (): CommunityRepository => new CommunityRepository($connect()),
     );
     $controller->setPreferencesRepository(
-        static fn (): PreferencesRepository => new PreferencesRepository((new Database())->connect()),
+        static fn (): PreferencesRepository => new PreferencesRepository($connect()),
     );
     try {
         $controller->initializeLanguage($controllerClass !== AuthController::class);
@@ -340,8 +301,16 @@ $routing->get('/reports/comment/{id}', CommunityController::class, 'reportCommen
 $routing->post('/reports/comment/{id}', CommunityController::class, 'reportComment');
 $routing->get('/reports/message/{id}', CommunityController::class, 'reportMessage');
 $routing->post('/reports/message/{id}', CommunityController::class, 'reportMessage');
-$routing->get('/moderation', CommunityController::class, 'moderation');
-$routing->post('/moderation/reports/{id}/resolve', CommunityController::class, 'resolve');
+$routing->get('/moderation', ModerationController::class, 'index');
+$routing->post('/moderation/reports/{id}/resolve', ModerationController::class, 'resolve');
+$routing->post('/moderation/reports/{id}/dismiss', ModerationController::class, 'dismissReport');
+$routing->post('/moderation/comments/{id}/remove', ModerationController::class, 'removeComment');
+$routing->post('/moderation/comments/{id}/warn', ModerationController::class, 'warnComment');
+$routing->post('/moderation/users/{id}/ban', ModerationController::class, 'banUser');
+$routing->post('/moderation/bans/{id}/revoke', ModerationController::class, 'revokeBan');
+$routing->get('/account/banned', ModerationController::class, 'banned');
+$routing->get('/account/notices', ModerationController::class, 'notices');
+$routing->post('/account/notices/{id}/read', ModerationController::class, 'readNotice');
 
 $routing->get('/profile', ProfileController::class, 'index');
 $routing->get('/settings', SettingsController::class, 'index');
@@ -377,6 +346,35 @@ $routing->get('/projects', ProjectController::class, 'index');
 $routing->get('/projects/{id}', ProjectController::class, 'show');
 
 try {
+    if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
+        $ban = AccountAccessGuard::begin(
+            $connect(),
+            $_SESSION['user_id'],
+            ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+                && parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/profile/import/confirm',
+        );
+        if ($ban !== null) {
+            $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+            $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+            $allowed = ($method === 'GET' && in_array($path, ['/account/banned', '/account/notices'], true))
+                || ($method === 'POST' && (in_array($path, ['/language', '/logout'], true)
+                    || preg_match('~^/account/notices/[1-9][0-9]*/read$~', (string) $path) === 1));
+            if (!$allowed) {
+                $preferences = (new PreferencesRepository($connect()))->forUser($_SESSION['user_id']);
+                Translator::setCurrent(new Translator($preferences['language'] ?? 'pl'));
+                AccountAccessGuard::finish(false);
+                if ($method !== 'GET' || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')) {
+                    http_response_code(403);
+                    header('Content-Type: application/json; charset=UTF-8');
+                    echo json_encode(['error' => Translator::current()->translate('moderation.banned'),
+                        'redirect' => '/account/banned'], JSON_THROW_ON_ERROR);
+                } else {
+                    header('Location: /account/banned', true, 303);
+                }
+                exit;
+            }
+        }
+    }
     $routeFound = $routing->dispatch(
         $_SERVER['REQUEST_METHOD'],
         $_SERVER['REQUEST_URI'],
@@ -386,7 +384,9 @@ try {
         http_response_code(404);
         (new DefaultController())->notFound();
     }
+    AccountAccessGuard::finish(http_response_code() < 400);
 } catch (Throwable $exception) {
+    AccountAccessGuard::finish(false);
     error_log('Błąd obsługi żądania: ' . $exception::class);
     http_response_code(500);
     (new DefaultController())->serverError();
