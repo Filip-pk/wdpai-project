@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
 use Closure;
@@ -23,12 +25,12 @@ final class ReplyNotificationController extends AppController
         $page = $this->page($_GET['page'] ?? '1');
         $notifications = $this->notifications()->findPageForUser($user['id'], $page);
         $this->render('reply-notifications', [
-            'pageTitle' => 'Powiadomienia — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.notifications'),
             'notifications' => $notifications + [
                 'previousUrl' => $notifications['page'] > 1 ? '/notifications/comments?page=' . ($notifications['page'] - 1) : null,
                 'nextUrl' => $notifications['page'] < $notifications['totalPages'] ? '/notifications/comments?page=' . ($notifications['page'] + 1) : null,
             ],
-            'notice' => ($_GET['read'] ?? null) === '1' ? 'Powiadomienia zostały oznaczone jako przeczytane.' : null,
+            'notice' => ($_GET['read'] ?? null) === '1' ? Translator::current()->translate('message.notification.read_all') : null,
         ]);
     }
 
@@ -37,12 +39,12 @@ final class ReplyNotificationController extends AppController
         $this->requireLogin();
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            $this->fail(403, Translator::current()->translate('message.csrf_expired'));
             return;
         }
         $notification = $this->notifications()->findByIdForUser($user['id'], $id);
         if ($notification === null || !$this->notifications()->markReadForUser($user['id'], $id)) {
-            $this->fail(404, 'Nie znaleziono Twojego powiadomienia.');
+            $this->fail(404, Translator::current()->translate('message.notification.missing'));
             return;
         }
         $this->redirect('/anime/' . $notification['animeId'] . '/comments/' . $notification['parentId']
@@ -54,12 +56,12 @@ final class ReplyNotificationController extends AppController
         $this->requireLogin();
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            $this->fail(403, Translator::current()->translate('message.csrf_expired'));
             return;
         }
         $snapshotId = filter_var($this->postString('lastNotificationId'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if ($snapshotId === false || !$this->notifications()->markAllReadForUser($user['id'], $snapshotId)) {
-            $this->fail(404, 'Nie znaleziono Twoich powiadomień do oznaczenia.');
+            $this->fail(404, Translator::current()->translate('message.notification.nothing_to_mark'));
             return;
         }
         $this->redirect('/notifications/comments?page=' . $this->page($_POST['page'] ?? '1') . '&read=1');
@@ -68,7 +70,7 @@ final class ReplyNotificationController extends AppController
     private function fail(int $status, string $message): void
     {
         http_response_code($status);
-        $this->render('community-error', ['pageTitle' => 'Powiadomienia — AniVibe', 'message' => $message]);
+        $this->render('community-error', ['pageTitle' => Translator::current()->translate('message.page.notifications'), 'message' => $message]);
     }
 
     private function page(mixed $value): int

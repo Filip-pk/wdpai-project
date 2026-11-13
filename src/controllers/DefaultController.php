@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 final class DefaultController extends AppController
 {
     public function index(): void
     {
         $this->render('home', [
-            'pageTitle' => 'AniVibe — odkryj swoje następne anime',
+            'pageTitle' => Translator::current()->translate('message.page.home'),
             'appName' => 'AniVibe',
-            'tagline' => 'Twój Inteligentny Przewodnik po Anime',
+            'tagline' => Translator::current()->translate('message.home.tagline'),
         ]);
     }
 
     public function notFound(): void
     {
         $this->render('not-found', [
-            'pageTitle' => 'Nie znaleziono strony — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.not_found'),
         ]);
     }
 
@@ -36,7 +38,7 @@ final class DefaultController extends AppController
         }
 
         $this->render('server-error', [
-            'pageTitle' => 'Błąd serwera — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.server_error'),
             'retryUrl' => $retryUrl,
         ]);
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Model\AnimeRankingCriteria;
 use App\Repository\AnimeRankingRepository;
 use App\Repository\AnimeRepository;
@@ -42,7 +44,7 @@ final class AnimeRankingController extends AppController
             );
         }
         $this->render('anime-ranking', [
-            'pageTitle' => 'Rankingi anime — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.anime_rankings'),
             'criteria' => $criteria, 'ranking' => $ranking,
             'animes' => $animes, 'communityRatings' => $communityRatings,
             'genres' => $this->animes()->genres(), 'modeUrls' => $modeUrls,

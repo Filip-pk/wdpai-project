@@ -17,7 +17,7 @@ final class MailService
     ) {
     }
 
-    public function sendWelcomeEmail(string $to, string $fullName): void
+    public function sendWelcomeEmail(string $to, string $fullName, string $locale = 'pl'): void
     {
         $this->validateConfiguration();
 
@@ -26,25 +26,27 @@ final class MailService
         }
 
         $safeName = trim(preg_replace('/[\x00-\x1F\x7F]+/', ' ', $fullName) ?? '');
-        $body = "Cześć {$safeName}!\r\n\r\n"
-            . "Twoje konto w AniVibe zostało utworzone. Możesz się już zalogować.\r\n\r\n"
-            . "Odkrywaj anime i twórz własną watchlistę.\r\n\r\n"
-            . "Pozdrawiamy,\r\nZespół AniVibe";
-        $this->sendMessage($to, 'Witaj w AniVibe — cześć!', $body);
+        $translator = new Translator($locale);
+        $body = $translator->translate('mail.welcome.greeting', ['user' => $safeName]) . "\r\n\r\n"
+            . $translator->translate('mail.welcome.created') . "\r\n\r\n"
+            . $translator->translate('mail.welcome.discover') . "\r\n\r\n"
+            . $translator->translate('mail.regards') . "\r\n" . $translator->translate('mail.team');
+        $this->sendMessage($to, $translator->translate('mail.welcome.subject'), $body);
     }
 
-    public function sendEmailChangeConfirmation(string $to, string $code): void
+    public function sendEmailChangeConfirmation(string $to, string $code, string $locale = 'pl'): void
     {
         if (preg_match('/\A[a-f0-9]{32}\z/', $code) !== 1) {
             throw new RuntimeException('Nieprawidłowy kod potwierdzenia.');
         }
 
-        $this->sendMessage($to, 'AniVibe — potwierdź nowy adres e-mail',
-            "Potwierdź zmianę adresu e-mail w AniVibe.\r\n\r\n"
-            . "Kod potwierdzenia: {$code}\r\n\r\n"
-            . "Zaloguj się na dotychczasowe konto i otwórz Ustawienia → Konto i bezpieczeństwo → Potwierdź e-mail.\r\n"
-            . "Wklej kod do formularza. Kod jest ważny przez 30 minut i działa tylko raz.\r\n\r\n"
-            . "Jeśli nie prosisz o tę zmianę, zignoruj wiadomość. Dotychczasowy adres pozostanie aktywny.\r\n"
+        $translator = new Translator($locale);
+        $this->sendMessage($to, $translator->translate('mail.email_change.subject'),
+            $translator->translate('mail.email_change.intro') . "\r\n\r\n"
+            . $translator->translate('mail.email_change.code', ['code' => $code]) . "\r\n\r\n"
+            . $translator->translate('mail.email_change.navigate') . "\r\n"
+            . $translator->translate('mail.email_change.instructions') . "\r\n\r\n"
+            . $translator->translate('mail.email_change.ignore') . "\r\n"
         );
     }
 

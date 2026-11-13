@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\RatingRepository;
@@ -99,14 +101,14 @@ final class CollectionController extends AppController
         $errors = [];
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+            $errors[] = Translator::current()->translate('message.csrf_expired');
         } else {
             $animeId = filter_var($this->postString('animeId'), FILTER_VALIDATE_INT, [
                 'options' => ['min_range' => 1],
             ]);
             if ($animeId === false) {
                 http_response_code(422);
-                $errors[] = 'Wybierz poprawne anime do usunięcia z kolekcji.';
+                $errors[] = Translator::current()->translate('message.collection.remove_valid_anime');
             } else {
                 if (!$this->collections()->removeAnimeForUser($user['id'], $id, $animeId)) {
                     $this->notFound();
@@ -131,12 +133,12 @@ final class CollectionController extends AppController
     {
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            return ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'];
+            return [Translator::current()->translate('message.csrf_expired')];
         }
 
         $errors = CollectionService::validate($form['name'], $form['description']);
         if (!is_string($_POST['description'] ?? '') || !is_string($_POST['name'] ?? '')) {
-            $errors[] = 'Podaj nazwę i opis kolekcji jako tekst.';
+            $errors[] = Translator::current()->translate('message.collection.text_fields');
         }
         if ($errors !== []) {
             http_response_code(422);
@@ -166,7 +168,7 @@ final class CollectionController extends AppController
         }
 
         $this->render('collections', [
-            'pageTitle' => ($collection['name'] ?? 'Moje kolekcje') . ' — AniVibe',
+            'pageTitle' => ($collection['name'] ?? Translator::current()->translate('message.collection.mine')) . ' — AniVibe',
             'collections' => $collectionPage['collections'],
             'collectionsPagination' => $collectionPage,
             'selectedCollection' => $collection,
@@ -203,7 +205,7 @@ final class CollectionController extends AppController
     private function notFound(): void
     {
         http_response_code(404);
-        $this->render('not-found', ['pageTitle' => 'Nie znaleziono kolekcji — AniVibe']);
+        $this->render('not-found', ['pageTitle' => Translator::current()->translate('message.page.collection_missing')]);
     }
 
     private function users(): UserRepository

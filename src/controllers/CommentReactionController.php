@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\CommentReactionRepository;
 use App\Repository\CommentRepository;
 use App\Repository\CommunityRepository;
@@ -29,12 +31,12 @@ final class CommentReactionController extends AppController
         $comment = $this->comments()->findByIdForAnime($id, $commentId);
         $backUrl = $this->backUrl($id, $commentId, $comment);
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.', $backUrl);
+            $this->fail(403, Translator::current()->translate('message.csrf_expired'), $backUrl);
             return;
         }
         $value = $this->postString('value');
         if (!in_array($value, ['-1', '0', '1'], true)) {
-            $this->fail(422, 'Wybierz like, dislike lub cofnięcie swojego głosu.', $backUrl);
+            $this->fail(422, Translator::current()->translate('message.reaction.choose'), $backUrl);
             return;
         }
         try {
@@ -45,7 +47,7 @@ final class CommentReactionController extends AppController
             return;
         }
         if (!$changed) {
-            $this->fail(404, 'Nie znaleziono wpisu, na który możesz zagłosować.', $backUrl);
+            $this->fail(404, Translator::current()->translate('message.reaction.missing'), $backUrl);
             return;
         }
         $this->redirect($backUrl);
@@ -69,7 +71,7 @@ final class CommentReactionController extends AppController
     private function fail(int $status, string $message, string $backUrl): void
     {
         http_response_code($status);
-        $this->render('community-error', ['pageTitle' => 'Reakcja na komentarz — AniVibe', 'message' => $message, 'backUrl' => $backUrl]);
+        $this->render('community-error', ['pageTitle' => Translator::current()->translate('message.page.reaction'), 'message' => $message, 'backUrl' => $backUrl]);
     }
 
     private function page(mixed $value): int

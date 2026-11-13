@@ -5,6 +5,7 @@
     const root = document.documentElement;
     const controls = document.querySelectorAll('[data-preference]');
     const theme = form.querySelector('[name="theme"]');
+    const translate = (key, fallback) => window.AniVibeI18n?.t(key) ?? fallback;
     let system = null;
     try {
         system = window.matchMedia('(prefers-color-scheme: dark)');
@@ -28,7 +29,9 @@
         if (toggle) {
             const isDark = root.dataset.theme === 'dark';
             toggle.setAttribute('aria-pressed', String(isDark));
-            toggle.setAttribute('aria-label', isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw');
+            toggle.setAttribute('aria-label', isDark
+                ? translate('js.theme.enable_light', 'Włącz jasny motyw')
+                : translate('js.theme.enable_dark', 'Włącz ciemny motyw'));
             toggle.title = toggle.getAttribute('aria-label');
         }
     }

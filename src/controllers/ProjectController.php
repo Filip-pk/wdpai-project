@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\ProjectRepository;
 use Closure;
 
@@ -23,7 +25,7 @@ final class ProjectController extends AppController
     {
         $this->requireLogin();
         $this->render('projects', [
-            'pageTitle' => 'Projekty — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.projects'),
             'projects' => $this->projects()->findAll(),
             'projectStatuses' => self::PROJECT_STATUSES,
         ]);
@@ -37,7 +39,7 @@ final class ProjectController extends AppController
         if ($project === null) {
             http_response_code(404);
             $this->render('not-found', [
-                'pageTitle' => 'Nie znaleziono projektu — AniVibe',
+                'pageTitle' => Translator::current()->translate('message.page.project_missing'),
             ]);
 
             return;

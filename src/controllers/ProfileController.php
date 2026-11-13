@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\AnimeRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
@@ -55,7 +57,7 @@ final class ProfileController extends AppController
 
             if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
                 http_response_code(403);
-                $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+                $errors[] = Translator::current()->translate('message.csrf_expired');
             } else {
                 $errors = (new ProfileService($this->users()))->update($user, $form);
 
@@ -77,7 +79,7 @@ final class ProfileController extends AppController
 
         if ($profileUser === null) {
             http_response_code(404);
-            $this->render('not-found', ['pageTitle' => 'Nie znaleziono użytkownika — AniVibe']);
+            $this->render('not-found', ['pageTitle' => Translator::current()->translate('message.page.user_missing')]);
             return;
         }
 
@@ -101,7 +103,7 @@ final class ProfileController extends AppController
         $showStatistics = $isOwnProfile || $settings['publicStatistics'];
 
         $this->render('user-profile', [
-            'pageTitle' => $profileUser['name'] . ' — Profil użytkownika — AniVibe',
+            'pageTitle' => $profileUser['name'] . Translator::current()->translate('message.page.user_suffix'),
             'profileUser' => $profileUser,
             'profilePath' => '/users/' . $id,
             'isOwnProfile' => $isOwnProfile,
@@ -116,8 +118,8 @@ final class ProfileController extends AppController
                     ?? ['blockedByMe' => false, 'blockedEitherWay' => false])
                 : ['blockedByMe' => false, 'blockedEitherWay' => false],
             'blockNotice' => match (true) {
-                ($_GET['blocked'] ?? null) === '1' => 'Użytkownik został zablokowany.',
-                ($_GET['unblocked'] ?? null) === '1' => 'Użytkownik został odblokowany.',
+                ($_GET['blocked'] ?? null) === '1' => Translator::current()->translate('message.user_blocked'),
+                ($_GET['unblocked'] ?? null) === '1' => Translator::current()->translate('message.user_unblocked'),
                 default => null,
             },
             'experience' => $showStatistics ? ExperienceService::progress($this->experience()->totalForUser($id)) : null,
@@ -154,14 +156,14 @@ final class ProfileController extends AppController
 
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            echo json_encode(['error' => 'Formularz wygasł. Odśwież stronę.']);
+            echo json_encode(['error' => Translator::current()->translate('message.csrf_refresh')]);
             return;
         }
 
         $theme = $this->postString('theme');
         if (!in_array($theme, ProfileService::THEMES, true)) {
             http_response_code(422);
-            echo json_encode(['error' => 'Nieprawidłowy motyw.']);
+            echo json_encode(['error' => Translator::current()->translate('message.theme.invalid')]);
             return;
         }
 
@@ -178,7 +180,7 @@ final class ProfileController extends AppController
 
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $errors = ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'];
+            $errors = [Translator::current()->translate('message.csrf_expired')];
         } else {
             $upload = is_array($_FILES['avatar'] ?? null) ? $_FILES['avatar'] : [];
             $errors = (new AvatarService($this->users()))->upload($user['id'], $upload);
@@ -236,13 +238,13 @@ final class ProfileController extends AppController
 
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+            $errors[] = Translator::current()->translate('message.csrf_expired');
         } else {
             $animeId = filter_var($this->postString('animeId'), FILTER_VALIDATE_INT);
             $anime = $animeId === false ? null : $this->animes()->findById($animeId);
 
             if ($anime === null) {
-                $errors[] = 'Wybierz anime z katalogu.';
+                $errors[] = Translator::current()->translate('message.watchlist.choose_anime');
             } elseif ($remove) {
                 $this->watchlists()->removeForUser($user['id'], $animeId);
             } elseif ($this->postString('mode') === 'add') {
@@ -255,10 +257,10 @@ final class ProfileController extends AppController
                 $episodes = $anime['episodes'] !== null && $anime['episodes'] > 0 ? $anime['episodes'] : null;
 
                 if (!isset(self::STATUSES[$status])) {
-                    $errors[] = 'Wybierz poprawny status oglądania.';
+                    $errors[] = Translator::current()->translate('message.watchlist.choose_status');
                 }
                 if ($watched === false || $watched < 0 || ($episodes !== null && $watched > $episodes)) {
-                    $errors[] = 'Liczba odcinków musi mieścić się w zakresie wybranej serii.';
+                    $errors[] = Translator::current()->translate('message.watchlist.episodes_range');
                 }
                 if ($errors === []) {
                     $watched = $status === 'completed' && $episodes !== null ? $episodes : $watched;
@@ -296,7 +298,7 @@ final class ProfileController extends AppController
         $animeIds = array_column($result['entries'], 'animeId');
 
         $this->render('profile', [
-            'pageTitle' => ($watchlistOnly ? 'Watchlista' : 'Twój profil') . ' — AniVibe',
+            'pageTitle' => ($watchlistOnly ? Translator::current()->translate('message.page.watchlist') : Translator::current()->translate('message.page.profile')) . ' — AniVibe',
             'watchlistOnly' => $watchlistOnly,
             'user' => $user,
             'form' => $form,

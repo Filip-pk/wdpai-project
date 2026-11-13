@@ -23,17 +23,17 @@ final class ProfileService
 
         if ($nameLength === false || $nameLength < 1 || $nameLength > 120
             || str_contains($form['name'], "\0")) {
-            $errors[] = 'Nazwa użytkownika musi mieć od 1 do 120 znaków.';
+            $errors[] = Translator::current()->translate('message.profile.name_length');
         }
         if (strlen($form['email']) > 255 || !filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Podaj poprawny adres e-mail (maksymalnie 255 znaków).';
+            $errors[] = Translator::current()->translate('message.profile.email_valid');
         }
         if ($interestsLength === false || $interestsLength > 1000
             || str_contains($form['interests'], "\0")) {
-            $errors[] = 'Zainteresowania mogą mieć maksymalnie 1000 znaków.';
+            $errors[] = Translator::current()->translate('message.profile.interests_length');
         }
         if (!in_array($form['theme'], self::THEMES, true)) {
-            $errors[] = 'Wybierz motyw systemowy, jasny lub ciemny.';
+            $errors[] = Translator::current()->translate('message.profile.theme_valid');
         }
 
         if ($errors !== []) {
@@ -41,7 +41,7 @@ final class ProfileService
         }
 
         if ($form['email'] !== strtolower($user['email'])) {
-            $errors[] = 'Adres e-mail zmienisz w ustawieniach konta po potwierdzeniu nowego adresu kodem.';
+            $errors[] = Translator::current()->translate('message.profile.email_settings');
         }
 
         if ($errors === []) {

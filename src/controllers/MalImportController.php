@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\UserRepository;
 use App\Service\MalImportChangedException;
 use App\Service\MalImportService;
@@ -29,7 +31,7 @@ final class MalImportController extends AppController
         $pending = $_SESSION['mal_import_pending'] ?? null;
         $expired = is_array($pending) && ($pending['userId'] ?? null) === $user['id']
             && ($pending['expiresAt'] ?? 0) <= time();
-        $this->renderImport($user['id'], notice: $expired ? 'Podgląd wygasł. Wgraj plik ponownie.' : null);
+        $this->renderImport($user['id'], notice: $expired ? Translator::current()->translate('message.mal.preview_expired') : null);
     }
 
     public function preview(): void
@@ -38,7 +40,7 @@ final class MalImportController extends AppController
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->renderImport($user['id'], ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            $this->renderImport($user['id'], [Translator::current()->translate('message.csrf_expired')]);
             return;
         }
 
@@ -46,7 +48,7 @@ final class MalImportController extends AppController
         try {
             $policy = $_POST['updateExisting'] ?? '0';
             if (!is_string($policy) || !in_array($policy, ['0', '1'], true)) {
-                throw new InvalidArgumentException('Wybierz poprawny sposób aktualizacji istniejących wpisów.');
+                throw new InvalidArgumentException(Translator::current()->translate('message.mal.choose_mode'));
             }
             $bytes = $this->readUpload();
             $parsed = (new MalXmlParser())->parse($bytes);
@@ -67,13 +69,13 @@ final class MalImportController extends AppController
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->renderImport($user['id'], ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            $this->renderImport($user['id'], [Translator::current()->translate('message.csrf_expired')]);
             return;
         }
         $pending = $this->pendingForUser($user['id']);
         if (!$this->isImportTokenValid($pending)) {
             http_response_code(409);
-            $this->renderImport($user['id'], ['Podgląd wygasł lub został już wykorzystany. Przygotuj nowy import.']);
+            $this->renderImport($user['id'], [Translator::current()->translate('message.mal.preview_used')]);
             return;
         }
 
@@ -85,7 +87,7 @@ final class MalImportController extends AppController
             $preview = $this->imports()->previewForUser($user['id'], $pending['parsed'], $pending['updateExisting']);
             $this->storePreview($user['id'], $pending['parsed'], $preview, $pending['updateExisting']);
             http_response_code(409);
-            $this->renderImport($user['id'], ['Dane zmieniły się od przygotowania podglądu. Sprawdź zaktualizowane zmiany i zatwierdź ponownie.']);
+            $this->renderImport($user['id'], [Translator::current()->translate('message.mal.changed_updated')]);
             return;
         }
 
@@ -100,12 +102,12 @@ final class MalImportController extends AppController
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->renderImport($user['id'], ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            $this->renderImport($user['id'], [Translator::current()->translate('message.csrf_expired')]);
             return;
         }
         if (!$this->isImportTokenValid($this->pendingForUser($user['id']))) {
             http_response_code(409);
-            $this->renderImport($user['id'], ['Ten podgląd nie jest już dostępny.']);
+            $this->renderImport($user['id'], [Translator::current()->translate('message.mal.preview_unavailable')]);
             return;
         }
         unset($_SESSION['mal_import_pending']);
@@ -117,21 +119,21 @@ final class MalImportController extends AppController
         $upload = $_FILES['malFile'] ?? null;
         if (!is_array($upload) || !is_int($upload['error'] ?? null)
             || $upload['error'] !== UPLOAD_ERR_OK) {
-            throw new InvalidArgumentException('Wybierz poprawny plik XML lub XML.GZ z eksportem listy anime.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.choose_xml'));
         }
         if (!is_string($upload['name'] ?? null) || strlen($upload['name']) > 512
             || preg_match('/\.(?:xml|gz)\z/i', $upload['name']) !== 1) {
-            throw new InvalidArgumentException('Obsługiwane są pliki XML i XML.GZ z MyAnimeList.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.supported'));
         }
         if (!is_int($upload['size'] ?? null) || $upload['size'] < 1 || $upload['size'] > MalXmlParser::MAX_UPLOAD_BYTES) {
-            throw new InvalidArgumentException('Plik musi być niepusty i mieć najwyżej 10 MB.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.file_size'));
         }
         if (!is_string($upload['tmp_name'] ?? null) || !is_uploaded_file($upload['tmp_name'])) {
-            throw new InvalidArgumentException('Nie udało się odebrać pliku. Wybierz go ponownie.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.upload_failed'));
         }
         $bytes = file_get_contents($upload['tmp_name'], false, null, 0, MalXmlParser::MAX_UPLOAD_BYTES + 1);
         if ($bytes === false || $bytes === '' || strlen($bytes) > MalXmlParser::MAX_UPLOAD_BYTES) {
-            throw new InvalidArgumentException('Nie udało się odczytać pliku lub plik przekracza limit 10 MB.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.read_limit'));
         }
         return $bytes;
     }
@@ -179,7 +181,7 @@ final class MalImportController extends AppController
         $visibleRows = array_slice($rows, ($page - 1) * self::PAGE_SIZE, self::PAGE_SIZE);
 
         $this->render('mal-import', [
-            'pageTitle' => 'Import z MyAnimeList — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.mal'),
             'errors' => $errors,
             'notice' => $notice,
             'preview' => $preview,

@@ -13,6 +13,6 @@ final class RateLimitException extends RuntimeException
     public function __construct(int $retryAfter)
     {
         $this->retryAfter = max(1, $retryAfter);
-        parent::__construct('Zbyt wiele prób. Spróbuj ponownie za ' . $this->retryAfter . ' s.');
+        parent::__construct(Translator::current()->translate('message.rate_limit', ['seconds' => $this->retryAfter]));
     }
 }

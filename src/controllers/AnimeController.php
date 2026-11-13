@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
 use App\Model\AnimeSearchCriteria;
 use App\Repository\AnimeRepository;
 use App\Repository\CollectionRepository;
@@ -57,7 +58,7 @@ final class AnimeController extends AppController
         ], $numbers);
 
         $this->render('anime-list', [
-            'pageTitle' => 'Odkrywaj anime — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.catalog'),
             'animes' => $result['animes'],
             'communityRatings' => $this->ratings()->communityForAnimeIds(array_keys($result['animes'])),
             'query' => $criteria->query,
@@ -89,7 +90,7 @@ final class AnimeController extends AppController
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->renderAnime($id, ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            $this->renderAnime($id, [Translator::current()->translate('message.csrf_expired')]);
             return;
         }
 
@@ -97,7 +98,7 @@ final class AnimeController extends AppController
         $collectionIds = [];
         if (!is_array($ids) || $ids === [] || count($ids) > 100) {
             http_response_code(422);
-            $this->renderAnime($id, ['Wybierz od 1 do 100 własnych kolekcji.']);
+            $this->renderAnime($id, [Translator::current()->translate('message.collection.choose_count')]);
             return;
         }
         foreach ($ids as $value) {
@@ -106,7 +107,7 @@ final class AnimeController extends AppController
             ]) : false;
             if ($collectionId === false) {
                 http_response_code(422);
-                $this->renderAnime($id, ['Wybierz poprawne kolekcje.']);
+                $this->renderAnime($id, [Translator::current()->translate('message.collection.choose_valid')]);
                 return;
             }
             $collectionIds[] = $collectionId;
@@ -131,13 +132,13 @@ final class AnimeController extends AppController
         ];
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->renderAnime($id, ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'], $form);
+            $this->renderAnime($id, [Translator::current()->translate('message.csrf_expired')], $form);
             return;
         }
 
         $errors = CollectionService::validate($form['name'], $form['description']);
         if (!is_string($_POST['description'] ?? '') || !is_string($_POST['name'] ?? '')) {
-            $errors[] = 'Podaj nazwę i opis kolekcji jako tekst.';
+            $errors[] = Translator::current()->translate('message.collection.text_fields');
         }
         if ($errors !== []) {
             http_response_code(422);
@@ -190,7 +191,7 @@ final class AnimeController extends AppController
         $errors = [];
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+            $errors[] = Translator::current()->translate('message.csrf_expired');
         } else {
             $errors = CommentService::validate($body);
             if ($errors !== []) {
@@ -263,7 +264,7 @@ final class AnimeController extends AppController
         $errors = [];
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+            $errors[] = Translator::current()->translate('message.csrf_expired');
         } elseif ($action !== 'delete') {
             $errors = CommentService::validate($body);
             if ($errors !== []) {
@@ -363,7 +364,7 @@ final class AnimeController extends AppController
         }
         $mainPage = $this->commentPage($_POST['commentsPage'] ?? $_GET['commentsPage'] ?? '1');
         $this->render('comment-thread', [
-            'pageTitle' => 'Dyskusja: ' . $anime['title'] . ' — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.discussion_prefix') . $anime['title'] . ' — AniVibe',
             'anime' => $anime, 'animeId' => $animeId, 'thread' => $thread, 'threadMode' => true,
             'threadPath' => '/anime/' . $animeId . '/comments/' . $rootId,
             'reactionCounts' => $this->reactions()->countsForComments(
@@ -377,10 +378,10 @@ final class AnimeController extends AppController
             'commentFormPage' => $mainPage, 'commentBody' => $body, 'commentErrors' => $errors,
             'editingComment' => $editingComment,
             'commentNotice' => !$this->isPost() ? match (true) {
-                ($_GET['replySaved'] ?? null) === '1' => 'Odpowiedź została dodana.',
-                ($_GET['commentUpdated'] ?? null) === '1' => 'Wpis został zaktualizowany.',
-                ($_GET['commentRemoved'] ?? null) === '1' => 'Wpis został usunięty.',
-                ($_GET['reportSaved'] ?? null) === '1' => 'Zgłoszenie zostało zapisane.',
+                ($_GET['replySaved'] ?? null) === '1' => Translator::current()->translate('message.reply_added'),
+                ($_GET['commentUpdated'] ?? null) === '1' => Translator::current()->translate('message.post_updated'),
+                ($_GET['commentRemoved'] ?? null) === '1' => Translator::current()->translate('message.post_removed'),
+                ($_GET['reportSaved'] ?? null) === '1' => Translator::current()->translate('message.report_saved'),
                 default => null,
             } : null,
         ]);
@@ -422,7 +423,7 @@ final class AnimeController extends AppController
     private function commentNotFound(): void
     {
         http_response_code(404);
-        $this->render('not-found', ['pageTitle' => 'Nie znaleziono komentarza — AniVibe']);
+        $this->render('not-found', ['pageTitle' => Translator::current()->translate('message.page.comment_missing')]);
     }
 
     private function changeRating(int $id, bool $remove): void
@@ -431,7 +432,7 @@ final class AnimeController extends AppController
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            $this->renderAnime($id, ratingErrors: ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.']);
+            $this->renderAnime($id, ratingErrors: [Translator::current()->translate('message.csrf_expired')]);
             return;
         }
 
@@ -448,7 +449,7 @@ final class AnimeController extends AppController
         $rating = $this->postString('rating');
         if (preg_match('/\A(?:[1-9]|10)\z/', $rating) !== 1) {
             http_response_code(422);
-            $this->renderAnime($id, ratingErrors: ['Wybierz ocenę od 1 do 10, bez części ułamkowej.']);
+            $this->renderAnime($id, ratingErrors: [Translator::current()->translate('message.rating.choose')]);
             return;
         }
 
@@ -473,7 +474,7 @@ final class AnimeController extends AppController
             http_response_code(404);
 
             $this->render('not-found', [
-                'pageTitle' => 'Nie znaleziono anime — AniVibe',
+                'pageTitle' => Translator::current()->translate('message.page.anime_missing'),
             ]);
 
             return;
@@ -489,7 +490,7 @@ final class AnimeController extends AppController
             'simkl.com' => 'SIMKL',
             'livechart.me' => 'LiveChart',
             'animenewsnetwork.com' => 'Anime News Network',
-            default => 'Strona źródłowa',
+            default => Translator::current()->translate('message.source_website'),
         };
 
         $collections = $this->animeCollections();
@@ -524,14 +525,14 @@ final class AnimeController extends AppController
             'collectionForm' => $collectionForm + ['name' => '', 'description' => ''],
             'selectedCollectionIds' => [],
             'collectionNotice' => !$this->isPost() && ($_GET['collectionSaved'] ?? null) === '1'
-                ? 'Anime zostało dodane do wybranych kolekcji.' : null,
+                ? Translator::current()->translate('message.collection.anime_added') : null,
             'userRating' => $userRating,
             'communityRatings' => $this->ratings()->communityForAnimeIds([$id]),
             'ratingValue' => $ratingErrors === [] ? (string) ($userRating ?? '') : $this->postString('rating'),
             'ratingErrors' => $ratingErrors,
             'ratingNotice' => !$this->isPost() ? match (true) {
-                ($_GET['ratingSaved'] ?? null) === '1' => 'Twoja ocena została zapisana.',
-                ($_GET['ratingRemoved'] ?? null) === '1' => 'Twoja ocena została usunięta.',
+                ($_GET['ratingSaved'] ?? null) === '1' => Translator::current()->translate('message.rating.saved'),
+                ($_GET['ratingRemoved'] ?? null) === '1' => Translator::current()->translate('message.rating.removed'),
                 default => null,
             } : null,
             'comments' => $comments + [
@@ -547,10 +548,10 @@ final class AnimeController extends AppController
             'editingComment' => $editingComment,
             'commentFormPage' => $comments['page'],
             'commentNotice' => !$this->isPost() ? match (true) {
-                ($_GET['commentSaved'] ?? null) === '1' => 'Komentarz został dodany.',
-                ($_GET['commentUpdated'] ?? null) === '1' => 'Komentarz został zaktualizowany.',
-                ($_GET['commentRemoved'] ?? null) === '1' => 'Komentarz został usunięty.',
-                ($_GET['reportSaved'] ?? null) === '1' => 'Zgłoszenie zostało zapisane.',
+                ($_GET['commentSaved'] ?? null) === '1' => Translator::current()->translate('message.comment.added'),
+                ($_GET['commentUpdated'] ?? null) === '1' => Translator::current()->translate('message.comment.updated'),
+                ($_GET['commentRemoved'] ?? null) === '1' => Translator::current()->translate('message.comment.removed'),
+                ($_GET['reportSaved'] ?? null) === '1' => Translator::current()->translate('message.report_saved'),
                 default => null,
             } : null,
         ]);
@@ -571,7 +572,7 @@ final class AnimeController extends AppController
     private function collectionNotFound(): void
     {
         http_response_code(404);
-        $this->render('not-found', ['pageTitle' => 'Nie znaleziono anime lub kolekcji — AniVibe']);
+        $this->render('not-found', ['pageTitle' => Translator::current()->translate('message.page.anime_collection_missing')]);
     }
 
     private function collections(): CollectionRepository

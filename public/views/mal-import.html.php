@@ -160,12 +160,19 @@ $importSteps = [1 => $t('view.catalog.import_load'), 2 => $t('view.catalog.impor
                                 </dl>
                             <?php endif; ?>
                             <?php
-                            $reason = $report === null ? $row['reason'] : strtr($row['reason'], [
-                                'Tytuł zostanie dodany' => 'Tytuł został dodany',
-                                'zostaną zastąpione' => 'zostały zastąpione',
-                            ]);
+                            $reasonParts = $row['reasonParts']
+                                ?? (preg_split('/(?<=[.!?])\s+/u', $row['reason']) ?: [$row['reason']]);
+                            $reason = implode(' ', array_map(static function (string $part) use ($report, $translateText): string {
+                                if ($report !== null) {
+                                    $part = strtr($part, [
+                                        'Tytuł zostanie dodany' => 'Tytuł został dodany',
+                                        'zostaną zastąpione' => 'zostały zastąpione',
+                                    ]);
+                                }
+                                return $translateText($part);
+                            }, $reasonParts));
                             ?>
-                            <?php if ($reason !== ''): ?><p class="import-entry-reason"><?= $escape($translateText($reason)) ?></p><?php endif; ?>
+                            <?php if ($reason !== ''): ?><p class="import-entry-reason"><?= $escape($reason) ?></p><?php endif; ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>

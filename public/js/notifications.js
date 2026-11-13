@@ -8,6 +8,9 @@
     const readForms = Array.from(document.querySelectorAll('form[data-mark-conversation-read]'));
     const acknowledgedForms = new WeakSet();
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const translate = (key, fallback, parameters = {}) => window.AniVibeI18n?.t(key, parameters)
+        ?? fallback.replace(/\{([a-zA-Z0-9_]+)\}/g, (placeholder, name) =>
+            Object.prototype.hasOwnProperty.call(parameters, name) ? String(parameters[name]) : placeholder);
     let timer = null;
     let stopped = false;
     let refreshing = false;
@@ -32,7 +35,11 @@
             badge.hidden = count === 0;
         });
         links.forEach(function (link) {
-            link.setAttribute('aria-label', 'Wiadomości. Nieprzeczytane: ' + count);
+            link.setAttribute('aria-label', translate(
+                'js.notifications.messages_unread',
+                'Wiadomości. Nieprzeczytane: {count}',
+                { count },
+            ));
         });
 
         return true;
@@ -53,7 +60,11 @@
             badge.hidden = value === 0;
         });
         replyLinks.forEach(function (link) {
-            link.setAttribute('aria-label', 'Powiadomienia. Nieprzeczytane: ' + value);
+            link.setAttribute('aria-label', translate(
+                'js.notifications.replies_unread',
+                'Powiadomienia. Nieprzeczytane: {count}',
+                { count: value },
+            ));
         });
     }
 
@@ -72,7 +83,11 @@
         document.querySelectorAll('[data-conversation-unread="' + id + '"]').forEach(function (badge) {
             badge.textContent = String(count);
             badge.hidden = count === 0;
-            badge.setAttribute('aria-label', 'Nieprzeczytane wiadomości: ' + count);
+            badge.setAttribute('aria-label', translate(
+                'js.notifications.conversation_unread',
+                'Nieprzeczytane wiadomości: {count}',
+                { count },
+            ));
         });
     }
 
