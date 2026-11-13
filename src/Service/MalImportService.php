@@ -23,6 +23,7 @@ final class MalImportService
         $counts = ['add' => 0, 'update' => 0, 'unchanged' => 0, 'skipped' => 0];
         foreach ($parsed['entries'] as $entry) {
             $row = $this->planEntry($entry, $states[$entry['malId']] ?? null, $updateExisting);
+            $row['reasonParts'] ??= [$row['reason']];
             $rows[] = $row;
             $counts[$row['action']]++;
         }
@@ -31,7 +32,7 @@ final class MalImportService
                 'malId' => $issue['malId'], 'animeId' => null, 'title' => $issue['title'],
                 'status' => null, 'watched' => null, 'rating' => null,
                 'currentStatus' => null, 'currentWatched' => null, 'currentRating' => null,
-                'action' => 'skipped', 'reason' => $issue['reason'], 'ratingAction' => 'none',
+                'action' => 'skipped', 'reason' => $issue['reason'], 'reasonParts' => [$issue['reason']], 'ratingAction' => 'none',
             ];
             $counts['skipped']++;
         }
@@ -48,12 +49,12 @@ final class MalImportService
     public function importForUser(int $userId, array $parsed, bool $updateExisting, string $expectedFingerprint): array
     {
         if (preg_match('/\A[a-f0-9]{64}\z/', $expectedFingerprint) !== 1) {
-            throw new MalImportChangedException('Podgląd importu wygasł. Przygotuj go ponownie.');
+            throw new MalImportChangedException(Translator::current()->translate('message.mal.import_expired'));
         }
         return $this->imports->transaction(function () use ($userId, $parsed, $updateExisting, $expectedFingerprint): array {
             $preview = $this->previewForUser($userId, $parsed, $updateExisting);
             if (!hash_equals($preview['fingerprint'], $expectedFingerprint)) {
-                throw new MalImportChangedException('Dane zmieniły się od przygotowania podglądu. Sprawdź zmiany i zatwierdź ponownie.');
+                throw new MalImportChangedException(Translator::current()->translate('message.mal.changed'));
             }
 
             $before = $this->imports->totalExpForUser($userId);
@@ -134,6 +135,7 @@ final class MalImportService
             'update' => 'Status, postęp i własna ocena zostaną zastąpione wartościami z podglądu.',
             default => 'Dane są już zgodne z importem; zapis nie jest potrzebny.',
         };
+        $row['reasonParts'] = [$row['reason'], ...$notes];
         if ($notes !== []) {
             $row['reason'] .= ' ' . implode(' ', $notes);
         }
@@ -147,7 +149,7 @@ final class MalImportService
             || !is_int($parsed['total'] ?? null) || $parsed['total'] < 0
             || $parsed['total'] !== count($parsed['entries']) + count($parsed['issues'])
             || $parsed['total'] > MalXmlParser::MAX_ENTRIES) {
-            throw new InvalidArgumentException('Nieprawidłowe dane podglądu importu.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.invalid_preview'));
         }
         $seen = [];
         foreach ($parsed['entries'] as $entry) {
@@ -157,7 +159,7 @@ final class MalImportService
                 || !is_int($entry['watched'] ?? null) || $entry['watched'] < 0 || $entry['watched'] > 2147483647
                 || !array_key_exists('rating', $entry)
                 || ($entry['rating'] !== null && (!is_int($entry['rating']) || $entry['rating'] < 1 || $entry['rating'] > 10))) {
-                throw new InvalidArgumentException('Nieprawidłowy wpis w podglądzie importu.');
+                throw new InvalidArgumentException(Translator::current()->translate('message.mal.invalid_entry'));
             }
             $seen[$entry['malId']] = true;
         }
@@ -165,7 +167,7 @@ final class MalImportService
             if (!is_array($issue) || !is_string($issue['title'] ?? null) || !is_string($issue['reason'] ?? null)
                 || !array_key_exists('malId', $issue)
                 || ($issue['malId'] !== null && (!is_int($issue['malId']) || $issue['malId'] <= 0))) {
-                throw new InvalidArgumentException('Nieprawidłowy raport importu.');
+                throw new InvalidArgumentException(Translator::current()->translate('message.mal.invalid_report'));
             }
         }
     }

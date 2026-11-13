@@ -14,6 +14,7 @@ use App\Controller\CommunityController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
 use App\Controller\MalImportController;
+use App\Controller\LanguageController;
 use App\Controller\MessageController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
@@ -45,6 +46,7 @@ use App\Routing;
 use App\Service\MailService;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
+use App\Service\Translator;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -63,8 +65,16 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 header('Cache-Control: no-store');
+Translator::setCurrent(new Translator(
+    is_string($_COOKIE['anivibe_language'] ?? null) ? $_COOKIE['anivibe_language'] : 'pl',
+));
 
 $createController = static function (string $controllerClass): AppController {
+    if ($controllerClass === LanguageController::class) {
+        return new LanguageController(
+            static fn (): PreferencesRepository => new PreferencesRepository((new Database())->connect()),
+        );
+    }
     if ($controllerClass === PrivacySettingsController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -271,10 +281,22 @@ $routing = new Routing(static function (string $controllerClass) use ($createCon
     $controller->setPreferencesRepository(
         static fn (): PreferencesRepository => new PreferencesRepository((new Database())->connect()),
     );
+    try {
+        $controller->initializeLanguage($controllerClass !== AuthController::class);
+    } catch (RuntimeException $exception) {
+        if (!$controller instanceof DefaultController
+            || (!$exception instanceof PDOException && !$exception->getPrevious() instanceof PDOException)) {
+            throw $exception;
+        }
+        // The public home page can use the session language while the database is unavailable.
+        $controller = new DefaultController();
+        $controller->initializeLanguage(false);
+    }
     return $controller;
 });
 
 $routing->get('/', DefaultController::class, 'index');
+$routing->post('/language', LanguageController::class, 'save');
 $routing->get('/login', AuthController::class, 'login');
 $routing->post('/login', AuthController::class, 'login');
 $routing->get('/register', AuthController::class, 'register');

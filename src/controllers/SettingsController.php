@@ -8,6 +8,7 @@ use App\Repository\PreferencesRepository;
 use App\Repository\PrivacySettingsRepository;
 use App\Repository\UserRepository;
 use App\Service\PreferencesService;
+use App\Service\Translator;
 use Closure;
 
 final class SettingsController extends AppController
@@ -92,7 +93,7 @@ final class SettingsController extends AppController
             $this->privacy = ($this->privacy)();
         }
         $this->render('settings', [
-            'pageTitle' => 'Ustawienia — AniVibe', 'user' => $user,
+            'pageTitle' => Translator::current()->translate('settings.page_title'), 'user' => $user,
             'form' => $form, 'errors' => $errors,
             'appearanceChoices' => PreferencesService::APPEARANCE,
             'accessibilityChoices' => PreferencesService::ACCESSIBILITY,

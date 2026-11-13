@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\ExperienceRepository;
 use App\Repository\UserRepository;
 use App\Service\ExperienceService;
@@ -32,7 +34,7 @@ final class RankingController extends AppController
         }
 
         $this->render('ranking', [
-            'pageTitle' => 'Ranking TOP 100 — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.ranking'),
             'leaders' => $leaders,
             'ownRanking' => $ownRanking,
             'experience' => ExperienceService::progress($ownRanking['totalExp'] ?? 0),

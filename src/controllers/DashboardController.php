@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Data\DemoData;
 use App\Repository\AnimeRepository;
 use App\Repository\RatingRepository;
@@ -86,7 +88,7 @@ final class DashboardController extends AppController
         }
 
         $this->render('dashboard', [
-            'pageTitle' => 'Twój pulpit — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.dashboard'),
             'user' => $user,
             'personas' => DemoData::personas(),
             'recommendations' => $animes,

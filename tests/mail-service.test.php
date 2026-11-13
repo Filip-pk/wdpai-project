@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Service\MailService;
+use App\Service\Translator;
 
 function smtpAssert(bool $condition, string $message = 'Warunek testu nie został spełniony.'): void
 {
@@ -177,6 +178,61 @@ $run('Potwierdzenie zmiany e-maila zawiera kod i instrukcję bez adresu obcego h
     smtpAssert(str_contains($result['message'], 'Kod potwierdzenia: ' . $code));
     smtpAssert(str_contains($result['message'], '30 minut'));
     smtpAssert(!str_contains($result['message'], 'http://') && !str_contains($result['message'], 'https://'));
+});
+
+$mailLocales = [
+    'pl' => ['Witaj w AniVibe — cześć!', 'Potwierdź zmianę adresu e-mail w AniVibe.'],
+    'en' => ['Welcome to AniVibe — hello!', 'Confirm your email address change in AniVibe.'],
+    'de' => ['Willkommen bei AniVibe — hallo!', 'Bestätige die Änderung deiner E-Mail-Adresse bei AniVibe.'],
+    'fr' => ['Bienvenue sur AniVibe — bonjour !', 'Confirmez le changement de votre adresse e-mail sur AniVibe.'],
+    'es' => ['¡Te damos la bienvenida a AniVibe!', 'Confirma el cambio de tu correo electrónico en AniVibe.'],
+    'ru' => ['Добро пожаловать в AniVibe!', 'Подтвердите смену адреса почты в AniVibe.'],
+];
+foreach ($mailLocales as $locale => [$welcomeSubject, $confirmationIntro]) {
+    $run('Obie wiadomości używają języka odbiorcy zamiast globalnego: ' . $locale, static function () use (
+        $locale, $welcomeSubject, $confirmationIntro,
+    ): void {
+        $previous = Translator::current();
+        try {
+            Translator::setCurrent(new Translator($locale === 'pl' ? 'ru' : 'pl'));
+            $name = 'Ustawienia <Ada> {code} Łucja';
+            $welcome = withSmtp('success', static fn (MailService $mailer) =>
+                $mailer->sendWelcomeEmail('lukasz@example.test', $name, $locale))['message'];
+            $headers = explode("\r\n\r\n", $welcome, 2)[0];
+            $headers = preg_replace('/\r\n[ \t]+/', ' ', $headers);
+            smtpAssert(preg_match('/^Subject: (.*)$/m', $headers, $subject) === 1);
+            $encoded = preg_replace('/(\?=)[ \t]+(=\?UTF-8\?B\?)/i', '$1$2', $subject[1]);
+            $decoded = preg_replace_callback('/=\?UTF-8\?B\?([^?]+)\?=/i',
+                static fn (array $part): string => (string) base64_decode($part[1], true), $encoded);
+            smtpAssert(trim($decoded) === $welcomeSubject, 'Temat powitania musi być w języku odbiorcy.');
+            smtpAssert(substr_count($welcome, $name) === 1, 'Nazwa odbiorcy pozostaje niezmieniona.');
+            smtpAssert(preg_match('/(?<!\r)\n|\r(?!\n)/', $welcome) === 0, 'Wiadomość zachowuje CRLF.');
+
+            $code = str_repeat('b', 32);
+            $confirmation = withSmtp('success', static fn (MailService $mailer) =>
+                $mailer->sendEmailChangeConfirmation('lukasz@example.test', $code, $locale))['message'];
+            smtpAssert(str_contains($confirmation, $confirmationIntro), 'Instrukcja musi być w języku odbiorcy.');
+            smtpAssert(substr_count($confirmation, $code) === 1, 'Kod pozostaje niezmieniony i występuje jeden raz.');
+            smtpAssert(!str_contains($confirmation, '{code}') && str_contains($confirmation, '30'));
+        } finally {
+            Translator::setCurrent($previous);
+        }
+    });
+}
+
+$run('Domyślne API poczty pozostaje polskie niezależnie od języka interfejsu', static function (): void {
+    $previous = Translator::current();
+    try {
+        Translator::setCurrent(new Translator('en'));
+        $welcome = withSmtp('success', static fn (MailService $mailer) =>
+            $mailer->sendWelcomeEmail('lukasz@example.test', 'Łucja'))['message'];
+        smtpAssert(str_contains($welcome, 'Cześć Łucja!'));
+        $confirmation = withSmtp('success', static fn (MailService $mailer) =>
+            $mailer->sendEmailChangeConfirmation('lukasz@example.test', str_repeat('c', 32)))['message'];
+        smtpAssert(str_contains($confirmation, 'Kod potwierdzenia: '));
+    } finally {
+        Translator::setCurrent($previous);
+    }
 });
 
 $run('Nieprawidłowy kod potwierdzenia odrzucany jest przed połączeniem SMTP', static function (): void {

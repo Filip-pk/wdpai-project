@@ -10,6 +10,6 @@ final class UserBlockedException extends RuntimeException
 {
     public function __construct()
     {
-        parent::__construct('Wysyłanie wiadomości jest niedostępne z powodu blokady użytkownika.');
+        parent::__construct(Translator::current()->translate('message.blocked_messages'));
     }
 }

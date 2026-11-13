@@ -23,39 +23,39 @@ final class AvatarService
         $error = $upload['error'] ?? null;
 
         if (!is_int($error) || $error === UPLOAD_ERR_NO_FILE) {
-            return ['Wybierz zdjęcie profilowe.'];
+            return [Translator::current()->translate('message.avatar.choose')];
         }
         if (in_array($error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
-            return ['Zdjęcie może mieć maksymalnie 4 MB.'];
+            return [Translator::current()->translate('message.avatar.size')];
         }
         if ($error !== UPLOAD_ERR_OK) {
-            return ['Nie udało się przesłać zdjęcia. Spróbuj ponownie.'];
+            return [Translator::current()->translate('message.avatar.upload')];
         }
 
         $path = $upload['tmp_name'] ?? null;
         if (!is_string($path) || !is_uploaded_file($path)) {
-            return ['Nieprawidłowy plik zdjęcia.'];
+            return [Translator::current()->translate('message.avatar.invalid')];
         }
 
         $bytes = filesize($path);
         if ($bytes === false || $bytes === 0 || $bytes > self::MAX_BYTES) {
-            return ['Wybierz niepuste zdjęcie o rozmiarze do 4 MB.'];
+            return [Translator::current()->translate('message.avatar.nonempty')];
         }
 
         $info = @getimagesize($path);
         if ($info === false || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
-            return ['Wybierz poprawne zdjęcie w formacie JPG lub PNG.'];
+            return [Translator::current()->translate('message.avatar.format')];
         }
         if ($info[0] < 1 || $info[1] < 1
             || $info[0] > self::MAX_DIMENSION || $info[1] > self::MAX_DIMENSION) {
-            return ['Zdjęcie może mieć maksymalnie 4096 × 4096 pikseli.'];
+            return [Translator::current()->translate('message.avatar.dimensions')];
         }
 
         $source = $info[2] === IMAGETYPE_JPEG
             ? @imagecreatefromjpeg($path)
             : @imagecreatefrompng($path);
         if ($source === false) {
-            return ['Nie można odczytać zdjęcia. Wybierz inny plik JPG lub PNG.'];
+            return [Translator::current()->translate('message.avatar.unreadable')];
         }
 
         $thumbnail = null;
@@ -63,7 +63,7 @@ final class AvatarService
         try {
             $thumbnail = imagecreatetruecolor(self::SIZE, self::SIZE);
             if ($thumbnail === false) {
-                throw new RuntimeException('Nie udało się przygotować zdjęcia.');
+                throw new RuntimeException(Translator::current()->translate('message.avatar.prepare'));
             }
 
             imagealphablending($thumbnail, false);
@@ -83,7 +83,7 @@ final class AvatarService
                 $side,
                 $side,
             )) {
-                throw new RuntimeException('Nie udało się przeskalować zdjęcia.');
+                throw new RuntimeException(Translator::current()->translate('message.avatar.resize'));
             }
 
             ob_start();
@@ -95,7 +95,7 @@ final class AvatarService
             }
 
             if (!$encoded || !is_string($contents) || $contents === '') {
-                throw new RuntimeException('Nie udało się zapisać zdjęcia.');
+                throw new RuntimeException(Translator::current()->translate('message.avatar.save'));
             }
 
             $this->users->updateAvatar($userId, $contents, bin2hex(random_bytes(16)));

@@ -1,24 +1,24 @@
 <?php
 
 $primaryNavigation = [
-    '/dashboard' => 'Odkrywaj',
-    '/chat' => 'Czat AI',
-    '/watchlist' => 'Ulubione',
-    '/profile' => 'Profil',
+    '/dashboard' => $t('navigation.discover'),
+    '/chat' => $t('navigation.chat'),
+    '/watchlist' => $t('navigation.favorites'),
+    '/profile' => $t('navigation.profile'),
 ];
 $secondaryNavigation = [
-    '/anime' => 'Katalog anime',
-    '/anime/ranking' => 'Ranking anime',
-    '/messages' => 'Wiadomości',
-    '/ranking' => 'Ranking użytkowników',
-    '/projects' => 'Projekty',
+    '/anime' => $t('navigation.catalog'),
+    '/anime/ranking' => $t('navigation.anime_ranking'),
+    '/messages' => $t('navigation.messages'),
+    '/ranking' => $t('navigation.user_ranking'),
+    '/projects' => $t('navigation.projects'),
 ];
 if ($isLoggedIn) {
-    $secondaryNavigation['/notifications/comments'] = 'Powiadomienia';
-    $secondaryNavigation['/settings'] = 'Ustawienia';
+    $secondaryNavigation['/notifications/comments'] = $t('navigation.notifications');
+    $secondaryNavigation['/settings'] = $t('navigation.settings');
 }
 if ($isModerator) {
-    $secondaryNavigation['/moderation'] = 'Moderacja';
+    $secondaryNavigation['/moderation'] = $t('navigation.moderation');
 }
 $isNavigationCurrent = static fn (string $url): bool => $currentPath === $url
     || ($url === '/chat' && str_starts_with((string) $currentPath, '/chat/'))
@@ -46,10 +46,10 @@ $navigationIcon = static function (string $url): string {
 };
 ?>
 
-<nav class="site-navigation" aria-label="Nawigacja główna">
+<nav class="site-navigation" aria-label="<?= $escape($t('navigation.main')) ?>">
     <?php if ($isWorkspace): ?>
         <a href="/" class="navigation-brand"><span aria-hidden="true">🌸</span> AniVibe</a>
-        <p class="navigation-caption">Twój świat anime</p>
+        <p class="navigation-caption"><?= $escape($t('navigation.tagline')) ?></p>
         <ul class="navigation-primary">
             <?php foreach ($primaryNavigation as $url => $label): ?>
                 <li>
@@ -62,11 +62,11 @@ $navigationIcon = static function (string $url): string {
             <li class="navigation-more-item" hidden>
                 <button type="button" data-navigation-more aria-expanded="false" aria-controls="navigation-panel">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
-                    <span>Więcej</span>
+                    <span><?= $escape($t('navigation.more')) ?></span>
                     <?php if ($isLoggedIn): ?>
                         <span class="navigation-unread-indicators">
-                            <span class="community-unread" data-unread-message-count aria-live="polite" title="Nieprzeczytane wiadomości"<?= $unreadMessageCount === 0 ? ' hidden' : '' ?>><?= $escape($unreadMessageCount) ?></span>
-                            <span class="community-unread" data-unread-reply-count aria-live="polite" title="Nieprzeczytane odpowiedzi"<?= ($unreadReplyCount ?? 0) === 0 ? ' hidden' : '' ?>><?= $escape($unreadReplyCount ?? 0) ?></span>
+                            <span class="community-unread" data-unread-message-count aria-live="polite" title="<?= $escape($t('navigation.unread_messages')) ?>"<?= $unreadMessageCount === 0 ? ' hidden' : '' ?>><?= $escape($unreadMessageCount) ?></span>
+                            <span class="community-unread" data-unread-reply-count aria-live="polite" title="<?= $escape($t('navigation.unread_replies')) ?>"<?= ($unreadReplyCount ?? 0) === 0 ? ' hidden' : '' ?>><?= $escape($unreadReplyCount ?? 0) ?></span>
                         </span>
                     <?php endif; ?>
                 </button>
@@ -74,12 +74,12 @@ $navigationIcon = static function (string $url): string {
         </ul>
     <?php else: ?>
         <ul class="navigation-public-links">
-            <li><a href="/anime">Odkryj anime</a></li>
+            <li><a href="/anime"><?= $escape($t('navigation.explore')) ?></a></li>
             <?php if (!$isLoggedIn): ?>
-                <li><a href="/login"<?= $currentPath === '/login' ? ' aria-current="page"' : '' ?>>Zaloguj się</a></li>
-                <li><a href="/register" class="navigation-register"<?= $currentPath === '/register' ? ' aria-current="page"' : '' ?>>Dołącz do nas <span aria-hidden="true">↗</span></a></li>
+                <li><a href="/login"<?= $currentPath === '/login' ? ' aria-current="page"' : '' ?>><?= $escape($t('navigation.login')) ?></a></li>
+                <li><a href="/register" class="navigation-register"<?= $currentPath === '/register' ? ' aria-current="page"' : '' ?>><?= $escape($t('navigation.join')) ?> <span aria-hidden="true">↗</span></a></li>
             <?php else: ?>
-                <li><a href="/dashboard">Twój pulpit <span aria-hidden="true">→</span></a></li>
+                <li><a href="/dashboard"><?= $escape($t('navigation.your_dashboard')) ?> <span aria-hidden="true">→</span></a></li>
             <?php endif; ?>
         </ul>
     <?php endif; ?>
@@ -87,22 +87,22 @@ $navigationIcon = static function (string $url): string {
     <details class="navigation-menu">
         <summary class="navigation-toggle" aria-controls="navigation-panel">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-            <span class="navigation-toggle-label">Menu</span>
+            <span class="navigation-toggle-label"><?= $escape($t('navigation.menu')) ?></span>
             <?php if ($isLoggedIn): ?>
                 <span class="navigation-unread-indicators">
-                    <span class="community-unread" data-unread-message-count aria-live="polite" title="Nieprzeczytane wiadomości"<?= $unreadMessageCount === 0 ? ' hidden' : '' ?>><?= $escape($unreadMessageCount) ?></span>
-                    <span class="community-unread" data-unread-reply-count aria-live="polite" title="Nieprzeczytane odpowiedzi"<?= ($unreadReplyCount ?? 0) === 0 ? ' hidden' : '' ?>><?= $escape($unreadReplyCount ?? 0) ?></span>
+                    <span class="community-unread" data-unread-message-count aria-live="polite" title="<?= $escape($t('navigation.unread_messages')) ?>"<?= $unreadMessageCount === 0 ? ' hidden' : '' ?>><?= $escape($unreadMessageCount) ?></span>
+                    <span class="community-unread" data-unread-reply-count aria-live="polite" title="<?= $escape($t('navigation.unread_replies')) ?>"<?= ($unreadReplyCount ?? 0) === 0 ? ' hidden' : '' ?>><?= $escape($unreadReplyCount ?? 0) ?></span>
                 </span>
             <?php endif; ?>
         </summary>
         <div class="navigation-panel" id="navigation-panel">
-            <p class="navigation-panel-title"><?= $isWorkspace ? 'Odkryj więcej' : 'Witaj w AniVibe' ?></p>
+            <p class="navigation-panel-title"><?= $isWorkspace ? $t('navigation.discover_more') : $t('navigation.welcome') ?></p>
             <ul class="navigation-secondary">
                 <?php foreach (($isWorkspace ? [] : $primaryNavigation) + $secondaryNavigation as $url => $label): ?>
                     <li>
                         <a href="<?= $escape($url) ?>"<?= $isNavigationCurrent($url) ? ' aria-current="page"' : '' ?>
-                            <?php if ($url === '/messages' && $isLoggedIn): ?> data-notifications-link aria-label="<?= $escape('Wiadomości. Nieprzeczytane: ' . $unreadMessageCount) ?>"<?php endif; ?>
-                            <?php if ($url === '/notifications/comments' && $isLoggedIn): ?> data-notifications-comment-link aria-label="<?= $escape('Powiadomienia. Nieprzeczytane: ' . ($unreadReplyCount ?? 0)) ?>"<?php endif; ?>
+                            <?php if ($url === '/messages' && $isLoggedIn): ?> data-notifications-link aria-label="<?= $escape($t('navigation.messages_count', ['count' => $unreadMessageCount])) ?>"<?php endif; ?>
+                            <?php if ($url === '/notifications/comments' && $isLoggedIn): ?> data-notifications-comment-link aria-label="<?= $escape($t('navigation.notifications_count', ['count' => $unreadReplyCount ?? 0])) ?>"<?php endif; ?>
                         >
                             <?= $navigationIcon($url) ?>
                             <span><?= $escape($label) ?></span>
@@ -116,9 +116,22 @@ $navigationIcon = static function (string $url): string {
                     </li>
                 <?php endforeach; ?>
             </ul>
+            <form method="post" action="/language" class="language-switcher">
+                <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                <input type="hidden" name="returnTo" value="<?= $escape($_SERVER['REQUEST_URI'] ?? '/') ?>">
+                <label for="navigation-language"><?= $escape($t('language.label')) ?></label>
+                <div class="language-switcher-controls">
+                    <select id="navigation-language" name="language">
+                        <?php foreach ($languages as $code => $name): ?>
+                            <option value="<?= $escape($code) ?>" lang="<?= $escape($code) ?>"<?= $locale === $code ? ' selected' : '' ?>><?= $escape($name) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit"><?= $escape($t('language.save')) ?></button>
+                </div>
+            </form>
             <?php if ($isLoggedIn): ?>
                 <div class="account-menu">
-                    <a href="/users/<?= $escape($accountId) ?>" class="account-user" aria-label="<?= $escape('Profil: ' . $currentUserName) ?>">
+                    <a href="/users/<?= $escape($accountId) ?>" class="account-user" aria-label="<?= $escape($t('navigation.profile_name', ['user' => $currentUserName])) ?>">
                         <span class="account-avatar" aria-hidden="true">
                             <?php if (!empty($currentUserAvatarUrl)): ?>
                                 <img src="<?= $escape($currentUserAvatarUrl) ?>" alt="" width="32" height="32" decoding="async">
@@ -130,13 +143,13 @@ $navigationIcon = static function (string $url): string {
                     </a>
                     <form method="post" action="/logout" class="account-logout">
                         <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                        <button type="submit">Wyloguj</button>
+                        <button type="submit"><?= $escape($t('navigation.logout')) ?></button>
                     </form>
                 </div>
             <?php else: ?>
                 <div class="navigation-account-links">
-                    <a href="/login"<?= $currentPath === '/login' ? ' aria-current="page"' : '' ?>>Zaloguj się</a>
-                    <a href="/register"<?= $currentPath === '/register' ? ' aria-current="page"' : '' ?>>Zarejestruj się</a>
+                    <a href="/login"<?= $currentPath === '/login' ? ' aria-current="page"' : '' ?>><?= $escape($t('navigation.login')) ?></a>
+                    <a href="/register"<?= $currentPath === '/register' ? ' aria-current="page"' : '' ?>><?= $escape($t('navigation.register')) ?></a>
                 </div>
             <?php endif; ?>
         </div>

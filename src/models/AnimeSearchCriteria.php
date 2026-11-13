@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Model;
 
+use App\Service\Translator;
+
 final readonly class AnimeSearchCriteria
 {
     public const DEFAULT_SORT = 'score_desc';
@@ -47,26 +49,26 @@ final readonly class AnimeSearchCriteria
     public static function fromQuery(array $input): self
     {
         $errors = [];
-        $query = self::stringValue($input, 'q', 'Tytuł anime', $errors);
+        $query = self::stringValue($input, 'q', Translator::current()->translate('message.field.title'), $errors);
 
         if (preg_match('/\A.{0,100}\z/us', $query) !== 1) {
-            $errors[] = 'Wpisz tytuł anime o długości do 100 znaków.';
+            $errors[] = Translator::current()->translate('message.filter.title_length');
             $query = '';
         }
 
-        $genre = self::stringValue($input, 'genre', 'Gatunek', $errors);
-        $genreId = self::integerValue($genre, 1, PHP_INT_MAX, 'Gatunek', $errors);
-        $pageValue = self::stringValue($input, 'page', 'Numer strony', $errors, '1');
-        $page = self::integerValue($pageValue, 1, 1000000, 'Numer strony', $errors, true) ?? 1;
+        $genre = self::stringValue($input, 'genre', Translator::current()->translate('message.field.genre'), $errors);
+        $genreId = self::integerValue($genre, 1, PHP_INT_MAX, Translator::current()->translate('message.field.genre'), $errors);
+        $pageValue = self::stringValue($input, 'page', Translator::current()->translate('message.field.page'), $errors, '1');
+        $page = self::integerValue($pageValue, 1, 1000000, Translator::current()->translate('message.field.page'), $errors, true) ?? 1;
 
         $labels = [
-            'type' => 'Format anime',
-            'episodes_min' => 'Minimalna liczba odcinków',
-            'episodes_max' => 'Maksymalna liczba odcinków',
-            'score_min' => 'Minimalna ocena',
-            'score_max' => 'Maksymalna ocena',
-            'year_min' => 'Najwcześniejszy rok premiery',
-            'year_max' => 'Najpóźniejszy rok premiery',
+            'type' => Translator::current()->translate('message.field.type'),
+            'episodes_min' => Translator::current()->translate('message.field.episodes_min'),
+            'episodes_max' => Translator::current()->translate('message.field.episodes_max'),
+            'score_min' => Translator::current()->translate('message.field.score_min'),
+            'score_max' => Translator::current()->translate('message.field.score_max'),
+            'year_min' => Translator::current()->translate('message.field.year_min'),
+            'year_max' => Translator::current()->translate('message.field.year_max'),
         ];
         $values = [];
         $form = [];
@@ -80,7 +82,7 @@ final readonly class AnimeSearchCriteria
         $type = strtoupper($values['type']);
 
         if (!array_key_exists($type, self::TYPE_OPTIONS)) {
-            $errors[] = 'Wybierz prawidłowy format anime.';
+            $errors[] = Translator::current()->translate('message.filter.choose_type');
             $type = '';
         } elseif ($type !== '') {
             $form['type'] = $type;
@@ -102,14 +104,14 @@ final readonly class AnimeSearchCriteria
             }
         }
 
-        self::validateRange($filters, 'episodesMin', 'episodesMax', 'liczby odcinków', $errors);
-        self::validateRange($filters, 'scoreMin', 'scoreMax', 'oceny', $errors);
-        self::validateRange($filters, 'yearMin', 'yearMax', 'roku premiery', $errors);
+        self::validateRange($filters, 'episodesMin', 'episodesMax', Translator::current()->translate('message.range.episodes'), $errors);
+        self::validateRange($filters, 'scoreMin', 'scoreMax', Translator::current()->translate('message.range.score'), $errors);
+        self::validateRange($filters, 'yearMin', 'yearMax', Translator::current()->translate('message.range.year'), $errors);
 
-        $sort = self::stringValue($input, 'sort', 'Sortowanie', $errors, self::DEFAULT_SORT);
+        $sort = self::stringValue($input, 'sort', Translator::current()->translate('message.field.sort'), $errors, self::DEFAULT_SORT);
 
         if (!array_key_exists($sort, self::SORT_OPTIONS)) {
-            $errors[] = 'Wybierz prawidłowy sposób sortowania.';
+            $errors[] = Translator::current()->translate('message.filter.choose_sort');
             $sort = self::DEFAULT_SORT;
         }
 
@@ -148,7 +150,7 @@ final readonly class AnimeSearchCriteria
         $value = $input[$key];
 
         if (!is_string($value) || str_contains($value, "\0") || preg_match('//u', $value) !== 1) {
-            $errors[] = $label . ': podaj prawidłową wartość tekstową.';
+            $errors[] = Translator::current()->translate('message.field.text', ['label' => $label]);
 
             return $default;
         }
@@ -173,7 +175,9 @@ final readonly class AnimeSearchCriteria
         ]);
 
         if ($number === false) {
-            $errors[] = $label . ': wpisz liczbę całkowitą od ' . $minimum . ' do ' . $maximum . '.';
+            $errors[] = Translator::current()->translate('message.field.integer', [
+                'label' => $label, 'minimum' => $minimum, 'maximum' => $maximum,
+            ]);
 
             return null;
         }
@@ -190,7 +194,7 @@ final readonly class AnimeSearchCriteria
         $normalized = str_replace(',', '.', $value);
 
         if (preg_match('/\A(?:[0-9]+(?:\.[0-9]{1,2})?|\.[0-9]{1,2})\z/', $normalized) !== 1) {
-            $errors[] = $label . ': wpisz liczbę od 0 do 10 z najwyżej dwoma miejscami po przecinku.';
+            $errors[] = Translator::current()->translate('message.field.score_precision', ['label' => $label]);
 
             return null;
         }
@@ -198,7 +202,7 @@ final readonly class AnimeSearchCriteria
         $number = (float) $normalized;
 
         if (!is_finite($number) || $number < 0 || $number > 10) {
-            $errors[] = $label . ': wpisz liczbę od 0 do 10.';
+            $errors[] = Translator::current()->translate('message.field.score_range', ['label' => $label]);
 
             return null;
         }
@@ -217,7 +221,7 @@ final readonly class AnimeSearchCriteria
         $maximum = $filters[$maximumKey];
 
         if ($minimum !== null && $maximum !== null && $minimum > $maximum) {
-            $errors[] = 'Dolna granica ' . $label . ' nie może być większa od górnej.';
+            $errors[] = Translator::current()->translate('message.range.invalid', ['label' => $label]);
             $filters[$minimumKey] = null;
             $filters[$maximumKey] = null;
         }

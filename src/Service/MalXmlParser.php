@@ -17,19 +17,19 @@ final class MalXmlParser
     public function parse(string $bytes): array
     {
         if ($bytes === '' || strlen($bytes) > self::MAX_UPLOAD_BYTES) {
-            throw new InvalidArgumentException('Wybierz plik XML lub XML.GZ o rozmiarze do 10 MB.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.choose_file'));
         }
         if (str_starts_with($bytes, "\x1f\x8b")) {
             $xml = @gzdecode($bytes, self::MAX_XML_BYTES + 1);
             if ($xml === false || strlen($xml) > self::MAX_XML_BYTES) {
-                throw new InvalidArgumentException('Nie można odczytać pliku GZIP lub jego zawartość przekracza 50 MB.');
+                throw new InvalidArgumentException(Translator::current()->translate('message.mal.gzip_limit'));
             }
         } else {
             $xml = $bytes;
         }
         if ($xml === '' || str_contains($xml, "\0") || preg_match('//u', $xml) !== 1
             || preg_match('/<!\s*(?:DOCTYPE|ENTITY)\b/i', $xml) === 1) {
-            throw new InvalidArgumentException('Wymagany jest eksport XML w UTF-8, bez definicji DTD i encji.');
+            throw new InvalidArgumentException(Translator::current()->translate('message.mal.xml_utf8'));
         }
 
         $previousErrors = libxml_use_internal_errors(true);
@@ -37,7 +37,7 @@ final class MalXmlParser
         $reader = new XMLReader();
         try {
             if (!$reader->XML($xml, 'UTF-8', LIBXML_NONET | LIBXML_COMPACT)) {
-                throw new InvalidArgumentException('Plik nie jest poprawnym eksportem listy anime z MyAnimeList.');
+                throw new InvalidArgumentException(Translator::current()->translate('message.mal.invalid_anime_export'));
             }
             $reader->setParserProperty(XMLReader::LOADDTD, false);
             $reader->setParserProperty(XMLReader::SUBST_ENTITIES, false);
@@ -54,20 +54,20 @@ final class MalXmlParser
             $oversized = [];
             while ($reader->read()) {
                 if (++$nodes > 10000000 || $reader->nodeType === XMLReader::DOC_TYPE) {
-                    throw new InvalidArgumentException('Plik XML zawiera zbyt wiele elementów lub niedozwolone definicje.');
+                    throw new InvalidArgumentException(Translator::current()->translate('message.mal.xml_elements'));
                 }
                 if ($reader->nodeType === XMLReader::ELEMENT && $reader->depth === 0) {
                     if ($rootFound || $reader->localName !== 'myanimelist') {
-                        throw new InvalidArgumentException('Plik nie jest eksportem listy MyAnimeList.');
+                        throw new InvalidArgumentException(Translator::current()->translate('message.mal.invalid_export'));
                     }
                     $rootFound = true;
                 } elseif ($reader->nodeType === XMLReader::ELEMENT && $reader->depth === 1) {
                     if ($reader->localName === 'manga') {
-                        throw new InvalidArgumentException('Wybierz eksport listy anime, a nie listy mang.');
+                        throw new InvalidArgumentException(Translator::current()->translate('message.mal.no_manga'));
                     }
                     if ($reader->localName === 'anime') {
                         if (++$total > self::MAX_ENTRIES) {
-                            throw new InvalidArgumentException('Jednorazowy import może zawierać maksymalnie 40 000 anime.');
+                            throw new InvalidArgumentException(Translator::current()->translate('message.mal.max_entries'));
                         }
                         $inAnime = true;
                         $fields = [];
@@ -112,11 +112,11 @@ final class MalXmlParser
             }
             foreach (libxml_get_errors() as $error) {
                 if ($error->level >= LIBXML_ERR_ERROR) {
-                    throw new InvalidArgumentException('Plik XML jest uszkodzony. Nie zapisano żadnych danych.');
+                    throw new InvalidArgumentException(Translator::current()->translate('message.mal.corrupt_xml'));
                 }
             }
             if (!$rootFound || $inAnime) {
-                throw new InvalidArgumentException('Plik nie jest poprawnym eksportem listy anime z MyAnimeList.');
+                throw new InvalidArgumentException(Translator::current()->translate('message.mal.invalid_anime_export'));
             }
             return ['entries' => $entries, 'issues' => $issues, 'total' => $total];
         } finally {

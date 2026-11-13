@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Data\DemoData;
 
 final class ChatController extends AppController
@@ -13,7 +15,7 @@ final class ChatController extends AppController
         $animes = DemoData::animes();
 
         $this->render('chat-assistant', [
-            'pageTitle' => 'Asystent AI — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.ai_assistant'),
             'user' => DemoData::user(),
             'animeId' => 3,
             'anime' => $animes[3],
@@ -28,14 +30,14 @@ final class ChatController extends AppController
             http_response_code(404);
 
             $this->render('not-found', [
-                'pageTitle' => 'Nie znaleziono postaci — AniVibe',
+                'pageTitle' => Translator::current()->translate('message.page.persona_missing'),
             ]);
 
             return;
         }
 
         $this->render('chat-persona', [
-            'pageTitle' => 'Czat: ' . $personas[$id]['name'] . ' — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.chat_prefix') . $personas[$id]['name'] . ' — AniVibe',
             'persona' => $personas[$id],
             'isNaruto' => $id === 1,
         ]);

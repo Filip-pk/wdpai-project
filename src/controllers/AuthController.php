@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Repository\UserRepository;
 use App\Service\MailService;
+use App\Service\Translator;
 use Closure;
 use PDOException;
 use RuntimeException;
@@ -32,14 +33,14 @@ final class AuthController extends AppController
 
             if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
                 http_response_code(403);
-                $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+                $errors[] = Translator::message('Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
             } else {
                 $user = $this->isEmailValid($email) ? $this->users()->findByEmail($email) : null;
 
                 if ($user === null || !$this->isPasswordValid($password)
                     || !password_verify($password, $user['password_hash'])) {
                     http_response_code(401);
-                    $errors[] = 'Nieprawidłowy e-mail lub hasło.';
+                    $errors[] = Translator::message('Nieprawidłowy e-mail lub hasło.');
                 } else {
                     if (!session_regenerate_id(true)) {
                         throw new \RuntimeException('Nie udało się odnowić sesji.');
@@ -50,6 +51,7 @@ final class AuthController extends AppController
                         'user_email' => (string) $user['email'],
                         'user_name' => (string) $user['name'],
                         'user_theme' => (string) $user['theme'],
+                        'user_language' => (string) ($user['language'] ?? 'pl'),
                         'user_avatar_url' => $user['avatar_url'],
                         'logged_in_at' => time(),
                     ];
@@ -64,7 +66,7 @@ final class AuthController extends AppController
             ? $_GET['mail'] : null;
 
         $this->render('login', [
-            'pageTitle' => 'Logowanie — AniVibe',
+            'pageTitle' => Translator::message('Logowanie — AniVibe'),
             'errors' => $errors,
             'email' => $email,
             'registered' => $registered,
@@ -80,6 +82,7 @@ final class AuthController extends AppController
 
         $name = trim($this->postString('name'));
         $email = strtolower(trim($this->postString('email')));
+        $language = Translator::current()->locale();
         $errors = [];
 
         if ($this->isPost()) {
@@ -87,43 +90,43 @@ final class AuthController extends AppController
 
             if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
                 http_response_code(403);
-                $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+                $errors[] = Translator::message('Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
             } else {
                 $nameLength = preg_match_all('/./us', $name);
 
                 if ($nameLength === false || $nameLength < 1 || $nameLength > 120
                     || str_contains($name, "\0")) {
-                    $errors[] = 'Podaj nazwę użytkownika o długości od 1 do 120 znaków.';
+                    $errors[] = Translator::message('Podaj nazwę użytkownika o długości od 1 do 120 znaków.');
                 }
                 if (!$this->isEmailValid($email)) {
-                    $errors[] = 'Podaj poprawny adres e-mail (maksymalnie 255 znaków).';
+                    $errors[] = Translator::message('Podaj poprawny adres e-mail (maksymalnie 255 znaków).');
                 }
                 if (!$this->isPasswordValid($password)) {
-                    $errors[] = 'Hasło musi mieć co najmniej 8 znaków i maksymalnie 72 bajty, bez znaku NUL.';
+                    $errors[] = Translator::message('Hasło musi mieć co najmniej 8 znaków i maksymalnie 72 bajty, bez znaku NUL.');
                 }
                 if ($password !== $this->postString('passwordConfirmation')) {
-                    $errors[] = 'Hasła nie są takie same.';
+                    $errors[] = Translator::message('Hasła nie są takie same.');
                 }
 
                 if ($errors === []) {
                     if ($this->users()->findByEmail($email) !== null) {
-                        $errors[] = 'Konto dla tego adresu już istnieje.';
+                        $errors[] = Translator::message('Konto dla tego adresu już istnieje.');
                     } else {
                         try {
-                            $this->users()->create($name, $email, password_hash($password, PASSWORD_DEFAULT));
+                            $this->users()->create($name, $email, password_hash($password, PASSWORD_DEFAULT), $language);
                         } catch (PDOException $exception) {
                             if ($exception->getCode() !== '23505') {
                                 throw $exception;
                             }
 
-                            $errors[] = 'Konto dla tego adresu już istnieje.';
+                            $errors[] = Translator::message('Konto dla tego adresu już istnieje.');
                         }
                     }
                 }
 
                 if ($errors === []) {
                     try {
-                        $this->mailer->sendWelcomeEmail($email, $name);
+                        $this->mailer->sendWelcomeEmail($email, $name, $language);
                         $mailStatus = 'sent';
                     } catch (RuntimeException $exception) {
                         error_log('Nie udało się wysłać wiadomości powitalnej: ' . $exception->getMessage());
@@ -138,7 +141,7 @@ final class AuthController extends AppController
         }
 
         $this->render('register', [
-            'pageTitle' => 'Rejestracja — AniVibe',
+            'pageTitle' => Translator::message('Rejestracja — AniVibe'),
             'errors' => $errors,
             'form' => ['name' => $name, 'email' => $email],
         ]);
@@ -149,8 +152,8 @@ final class AuthController extends AppController
         if (!$this->isPost() || !$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
             $this->render('login', [
-                'pageTitle' => 'Logowanie — AniVibe',
-                'errors' => ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'],
+                'pageTitle' => Translator::message('Logowanie — AniVibe'),
+                'errors' => [Translator::message('Formularz wygasł. Odśwież stronę i spróbuj ponownie.')],
             ]);
 
             return;

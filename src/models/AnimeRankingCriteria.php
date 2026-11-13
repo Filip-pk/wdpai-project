@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Model;
 
+use App\Service\Translator;
+
 final readonly class AnimeRankingCriteria
 {
     public const MODES = [
@@ -25,22 +27,22 @@ final readonly class AnimeRankingCriteria
     public static function fromQuery(array $input): self
     {
         $errors = [];
-        $mode = self::stringValue($input, 'mode', 'Rodzaj rankingu', $errors, 'best');
+        $mode = self::stringValue($input, 'mode', Translator::current()->translate('message.field.ranking_mode'), $errors, 'best');
         if (!array_key_exists($mode, self::MODES)) {
-            $errors[] = 'Wybierz prawidłowy rodzaj rankingu.';
+            $errors[] = Translator::current()->translate('message.ranking.choose_mode');
             $mode = 'best';
         }
-        $genre = self::stringValue($input, 'genre', 'Gatunek', $errors);
-        $year = self::stringValue($input, 'year', 'Rok premiery', $errors);
-        $minVotes = self::stringValue($input, 'min_votes', 'Minimalna liczba ocen', $errors, '5');
-        $page = self::stringValue($input, 'page', 'Numer strony', $errors, '1');
+        $genre = self::stringValue($input, 'genre', Translator::current()->translate('message.field.genre'), $errors);
+        $year = self::stringValue($input, 'year', Translator::current()->translate('message.field.year'), $errors);
+        $minVotes = self::stringValue($input, 'min_votes', Translator::current()->translate('message.field.min_votes'), $errors, '5');
+        $page = self::stringValue($input, 'page', Translator::current()->translate('message.field.page'), $errors, '1');
 
         return new self(
             $mode,
-            self::integerValue($genre, 1, PHP_INT_MAX, 'Gatunek', $errors),
-            self::integerValue($year, 1900, 2200, 'Rok premiery', $errors),
-            self::integerValue($minVotes, 1, 1000000, 'Minimalna liczba ocen', $errors, true) ?? 5,
-            self::integerValue($page, 1, 1000000, 'Numer strony', $errors, true) ?? 1,
+            self::integerValue($genre, 1, PHP_INT_MAX, Translator::current()->translate('message.field.genre'), $errors),
+            self::integerValue($year, 1900, 2200, Translator::current()->translate('message.field.year'), $errors),
+            self::integerValue($minVotes, 1, 1000000, Translator::current()->translate('message.field.min_votes'), $errors, true) ?? 5,
+            self::integerValue($page, 1, 1000000, Translator::current()->translate('message.field.page'), $errors, true) ?? 1,
             ['mode' => $mode, 'genre' => $genre, 'year' => $year, 'min_votes' => $minVotes],
             $errors,
         );
@@ -70,7 +72,7 @@ final readonly class AnimeRankingCriteria
         }
         $value = $input[$key];
         if (!is_string($value) || strlen($value) > 64 || str_contains($value, "\0") || preg_match('//u', $value) !== 1) {
-            $errors[] = $label . ': podaj prawidłową wartość tekstową.';
+            $errors[] = Translator::current()->translate('message.field.text', ['label' => $label]);
             return $default;
         }
 
@@ -84,7 +86,9 @@ final readonly class AnimeRankingCriteria
         }
         $number = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => $minimum, 'max_range' => $maximum]]);
         if ($number === false) {
-            $errors[] = $label . ': wpisz liczbę całkowitą od ' . $minimum . ' do ' . $maximum . '.';
+            $errors[] = Translator::current()->translate('message.field.integer', [
+                'label' => $label, 'minimum' => $minimum, 'maximum' => $maximum,
+            ]);
             return null;
         }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\CommunityRepository;
 use App\Repository\MessageRepository;
 use App\Repository\UserRepository;
@@ -33,12 +35,12 @@ final class CommunityController extends AppController
         $this->requireLogin();
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            $this->fail(403, Translator::current()->translate('message.csrf_expired'));
             return;
         }
         $lastMessageId = filter_var($this->postString('lastMessageId'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if ($lastMessageId === false || !$this->community()->markReadForUser($user['id'], $id, $lastMessageId)) {
-            $this->fail(404, 'Nie znaleziono wiadomości w Twojej rozmowie.');
+            $this->fail(404, Translator::current()->translate('message.message_missing'));
             return;
         }
         if ($this->wantsJson()) {
@@ -67,17 +69,17 @@ final class CommunityController extends AppController
         $this->requireLogin();
         $user = $this->currentUser($this->users());
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            $this->fail(403, Translator::current()->translate('message.csrf_expired'));
             return;
         }
         if ($id <= 0 || $id === $user['id'] || $this->users()->findPublicById($id) === null) {
-            $this->fail(404, 'Nie znaleziono użytkownika.');
+            $this->fail(404, Translator::current()->translate('message.user_missing'));
             return;
         }
         $changed = $block ? $this->community()->blockForUser($user['id'], $id)
             : $this->community()->unblockForUser($user['id'], $id);
         if (!$changed) {
-            $this->fail(404, 'Nie znaleziono użytkownika.');
+            $this->fail(404, Translator::current()->translate('message.user_missing'));
             return;
         }
         $notice = $block ? 'blocked=1' : 'unblocked=1';
@@ -100,13 +102,13 @@ final class CommunityController extends AppController
         $user = $this->currentUser($this->users());
         $blocked = $this->community()->blockedPageForUser($user['id'], $this->page($_GET['page'] ?? '1'));
         $this->render('blocked-users', [
-            'pageTitle' => 'Zablokowani użytkownicy — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.blocked'),
             'blocked' => $blocked + [
                 'previousUrl' => $blocked['page'] > 1 ? '/messages/blocked?page=' . ($blocked['page'] - 1) : null,
                 'nextUrl' => $blocked['page'] < $blocked['totalPages'] ? '/messages/blocked?page=' . ($blocked['page'] + 1) : null,
             ],
             'errors' => [],
-            'notice' => ($_GET['unblocked'] ?? null) === '1' ? 'Użytkownik został odblokowany.' : null,
+            'notice' => ($_GET['unblocked'] ?? null) === '1' ? Translator::current()->translate('message.user_unblocked') : null,
         ]);
     }
 
@@ -126,7 +128,7 @@ final class CommunityController extends AppController
         $user = $this->currentUser($this->users());
         $target = $id > 0 ? $this->community()->reportTargetForUser($user['id'], $type, $id) : null;
         if ($target === null) {
-            $this->fail(404, 'Nie znaleziono treści, którą możesz zgłosić.');
+            $this->fail(404, Translator::current()->translate('message.report.missing_content'));
             return;
         }
         $page = $this->page($_POST['returnPage'] ?? $_GET['page'] ?? '1');
@@ -145,7 +147,7 @@ final class CommunityController extends AppController
         if ($this->isPost()) {
             if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
                 http_response_code(403);
-                $errors[] = 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.';
+                $errors[] = Translator::current()->translate('message.csrf_expired');
             } else {
                 $errors = CommunityService::validateReason($reason);
                 if ($errors !== []) {
@@ -156,7 +158,7 @@ final class CommunityController extends AppController
                 try {
                     $reportId = (new CommunityService($this->community()))->report($user['id'], $type, $id, $reason);
                     if ($reportId === null) {
-                        $this->fail(404, 'Nie znaleziono treści, którą możesz zgłosić.');
+                        $this->fail(404, Translator::current()->translate('message.report.missing_content'));
                         return;
                     }
                     $this->redirect(str_replace('#', '&reportSaved=1#', $backUrl));
@@ -168,7 +170,7 @@ final class CommunityController extends AppController
             }
         }
         $this->render('report', [
-            'pageTitle' => 'Zgłoś treść — AniVibe', 'target' => $target,
+            'pageTitle' => Translator::current()->translate('message.page.report'), 'target' => $target,
             'reason' => $reason, 'errors' => $errors, 'returnPage' => $page, 'backUrl' => $backUrl,
             'returnThread' => $returnThread, 'mainCommentsPage' => $mainCommentsPage, 'repliesPage' => $repliesPage,
         ]);
@@ -180,17 +182,17 @@ final class CommunityController extends AppController
         $user = $this->currentUser($this->users());
         $reports = $this->community()->reportsPageForModerator($user['id'], $this->page($_GET['page'] ?? '1'));
         if ($reports === null) {
-            $this->fail(403, 'Ta sekcja jest dostępna wyłącznie dla moderatorów.');
+            $this->fail(403, Translator::current()->translate('message.moderation.section'));
             return;
         }
         $this->render('moderation', [
-            'pageTitle' => 'Moderacja — AniVibe',
+            'pageTitle' => Translator::current()->translate('message.page.moderation'),
             'reports' => $reports + [
                 'previousUrl' => $reports['page'] > 1 ? '/moderation?page=' . ($reports['page'] - 1) : null,
                 'nextUrl' => $reports['page'] < $reports['totalPages'] ? '/moderation?page=' . ($reports['page'] + 1) : null,
             ],
             'errors' => [],
-            'notice' => ($_GET['resolved'] ?? null) === '1' ? 'Zgłoszenie zostało rozpatrzone.' : null,
+            'notice' => ($_GET['resolved'] ?? null) === '1' ? Translator::current()->translate('message.report.resolved') : null,
         ]);
     }
 
@@ -199,20 +201,20 @@ final class CommunityController extends AppController
         $this->requireLogin();
         $user = $this->currentUser($this->users());
         if (!$this->community()->navigationStateForUser($user['id'])['isModerator']) {
-            $this->fail(403, 'Ta operacja jest dostępna wyłącznie dla moderatorów.');
+            $this->fail(403, Translator::current()->translate('message.moderation.operation'));
             return;
         }
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
-            $this->fail(403, 'Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
+            $this->fail(403, Translator::current()->translate('message.csrf_expired'));
             return;
         }
         $action = $this->postString('action');
         if (!in_array($action, ['remove', 'dismiss'], true)) {
-            $this->fail(422, 'Wybierz ukrycie treści lub odrzucenie zgłoszenia.');
+            $this->fail(422, Translator::current()->translate('message.moderation.choose'));
             return;
         }
         if (!$this->community()->resolveReportForModerator($user['id'], $id, $action)) {
-            $this->fail(404, 'Nie znaleziono otwartego zgłoszenia.');
+            $this->fail(404, Translator::current()->translate('message.report.no_open'));
             return;
         }
         $this->redirect('/moderation?page=' . $this->page($_POST['page'] ?? '1') . '&resolved=1');
@@ -225,7 +227,7 @@ final class CommunityController extends AppController
             $this->json(['error' => $message]);
             return;
         }
-        $this->render('community-error', ['pageTitle' => 'Nie można wykonać operacji — AniVibe', 'message' => $message]);
+        $this->render('community-error', ['pageTitle' => Translator::current()->translate('message.page.operation_failed'), 'message' => $message]);
     }
 
     private function wantsJson(): bool

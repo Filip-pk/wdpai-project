@@ -2,6 +2,8 @@
 
 Zakładka `/settings` wymaga logowania. Jest dostępna w panelu bocznym i w menu „Więcej” na telefonie.
 
+Sekcja „Język interfejsu” zapisuje wybór jednego z sześciu języków na koncie. Goście korzystają z przełącznika w menu. Migrację `22` i zasady tłumaczeń opisuje [dokumentacja języków](translations.md).
+
 ## Migracja istniejącej bazy
 
 Uruchom raz w Windows CMD, z katalogu projektu:

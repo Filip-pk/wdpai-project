@@ -12,86 +12,86 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
 <div class="anime-ranking-page" data-ranking-mode="<?= $escape($criteria->mode) ?>" data-ranking-page="<?= $escape($ranking['page']) ?>" data-ranking-total="<?= $escape($ranking['total']) ?>" data-ranking-total-pages="<?= $escape($ranking['totalPages']) ?>">
     <header class="anime-ranking-heading">
         <div class="anime-ranking-heading-copy">
-            <p class="eyebrow">Wybory społeczności AniVibe</p>
-            <h1>Rankingi anime</h1>
-            <p>Odkryj tytuły najlepiej oceniane i najczęściej oglądane przez użytkowników AniVibe.</p>
+            <p class="eyebrow"><?= $escape($t('view.catalog.community_choices')) ?></p>
+            <h1><?= $escape($t('view.catalog.anime_rankings')) ?></h1>
+            <p><?= $escape($t('view.catalog.ranking_intro')) ?></p>
         </div>
-        <nav class="anime-ranking-related" aria-label="Więcej w AniVibe">
-            <a href="/anime">Przeglądaj katalog anime <span aria-hidden="true">↗</span></a>
-            <a href="/ranking">Ranking użytkowników <span aria-hidden="true">→</span></a>
+        <nav class="anime-ranking-related" aria-label="<?= $escape($t('view.catalog.more_anivibe')) ?>">
+            <a href="/anime"><?= $escape($t('view.catalog.browse_catalog')) ?> <span aria-hidden="true">↗</span></a>
+            <a href="/ranking"><?= $escape($t('view.catalog.user_ranking')) ?> <span aria-hidden="true">→</span></a>
         </nav>
     </header>
 
-    <nav class="anime-ranking-tabs" aria-label="Wybierz ranking anime">
+    <nav class="anime-ranking-tabs" aria-label="<?= $escape($t('view.catalog.choose_ranking')) ?>">
         <?php foreach ($criteria::MODES as $mode => $label): ?>
-            <a href="<?= $escape($modeUrls[$mode]) ?>"<?= $criteria->mode === $mode ? ' aria-current="page"' : '' ?>><?= $escape($label) ?></a>
+            <a href="<?= $escape($modeUrls[$mode]) ?>"<?= $criteria->mode === $mode ? ' aria-current="page"' : '' ?>><?= $escape($translateText($label)) ?></a>
         <?php endforeach; ?>
     </nav>
 
     <details class="anime-ranking-explanation">
-        <summary><?= $isWatchedRanking ? 'Jak liczymy oglądających?' : 'Jak powstaje ranking ocen?' ?></summary>
+        <summary><?= $isWatchedRanking ? $escape($t('view.catalog.watchers_calculation')) : $escape($t('view.catalog.rating_calculation')) ?></summary>
         <p class="anime-ranking-description">
             <?php if ($isWatchedRanking): ?>
-                Liczymy konta, które mają anime na watchliście ze statusem „Oglądam” lub „Ukończone”. Każde konto liczy się raz przy danym tytule.
+                <?= $escape($t('view.catalog.watchers_help')) ?>
             <?php else: ?>
-                Kolejność według średniej ocen AniVibe. Minimalna liczba ocen: <?= $escape($criteria->minVotes) ?>.
-                Przy tej samej średniej wyżej jest tytuł z większą liczbą ocen; kolejne remisy porządkuje tytuł anime.
+                <?= $escape($t('view.catalog.ranking_score_intro', ['count' => $criteria->minVotes])) ?>
+                <?= $escape($t('view.catalog.rating_tiebreak')) ?>
             <?php endif; ?>
         </p>
     </details>
 
     <?php if ($criteria->errors !== []): ?>
         <div id="anime-ranking-errors" class="anime-ranking-errors" role="alert">
-            <ul><?php foreach ($criteria->errors as $error): ?><li><?= $escape($error) ?></li><?php endforeach; ?></ul>
+            <ul><?php foreach ($criteria->errors as $error): ?><li><?= $escape($translateText($error)) ?></li><?php endforeach; ?></ul>
         </div>
     <?php endif; ?>
 
-    <form action="/anime/ranking" method="get" class="anime-ranking-filters" aria-label="Filtry rankingu anime"<?= $criteria->errors !== [] ? ' aria-describedby="anime-ranking-errors"' : '' ?>>
+    <form action="/anime/ranking" method="get" class="anime-ranking-filters" aria-label="<?= $escape($t('view.catalog.ranking_filters')) ?>"<?= $criteria->errors !== [] ? ' aria-describedby="anime-ranking-errors"' : '' ?>>
         <input type="hidden" name="mode" value="<?= $escape($criteria->mode) ?>">
         <div class="anime-ranking-field">
-            <label for="anime-ranking-genre">Gatunek</label>
+            <label for="anime-ranking-genre"><?= $escape($t('view.catalog.genre')) ?></label>
             <select id="anime-ranking-genre" name="genre">
-                <option value=""<?= $genreValue === '' ? ' selected' : '' ?>>Wszystkie gatunki</option>
+                <option value=""<?= $genreValue === '' ? ' selected' : '' ?>><?= $escape($t('view.catalog.all_genres')) ?></option>
                 <?php if ($genreValue !== '' && !in_array($genreValue, $genreValues, true)): ?>
-                    <option value="<?= $escape($genreValue) ?>" selected>Nieznany gatunek</option>
+                    <option value="<?= $escape($genreValue) ?>" selected><?= $escape($t('view.catalog.unknown_genre')) ?></option>
                 <?php endif; ?>
                 <?php foreach ($genres as $genre): ?>
-                    <option value="<?= $escape($genre['id']) ?>"<?= $genreValue === (string) $genre['id'] ? ' selected' : '' ?>><?= $escape($genre['name']) ?></option>
+                    <option value="<?= $escape($genre['id']) ?>"<?= $genreValue === (string) $genre['id'] ? ' selected' : '' ?>><?= $escape($translateText($genre['name'])) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div class="anime-ranking-field">
-            <label for="anime-ranking-year">Rok premiery</label>
-            <input id="anime-ranking-year" name="year" type="number" min="1900" max="2200" step="1" value="<?= $escape($yearValue) ?>" placeholder="Dowolny rok">
+            <label for="anime-ranking-year"><?= $escape($t('view.catalog.release_year')) ?></label>
+            <input id="anime-ranking-year" name="year" type="number" min="1900" max="2200" step="1" value="<?= $escape($yearValue) ?>" placeholder="<?= $escape($t('view.catalog.any_year')) ?>">
         </div>
         <div class="anime-ranking-field">
-            <label for="anime-ranking-min-votes">Minimalna liczba ocen</label>
+            <label for="anime-ranking-min-votes"><?= $escape($t('view.catalog.min_ratings')) ?></label>
             <input id="anime-ranking-min-votes" name="min_votes" type="number" min="1" max="1000000" step="1" value="<?= $escape($minimumVotesValue) ?>" aria-describedby="anime-ranking-min-votes-help"<?= $isWatchedRanking ? ' disabled' : '' ?>>
-            <p id="anime-ranking-min-votes-help">Dotyczy tylko rankingu najlepiej ocenianych anime. Domyślnie: 5 ocen.</p>
+            <p id="anime-ranking-min-votes-help"><?= $escape($t('view.catalog.min_ratings_help')) ?></p>
         </div>
         <div class="anime-ranking-filter-actions">
-            <button type="submit">Zastosuj filtry</button>
-            <a href="<?= $escape($clearUrl) ?>">Wyczyść filtry</a>
+            <button type="submit"><?= $escape($t('view.catalog.apply_filters')) ?></button>
+            <a href="<?= $escape($clearUrl) ?>"><?= $escape($t('view.catalog.clear_filters')) ?></a>
         </div>
     </form>
 
     <section class="anime-ranking-results" aria-labelledby="anime-ranking-results-title">
         <header class="anime-ranking-results-heading">
             <div>
-                <p class="anime-ranking-kicker">Głos społeczności</p>
-                <h2 id="anime-ranking-results-title"><?= $escape($criteria::MODES[$criteria->mode]) ?></h2>
+                <p class="anime-ranking-kicker"><?= $escape($t('view.catalog.community_voice')) ?></p>
+                <h2 id="anime-ranking-results-title"><?= $escape($translateText($criteria::MODES[$criteria->mode])) ?></h2>
             </div>
-            <p class="anime-ranking-total">Wyników: <strong><?= $escape($ranking['total']) ?></strong></p>
+            <p class="anime-ranking-total"><?= $escape($t('view.catalog.results')) ?> <strong><?= $escape($ranking['total']) ?></strong></p>
         </header>
         <?php if ($ranking['entries'] === []): ?>
             <div class="anime-ranking-empty">
                 <span class="anime-ranking-empty-mark" aria-hidden="true">✦</span>
-                <p>Brak anime spełniających wybrane kryteria.</p>
-                <p><?= $isWatchedRanking ? 'Zmień filtry lub dodaj oglądane anime do swojej watchlisty.' : 'Zmień filtry lub zmniejsz minimalną liczbę ocen. Możesz też ocenić anime w katalogu.' ?></p>
-                <a href="/anime">Przejdź do katalogu anime</a>
+                <p><?= $escape($t('view.catalog.ranking_empty')) ?></p>
+                <p><?= $isWatchedRanking ? $escape($t('view.catalog.ranking_empty_watched')) : $escape($t('view.catalog.ranking_empty_rated')) ?></p>
+                <a href="/anime"><?= $escape($t('view.catalog.go_catalog')) ?></a>
             </div>
         <?php else: ?>
-            <ol class="anime-ranking-list" aria-label="<?= $escape($criteria::MODES[$criteria->mode]) ?>" start="<?= $escape(($ranking['page'] - 1) * 20 + 1) ?>">
+            <ol class="anime-ranking-list" aria-label="<?= $escape($translateText($criteria::MODES[$criteria->mode])) ?>" start="<?= $escape(($ranking['page'] - 1) * 20 + 1) ?>">
                 <?php foreach ($ranking['entries'] as $entry): ?>
                     <?php
                     $animeId = $entry['id'];
@@ -103,9 +103,9 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
                     ?>
                     <li class="anime-ranking-item" data-ranked-anime-id="<?= $escape($animeId) ?>" data-rank="<?= $escape($entry['rank']) ?>" data-community-average="<?= $escape($rankAverage) ?>" data-community-count="<?= $escape($entry['communityCount']) ?>" data-watcher-count="<?= $escape($entry['watcherCount']) ?>" data-year="<?= $escape($anime['year'] ?? '') ?>">
                         <div class="anime-ranking-position">
-                            <span class="anime-ranking-rank"><span>Pozycja</span><strong><?= $escape($entry['rank']) ?></strong></span>
+                            <span class="anime-ranking-rank"><span><?= $escape($t('view.catalog.position')) ?></span><strong><?= $escape($entry['rank']) ?></strong></span>
                             <?php if ($isWatchedRanking): ?>
-                                <span class="anime-ranking-watchers">Oglądam lub Ukończone: <strong><?= $escape($entry['watcherCount']) ?></strong></span>
+                                <span class="anime-ranking-watchers"><?= $escape($t('view.catalog.watchers_status')) ?> <strong><?= $escape($entry['watcherCount']) ?></strong></span>
                             <?php endif; ?>
                         </div>
                         <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
@@ -116,13 +116,13 @@ $clearUrl = '/anime/ranking?' . http_build_query(['mode' => $criteria->mode]);
     </section>
 
     <?php if ($ranking['totalPages'] > 1): ?>
-        <nav class="anime-ranking-pagination" aria-label="Strony rankingu anime">
+        <nav class="anime-ranking-pagination" aria-label="<?= $escape($t('view.catalog.ranking_pages')) ?>">
             <?php if ($previousUrl !== null): ?>
-                <a href="<?= $escape($previousUrl) ?>" rel="prev">← Poprzednia</a>
+                <a href="<?= $escape($previousUrl) ?>" rel="prev"><?= $escape($t('view.catalog.previous')) ?></a>
             <?php endif; ?>
-            <span>Strona <?= $escape($ranking['page']) ?> z <?= $escape($ranking['totalPages']) ?></span>
+            <span><?= $escape($t('view.catalog.page_position', ['page' => $ranking['page'], 'pages' => $ranking['totalPages']])) ?></span>
             <?php if ($nextUrl !== null): ?>
-                <a href="<?= $escape($nextUrl) ?>" rel="next">Następna →</a>
+                <a href="<?= $escape($nextUrl) ?>" rel="next"><?= $escape($t('view.catalog.next')) ?></a>
             <?php endif; ?>
         </nav>
     <?php endif; ?>

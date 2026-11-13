@@ -75,19 +75,19 @@ final class CommunityService
     public static function validateReason(string $reason): array
     {
         if (preg_match('//u', $reason) !== 1) {
-            return ['Powód zgłoszenia zawiera nieprawidłowe znaki.'];
+            return [Translator::current()->translate('message.report.invalid')];
         }
 
         if (preg_match('/[^\s\p{Z}]/u', $reason) !== 1) {
-            return ['Podaj powód zgłoszenia.'];
+            return [Translator::current()->translate('message.report.reason_required')];
         }
 
         if (preg_match_all('/./us', $reason) > 1000) {
-            return ['Powód zgłoszenia może mieć maksymalnie 1000 znaków.'];
+            return [Translator::current()->translate('message.report.reason_length')];
         }
 
         if (preg_match('/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{007F}-\x{009F}]/u', $reason) === 1) {
-            return ['Powód zgłoszenia zawiera niedozwolone znaki sterujące.'];
+            return [Translator::current()->translate('message.report.controls')];
         }
 
         return [];

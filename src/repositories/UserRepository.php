@@ -12,11 +12,11 @@ final class UserRepository
     {
     }
 
-    /** @return array{id: int, name: string, email: string, password_hash: string, interests: string, theme: string, avatar_url: ?string}|null */
+    /** @return array{id: int, name: string, email: string, password_hash: string, interests: string, theme: string, language: string, avatar_url: ?string}|null */
     public function findByEmail(string $email): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT id, name, email, password_hash, interests, theme, avatar_version
+            'SELECT id, name, email, password_hash, interests, theme, language, avatar_version
              FROM users
              WHERE LOWER(email) = LOWER(:email)'
         );
@@ -34,6 +34,7 @@ final class UserRepository
             'password_hash' => (string) $user['password_hash'],
             'interests' => (string) $user['interests'],
             'theme' => (string) $user['theme'],
+            'language' => (string) $user['language'],
             'avatar_url' => $this->avatarUrl($user),
         ];
     }
@@ -41,7 +42,7 @@ final class UserRepository
     public function findById(int $id): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT id, name, email, interests, theme, created_at, avatar_version FROM users WHERE id = :id'
+            'SELECT id, name, email, interests, theme, language, created_at, avatar_version FROM users WHERE id = :id'
         );
         $statement->execute(['id' => $id]);
         $user = $statement->fetch(PDO::FETCH_ASSOC);
@@ -132,17 +133,21 @@ final class UserRepository
         $statement->execute(['id' => $userId, 'theme' => $theme]);
     }
 
-    public function create(string $name, string $email, string $passwordHash): int
+    public function create(string $name, string $email, string $passwordHash, string $language = 'pl'): int
     {
+        if (!\App\Service\Translator::isSupported($language)) {
+            throw new \InvalidArgumentException('Unsupported language.');
+        }
         $statement = $this->database->prepare(
-            'INSERT INTO users (name, email, password_hash)
-             VALUES (:name, :email, :passwordHash)
+            'INSERT INTO users (name, email, password_hash, language)
+             VALUES (:name, :email, :passwordHash, :language)
              RETURNING id'
         );
         $statement->execute([
             'name' => $name,
             'email' => $email,
             'passwordHash' => $passwordHash,
+            'language' => $language,
         ]);
 
         return (int) $statement->fetchColumn();

@@ -13,15 +13,15 @@ $errorStatus = http_response_code();
 
     <div class="error-copy">
         <header class="error-heading">
-            <p class="error-eyebrow">Operacja przerwana</p>
-            <h1 id="community-error-title">Nie można wykonać operacji</h1>
-            <p class="error-message" role="alert"><?= $escape($message) ?></p>
+            <p class="error-eyebrow"><?= $escape($t('view.interface.operation_interrupted')) ?></p>
+            <h1 id="community-error-title"><?= $escape($t('view.interface.unable_to_complete_the_operation')) ?></h1>
+            <p class="error-message" role="alert"><?= $escape($translateText($message)) ?></p>
         </header>
-        <nav class="error-actions" aria-label="Nawigacja po błędzie">
-            <a href="<?= $escape($backUrl ?? '/messages') ?>" class="error-button error-button-primary"><?= isset($backUrl) ? 'Wróć do dyskusji' : 'Przejdź do wiadomości' ?> <span aria-hidden="true">→</span></a>
-            <a href="/" class="error-button error-button-secondary">Strona główna</a>
+        <nav class="error-actions" aria-label="<?= $escape($t('view.interface.error_navigation')) ?>">
+            <a href="<?= $escape($backUrl ?? '/messages') ?>" class="error-button error-button-primary"><?= $escape(isset($backUrl) ? $t('view.interface.back_to_discussion') : $t('view.interface.go_to_messages')) ?> <span aria-hidden="true">→</span></a>
+            <a href="/" class="error-button error-button-secondary"><?= $escape($t('view.interface.home')) ?></a>
         </nav>
-        <p class="error-hint"><span aria-hidden="true">✦</span> Możesz wrócić do rozmowy lub wybrać inną sekcję z nawigacji.</p>
+        <p class="error-hint"><span aria-hidden="true">✦</span> <?= $escape($t('view.interface.return_to_the_conversation_or_choose_another_section_from_navigation')) ?></p>
     </div>
 </section>
 

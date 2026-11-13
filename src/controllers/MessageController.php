@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\Translator;
+
 use App\Repository\CommunityRepository;
 use App\Repository\MessageRepository;
 use App\Repository\UserRepository;
@@ -52,7 +54,7 @@ final class MessageController extends AppController
         $errors = $this->validateMessage($body);
         if ($errors === [] && !$this->messages()->canReceiveFromUser($user['id'], $id)) {
             http_response_code(403);
-            $errors[] = 'Wysyłanie wiadomości do tego konta jest niedostępne.';
+            $errors[] = Translator::current()->translate('message.message_unavailable');
         }
         if ($errors !== []) {
             $this->renderMessages($user, recipient: $recipient, errors: $errors, body: $body);
@@ -94,7 +96,7 @@ final class MessageController extends AppController
             $errors = $this->validateMessage($body);
             if ($errors === [] && !$this->messages()->canReceiveFromUser($user['id'], $conversation['recipientId'])) {
                 http_response_code(403);
-                $errors[] = 'Wysyłanie wiadomości do tego konta jest niedostępne.';
+                $errors[] = Translator::current()->translate('message.message_unavailable');
             }
             if ($errors !== []) {
                 $this->renderMessages($user, $conversation, errors: $errors, body: $body);
@@ -127,7 +129,7 @@ final class MessageController extends AppController
     {
         if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {
             http_response_code(403);
-            return ['Formularz wygasł. Odśwież stronę i spróbuj ponownie.'];
+            return [Translator::current()->translate('message.csrf_expired')];
         }
 
         $errors = MessageService::validate($body);
@@ -177,7 +179,7 @@ final class MessageController extends AppController
             : $this->community()->blockStateForUser($user['id'], $conversation['recipientId']);
 
         $this->render('messages', [
-            'pageTitle' => ($conversation === null ? 'Wiadomości' : 'Rozmowa: ' . $conversation['recipientName']) . ' — AniVibe',
+            'pageTitle' => ($conversation === null ? Translator::current()->translate('message.page.messages') : Translator::current()->translate('message.page.conversation_prefix') . $conversation['recipientName']) . ' — AniVibe',
             'conversationList' => $conversationList + [
                 'previousUrl' => '/messages?conversationsPage=' . ($conversationList['page'] - 1),
                 'nextUrl' => '/messages?conversationsPage=' . ($conversationList['page'] + 1),
@@ -204,7 +206,7 @@ final class MessageController extends AppController
     private function notFound(): void
     {
         http_response_code(404);
-        $this->render('not-found', ['pageTitle' => 'Nie znaleziono rozmowy lub użytkownika — AniVibe']);
+        $this->render('not-found', ['pageTitle' => Translator::current()->translate('message.page.conversation_missing')]);
     }
 
     private function setWriteErrorStatus(RateLimitException|UserBlockedException $exception): void

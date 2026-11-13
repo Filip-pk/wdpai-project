@@ -9,6 +9,7 @@
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     const hasAccount = /^[1-9]\d*$/.test(root.dataset.accountId ?? '');
     const profileTheme = hasAccount ? document.querySelector('#profile-theme') : null;
+    const translate = (key, fallback) => window.AniVibeI18n?.t(key) ?? fallback;
     let saving = false;
     let colorSchemeQuery = null;
 
@@ -41,7 +42,9 @@
         root.dataset.theme = theme;
 
         const isDark = theme === 'dark';
-        const toggleLabel = isDark ? 'Włącz jasny motyw' : 'Włącz ciemny motyw';
+        const toggleLabel = isDark
+            ? translate('js.theme.enable_light', 'Włącz jasny motyw')
+            : translate('js.theme.enable_dark', 'Włącz ciemny motyw');
 
         if (themeToggle) {
             themeToggle.setAttribute('aria-pressed', String(isDark));
@@ -53,8 +56,8 @@
         if (themeSystem) {
             themeSystem.disabled = saving || userTheme === null;
             themeSystem.title = userTheme === null
-                ? 'Aktualnie używany jest motyw systemowy'
-                : 'Przywróć motyw zgodny z ustawieniem systemowym';
+                ? translate('js.theme.system_active', 'Aktualnie używany jest motyw systemowy')
+                : translate('js.theme.restore_system', 'Przywróć motyw zgodny z ustawieniem systemowym');
         }
     }
 
@@ -115,7 +118,10 @@
         } catch (error) {
             userTheme = previousTheme;
             if (saveStatus) {
-                saveStatus.textContent = 'Nie udało się zapisać motywu. Spróbuj ponownie.';
+                saveStatus.textContent = translate(
+                    'js.theme.save_failed',
+                    'Nie udało się zapisać motywu. Spróbuj ponownie.',
+                );
                 saveStatus.hidden = false;
             }
         } finally {

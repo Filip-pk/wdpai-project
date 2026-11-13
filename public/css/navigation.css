@@ -531,3 +531,36 @@ summary:focus-visible {
         padding-block: 2.5rem 4rem;
     }
 }
+.language-switcher {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-block: 1rem;
+    border-block: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+}
+
+.language-switcher-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.language-switcher select,
+.language-switcher button {
+    flex: 1 1 6rem;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0.625rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    font: inherit;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.language-switcher select {
+    background: var(--color-surface);
+    color: var(--color-text);
+}
