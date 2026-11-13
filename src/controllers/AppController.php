@@ -7,12 +7,14 @@ namespace App\Controller;
 use App\Repository\CommunityRepository;
 use App\Repository\PreferencesRepository;
 use App\Repository\UserRepository;
+use App\Service\Translator;
 use Closure;
 
 abstract class AppController
 {
     private CommunityRepository|Closure|null $communityRepository = null;
     private PreferencesRepository|Closure|null $preferencesRepository = null;
+    private ?array $loadedPreferences = null;
 
     public function setPreferencesRepository(PreferencesRepository|Closure $repository): void
     {
@@ -22,6 +24,31 @@ abstract class AppController
     public function setCommunityRepository(CommunityRepository|Closure $repository): void
     {
         $this->communityRepository = $repository;
+    }
+
+    public function initializeLanguage(bool $loadAccount = true): void
+    {
+        $language = $_COOKIE['anivibe_language'] ?? 'pl';
+        if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
+            $preferences = $loadAccount ? $this->accountPreferences() : [];
+            $language = $preferences['language'] ?? $_SESSION['user_language'] ?? 'pl';
+            $_SESSION['user_language'] = $language;
+        }
+        Translator::setCurrent(new Translator(is_string($language) ? $language : 'pl'));
+    }
+
+    private function accountPreferences(): array
+    {
+        if ($this->loadedPreferences !== null) {
+            return $this->loadedPreferences;
+        }
+        if (!is_int($_SESSION['user_id'] ?? null) || $this->preferencesRepository === null) {
+            return [];
+        }
+        if ($this->preferencesRepository instanceof Closure) {
+            $this->preferencesRepository = ($this->preferencesRepository)();
+        }
+        return $this->loadedPreferences = $this->preferencesRepository->forUser($_SESSION['user_id']);
     }
 
     protected function currentUser(UserRepository $users): array
@@ -37,6 +64,8 @@ abstract class AppController
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_theme'] = $user['theme'];
+        $_SESSION['user_language'] = $user['language'] ?? 'pl';
+        Translator::setCurrent(new Translator($_SESSION['user_language']));
         $_SESSION['user_avatar_url'] = $user['avatar_url'];
 
         return $user;
@@ -94,15 +123,20 @@ abstract class AppController
         $currentUserAvatarUrl = $isLoggedIn ? ($_SESSION['user_avatar_url'] ?? null) : null;
         $accountId = $isLoggedIn ? $_SESSION['user_id'] : null;
         $accountTheme = $isLoggedIn ? ($_SESSION['user_theme'] ?? 'system') : null;
-        $accountPreferences = [];
-        if ($isLoggedIn && $this->preferencesRepository !== null) {
-            if ($this->preferencesRepository instanceof Closure) {
-                $this->preferencesRepository = ($this->preferencesRepository)();
-            }
-            $accountPreferences = $this->preferencesRepository->forUser($accountId);
+        $accountPreferences = $isLoggedIn ? $this->accountPreferences() : [];
+        if ($accountPreferences !== []) {
             $accountTheme = $accountPreferences['theme'] ?? $accountTheme;
             $_SESSION['user_theme'] = $accountTheme;
         }
+        $language = $isLoggedIn
+            ? ($accountPreferences['language'] ?? $_SESSION['user_language'] ?? 'pl')
+            : ($_COOKIE['anivibe_language'] ?? 'pl');
+        $translator = new Translator(is_string($language) ? $language : 'pl');
+        Translator::setCurrent($translator);
+        $locale = $translator->locale();
+        $t = $translator->translate(...);
+        $translateText = $translator->translateText(...);
+        $languages = Translator::LANGUAGES;
         $csrfToken = $this->csrfToken();
         $unreadMessageCount = 0;
         $unreadReplyCount = 0;

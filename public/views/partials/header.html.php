@@ -56,13 +56,19 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
 ?>
 
 <!doctype html>
-<html lang="pl"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>" data-font-size="<?= $escape($accountPreferences['font_size'] ?? 'standard') ?>" data-line-height="<?= $escape($accountPreferences['line_height'] ?? 'standard') ?>" data-density="<?= $escape($accountPreferences['interface_density'] ?? 'comfortable') ?>" data-high-contrast="<?= $escape($accountPreferences['high_contrast'] ?? '0') ?>" data-reduced-motion="<?= $escape($accountPreferences['reduced_motion'] ?? '0') ?>" data-strong-focus="<?= $escape($accountPreferences['strong_focus'] ?? '0') ?>" data-large-controls="<?= $escape($accountPreferences['large_controls'] ?? '0') ?>" data-message-text-size="<?= $escape($accountPreferences['message_text_size'] ?? 'standard') ?>" data-comment-text-size="<?= $escape($accountPreferences['comment_text_size'] ?? 'standard') ?>"<?php endif; ?>>
+<html lang="<?= $escape($locale) ?>"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>" data-font-size="<?= $escape($accountPreferences['font_size'] ?? 'standard') ?>" data-line-height="<?= $escape($accountPreferences['line_height'] ?? 'standard') ?>" data-density="<?= $escape($accountPreferences['interface_density'] ?? 'comfortable') ?>" data-high-contrast="<?= $escape($accountPreferences['high_contrast'] ?? '0') ?>" data-reduced-motion="<?= $escape($accountPreferences['reduced_motion'] ?? '0') ?>" data-strong-focus="<?= $escape($accountPreferences['strong_focus'] ?? '0') ?>" data-large-controls="<?= $escape($accountPreferences['large_controls'] ?? '0') ?>" data-message-text-size="<?= $escape($accountPreferences['message_text_size'] ?? 'standard') ?>" data-comment-text-size="<?= $escape($accountPreferences['comment_text_size'] ?? 'standard') ?>"<?php endif; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= $escape($csrfToken) ?>">
 
     <title><?= $escape($pageTitle) ?></title>
+
+    <script type="application/json" id="anivibe-translations"><?= json_encode(
+        ['locale' => $locale, 'messages' => $translator->javascriptMessages()],
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR,
+    ) ?></script>
+    <script src="<?= $assetUrl('/js/i18n.js') ?>" defer></script>
 
     <script>
         (function () {
@@ -191,24 +197,24 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?><?= $isCommunityPage ? ' page-community' : '' ?><?= $isAiPage ? ' page-ai' : '' ?><?= $isProjectsPage ? ' page-projects' : '' ?><?= $isImportPage ? ' page-import' : '' ?><?= $isModerationPage ? ' page-moderation' : '' ?>">
     <a href="#main-content" class="skip-link">
-        Przejdź do treści
+        <?= $escape($t('header.skip')) ?>
     </a>
 
     <header class="site-header">
-        <a href="/" class="site-brand" aria-label="AniVibe — strona główna">
+        <a href="/" class="site-brand" aria-label="<?= $escape($t('header.home')) ?>">
             <span class="site-brand-icon" aria-hidden="true">🌸</span>
             <span>AniVibe</span>
         </a>
 
         <?php require __DIR__ . '/navigation.html.php'; ?>
 
-        <div class="theme-controls" role="group" aria-label="Ustawienia motywu">
+        <div class="theme-controls" role="group" aria-label="<?= $escape($t('header.theme')) ?>">
             <button
                 class="theme-toggle"
                 type="button"
-                aria-label="Włącz ciemny motyw"
+                aria-label="<?= $escape($t('header.dark')) ?>"
                 aria-pressed="false"
-                title="Włącz ciemny motyw"
+                title="<?= $escape($t('header.dark')) ?>"
                 disabled
             >
                 <svg
@@ -242,8 +248,8 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
                     <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
                 </svg>
             </button>
-            <button class="theme-system" type="button" aria-label="Motyw systemowy" disabled>
-                Auto
+            <button class="theme-system" type="button" aria-label="<?= $escape($t('header.system')) ?>" disabled>
+                <?= $escape($t('header.auto')) ?>
             </button>
             <p class="theme-save-status" role="status" hidden></p>
         </div>
