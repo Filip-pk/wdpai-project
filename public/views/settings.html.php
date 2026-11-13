@@ -62,6 +62,7 @@
                     <div class="settings-actions"><button type="submit">Zapisz dostępność</button></div>
                 </form>
             </section>
+            <?php require __DIR__ . '/partials/settings-security.html.php'; ?>
         </div>
 
         <aside class="settings-preview settings-card" aria-labelledby="preview-title">

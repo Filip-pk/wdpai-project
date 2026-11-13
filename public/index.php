@@ -20,6 +20,7 @@ use App\Controller\ProjectController;
 use App\Controller\RankingController;
 use App\Controller\ReplyNotificationController;
 use App\Controller\SettingsController;
+use App\Controller\SecuritySettingsController;
 use App\Database;
 use App\Repository\AnimeRepository;
 use App\Repository\AnimeRankingRepository;
@@ -36,6 +37,7 @@ use App\Repository\RecommendationRepository;
 use App\Repository\ReplyNotificationRepository;
 use App\Repository\UserRepository;
 use App\Repository\PreferencesRepository;
+use App\Repository\SecuritySettingsRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\MailService;
@@ -61,6 +63,18 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Cache-Control: no-store');
 
 $createController = static function (string $controllerClass): AppController {
+    if ($controllerClass === SecuritySettingsController::class) {
+        $connection = null;
+        $connect = static function () use (&$connection): PDO {
+            return $connection ??= (new Database())->connect();
+        };
+        $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
+        return new SecuritySettingsController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): SecuritySettingsRepository => new SecuritySettingsRepository($connect()),
+            new MailService(...$mailConfiguration),
+        );
+    }
     if ($controllerClass === SettingsController::class) {
         $connection = null;
         $connect = static function () use (&$connection): PDO {
@@ -297,6 +311,10 @@ $routing->get('/profile', ProfileController::class, 'index');
 $routing->get('/settings', SettingsController::class, 'index');
 $routing->post('/settings', SettingsController::class, 'index');
 $routing->post('/settings/accessibility', SettingsController::class, 'accessibility');
+$routing->post('/settings/password', SecuritySettingsController::class, 'changePassword');
+$routing->post('/settings/email', SecuritySettingsController::class, 'requestEmailChange');
+$routing->get('/settings/email/confirm', SecuritySettingsController::class, 'confirmEmail');
+$routing->post('/settings/email/confirm', SecuritySettingsController::class, 'confirmEmail');
 $routing->post('/settings/appearance/reset', SettingsController::class, 'resetAppearance');
 $routing->post('/profile', ProfileController::class, 'index');
 $routing->post('/profile/avatar', ProfileController::class, 'uploadAvatar');

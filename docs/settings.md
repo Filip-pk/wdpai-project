@@ -25,6 +25,10 @@ Osobny formularz zapisuje kontrast, ograniczenie animacji, mocniejszy fokus klaw
 
 Sprawdź klawiszem Tab widoczność fokusu, osobne teksty wiadomości i komentarza w podglądzie oraz większe kontrolki na telefonie. Zapisz i odwiedź inną stronę, aby potwierdzić działanie globalne.
 
+## Konto i bezpieczeństwo
+
+Zastosuj też migrację `20` według [instrukcji bezpieczeństwa konta](account-security-settings.md). Formularze zmieniają hasło po potwierdzeniu obecnego oraz adres e-mail po potwierdzeniu obecnego hasła i kodu wysłanego na nową skrzynkę. Na lokalnym środowisku kod znajdziesz w [Mailpit](http://localhost:8025). Stary adres pozostaje aktywny do zatwierdzenia kodu.
+
 ```cmd
 node --test tests/settings-http.test.cjs tests/theme.test.cjs tests/assets.test.cjs
 ```

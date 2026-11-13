@@ -18,8 +18,10 @@ Przykładów Kacpra nie przenosimy do kont użytkowników.
 
 ## Dostępne funkcje
 
-- `/profile`: odczyt i edycja nazwy, e-maila, zainteresowań i motywu.
-- Zmiana e-maila wymaga aktualnego hasła. Hasło nie jest ponownie wyświetlane.
+- `/profile`: odczyt danych oraz edycja nazwy, zainteresowań i motywu.
+- E-mail zmienisz w [ustawieniach konta](account-security-settings.md): podaj
+  aktualne hasło i potwierdź nowy adres kodem przesłanym na ten adres.
+  Formularz profilu nie pozwala obejść potwierdzenia. Hasła nie są ponownie wyświetlane.
 - Nazwa ma 1–120 znaków, zainteresowania do 1000, e-mail do 255.
 - Motyw `system`, `light` lub `dark` jest zapisywany na koncie, także przez
   przyciski w nagłówku. Gość nadal korzysta z ustawienia tej przeglądarki.
@@ -101,8 +103,9 @@ przypisania jego tytułów do użytkowników.
 Zaloguj dwa konta w zwykłym i prywatnym oknie przeglądarki. Zmień nazwę,
 zainteresowania i motyw pierwszego, dodaj anime i zapisz postęp.
 Drugie konto powinno zachować swoje dane i pustą listę. Wyloguj się i zaloguj
-ponownie, aby sprawdzić trwałość ustawień. Sprawdź błędne aktualne hasło
-przy zmianie e-maila oraz adres zajęty przez drugie konto.
+ponownie, aby sprawdzić trwałość ustawień. W `/settings` sprawdź błędne aktualne
+hasło przy zmianie e-maila oraz adres zajęty przez drugie konto. Po poprawnej
+próbie odbierz kod w Mailpit i potwierdź go w `/settings/email/confirm`.
 
 ```cmd
 node --test tests/profile-http.test.cjs

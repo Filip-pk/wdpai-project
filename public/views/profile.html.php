@@ -77,12 +77,8 @@
                     </div>
                     <div class="profile-field">
                         <label for="profile-email">E-mail</label>
-                        <input id="profile-email" name="email" type="email" value="<?= $escape($form['email']) ?>" maxlength="255" autocomplete="email" required>
-                    </div>
-                    <div class="profile-field profile-field-wide">
-                        <label for="profile-current-password">Aktualne hasło</label>
-                        <input id="profile-current-password" name="currentPassword" type="password" autocomplete="current-password" aria-describedby="profile-password-help">
-                        <p id="profile-password-help">Wymagane tylko przy zmianie adresu e-mail.</p>
+                        <input id="profile-email" name="email" type="email" value="<?= $escape($user['email']) ?>" maxlength="255" autocomplete="email" readonly>
+                        <p><a href="/settings#security">Zmień e-mail w ustawieniach konta</a> — nowy adres wymaga potwierdzenia kodem.</p>
                     </div>
                     <div class="profile-field profile-field-wide">
                         <label for="profile-interests">Zainteresowania</label>

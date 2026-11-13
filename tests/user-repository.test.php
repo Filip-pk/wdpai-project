@@ -80,7 +80,7 @@ try {
         $repository, $assert, $hash,
     ): void {
         $id = $repository->create('Łucja <svg>', 'private@example.test', $hash);
-        $repository->updateProfile($id, 'Łucja <svg>', 'private@example.test', 'Mecha & fantasy', 'dark');
+        $repository->updateProfile($id, 'Łucja <svg>', 'Mecha & fantasy', 'dark');
         $repository->updateAvatar($id, 'test-image', str_repeat('b', 32));
         $user = $repository->findPublicById($id);
 

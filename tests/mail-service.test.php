@@ -170,6 +170,22 @@ $run('Dialog SMTP, wieloliniowe EHLO, kod 251 i wiadomość UTF-8', static funct
     smtpAssert(preg_match('/(?<!\r)\n|\r(?!\n)/', $message) === 0, 'Wiadomość musi używać CRLF.');
 });
 
+$run('Potwierdzenie zmiany e-maila zawiera kod i instrukcję bez adresu obcego hosta', static function (): void {
+    $code = str_repeat('a', 32);
+    $result = withSmtp('success', static fn (MailService $mailer) =>
+        $mailer->sendEmailChangeConfirmation('lukasz@example.test', $code));
+    smtpAssert(str_contains($result['message'], 'Kod potwierdzenia: ' . $code));
+    smtpAssert(str_contains($result['message'], '30 minut'));
+    smtpAssert(!str_contains($result['message'], 'http://') && !str_contains($result['message'], 'https://'));
+});
+
+$run('Nieprawidłowy kod potwierdzenia odrzucany jest przed połączeniem SMTP', static function (): void {
+    $mailer = new MailService('127.0.0.1', 1, 'noreply@anivibe.local', 'AniVibe', 1);
+    foreach (['', '12345', str_repeat('g', 32), str_repeat('a', 32) . "\r\nQUIT"] as $code) {
+        smtpThrows(static fn () => $mailer->sendEmailChangeConfirmation('lukasz@example.test', $code), '/kod potwierdzenia/');
+    }
+});
+
 $run('Znaki CRLF w imieniu nie dodają nagłówków ani poleceń', static function (): void {
     $result = withSmtp('success', static fn (MailService $mailer) =>
         $mailer->sendWelcomeEmail('lukasz@example.test', "Łukasz\r\nBcc: intruz@example.test\r\n.\r\nQUIT"));

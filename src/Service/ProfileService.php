@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Repository\UserRepository;
-use PDOException;
 
 final class ProfileService
 {
@@ -42,32 +41,13 @@ final class ProfileService
         }
 
         if ($form['email'] !== strtolower($user['email'])) {
-            $account = $this->users->findByEmail($user['email']);
-
-            if ($account === null || str_contains($form['currentPassword'], "\0")
-                || strlen($form['currentPassword']) > 72
-                || !password_verify($form['currentPassword'], $account['password_hash'])) {
-                $errors[] = 'Potwierdź zmianę e-maila aktualnym hasłem.';
-            }
-
-            $existing = $this->users->findByEmail($form['email']);
-            if ($existing !== null && $existing['id'] !== $user['id']) {
-                $errors[] = 'Konto dla tego adresu już istnieje.';
-            }
+            $errors[] = 'Adres e-mail zmienisz w ustawieniach konta po potwierdzeniu nowego adresu kodem.';
         }
 
         if ($errors === []) {
-            try {
-                $this->users->updateProfile(
-                    $user['id'], $form['name'], $form['email'], $form['interests'], $form['theme'],
-                );
-            } catch (PDOException $exception) {
-                if ($exception->getCode() !== '23505') {
-                    throw $exception;
-                }
-
-                $errors[] = 'Konto dla tego adresu już istnieje.';
-            }
+            $this->users->updateProfile(
+                $user['id'], $form['name'], $form['interests'], $form['theme'],
+            );
         }
 
         return $errors;
