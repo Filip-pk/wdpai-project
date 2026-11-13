@@ -3,7 +3,7 @@
 <section class="auth-page auth-page-login" aria-labelledby="login-title">
     <a href="/" class="auth-back">
         <span aria-hidden="true">←</span>
-        Wróć do strony głównej
+        <?= $escape($t('view.interface.back_to_home')) ?>
     </a>
 
     <div class="auth-card">
@@ -22,47 +22,45 @@
                     AniVibe Neural Core
                 </p>
 
-                <h2 id="showcase-title">Połącz z cyberświatem</h2>
+                <h2 id="showcase-title"><?= $escape($t('view.interface.connect_to_the_cyberworld')) ?></h2>
 
                 <p class="auth-showcase-description">
-                    Twoje anime. Twoje historie.
-                    Nowy wymiar odkrywania.
+                    <?= $escape($t('view.interface.your_anime_your_stories_a_new_dimension_of_discovery')) ?>
                 </p>
             </div>
         </aside>
 
         <div class="auth-panel">
             <header class="auth-heading">
-                <p class="auth-kicker"><span class="auth-status-dot" aria-hidden="true"></span> Twoja przygoda trwa dalej</p>
+                <p class="auth-kicker"><span class="auth-status-dot" aria-hidden="true"></span> <?= $escape($t('view.interface.your_adventure_continues')) ?></p>
 
                 <h1 id="login-title">
-                    Witaj z powrotem!
+                    <?= $escape($t('view.interface.welcome_back')) ?>
                     <span aria-hidden="true">👋</span>
                 </h1>
 
                 <p>
-                    Zaloguj się, aby rozmawiać z postaciami
-                    i odkrywać anime z AI.
+                    <?= $escape($t('view.interface.sign_in_to_chat_with_characters_and_discover_anime_with_ai')) ?>
                 </p>
             </header>
 
             <p id="login-info" class="auth-info">
-                Zaloguj się adresem e-mail i hasłem swojego konta.
+                <?= $escape($t('view.interface.sign_in_with_your_account_email_and_password')) ?>
             </p>
 
             <?php if ($registered ?? false): ?>
                 <p class="auth-notice" role="status">
-                    Konto zostało utworzone. Możesz się zalogować.
+                    <?= $escape($t('view.interface.your_account_has_been_created_you_can_now_sign_in')) ?>
                 </p>
             <?php endif; ?>
 
             <?php if (($mailStatus ?? null) === 'sent'): ?>
                 <p class="auth-notice" role="status" data-mail-status="sent">
-                    Wysłaliśmy wiadomość powitalną na podany adres e-mail.
+                    <?= $escape($t('view.interface.we_sent_a_welcome_email_to_the_address_you_provided')) ?>
                 </p>
             <?php elseif (($mailStatus ?? null) === 'failed'): ?>
                 <p class="auth-notice auth-notice--warning" role="status" data-mail-status="failed">
-                    Nie udało się wysłać wiadomości powitalnej. Konto jest aktywne i możesz się zalogować.
+                    <?= $escape($t('view.interface.the_welcome_email_could_not_be_sent_your_account_is_active_and_you_can_sign_in')) ?>
                 </p>
             <?php endif; ?>
 
@@ -70,7 +68,7 @@
                 <div class="auth-notice" role="alert">
                     <ul>
                         <?php foreach ($errors as $error): ?>
-                            <li><?= $escape($error) ?></li>
+                            <li><?= $escape($translateText($error)) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -86,12 +84,12 @@
 
                 <fieldset class="auth-fields">
                     <legend class="auth-visually-hidden">
-                        Dane logowania
+                        <?= $escape($t('view.interface.sign_in_details')) ?>
                     </legend>
 
                     <div class="auth-field">
                         <label for="login-email">
-                            E-mail
+                            <?= $escape($t('view.interface.email')) ?>
                         </label>
 
                         <input
@@ -101,14 +99,14 @@
                             autocomplete="username"
                             maxlength="255"
                             value="<?= $escape($email ?? '') ?>"
-                            placeholder="np. otaku@example.com"
+                            placeholder="<?= $escape($t('view.interface.e_g_otaku_example_com')) ?>"
                             required
                         >
                     </div>
 
                     <div class="auth-field">
                         <label for="login-password">
-                            Hasło
+                            <?= $escape($t('view.interface.password')) ?>
                         </label>
 
                         <input
@@ -116,7 +114,7 @@
                             name="password"
                             type="password"
                             autocomplete="current-password"
-                            placeholder="Wpisz swoje hasło"
+                            placeholder="<?= $escape($t('view.interface.enter_your_password')) ?>"
                             required
                         >
                     </div>
@@ -127,7 +125,7 @@
                             class="auth-text-button"
                             disabled
                         >
-                            Nie pamiętasz hasła?
+                            <?= $escape($t('view.interface.forgot_your_password')) ?>
                         </button>
                     </div>
 
@@ -136,24 +134,24 @@
                         class="auth-submit"
                     >
                         <span aria-hidden="true">→</span>
-                        Zaloguj się
+                        <?= $escape($t('view.interface.sign_in')) ?>
                     </button>
                 </fieldset>
             </form>
 
             <div class="auth-register">
-                <p>Nie masz jeszcze konta?</p>
+                <p><?= $escape($t('view.interface.don_t_have_an_account_yet')) ?></p>
 
                 <a
                     href="/register"
                     class="auth-text-button"
                 >
-                    Zarejestruj się
+                    <?= $escape($t('view.interface.sign_up')) ?>
                 </a>
             </div>
 
             <a href="/dashboard" class="auth-demo-link">
-                Zobacz przykładowy pulpit
+                <?= $escape($t('view.interface.view_the_demo_dashboard')) ?>
                 <span aria-hidden="true">→</span>
             </a>
         </div>

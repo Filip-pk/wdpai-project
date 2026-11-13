@@ -19,7 +19,7 @@ $reportUrl = '/reports/comment/' . $comment['id'] . '?page=' . ($isReplyComment 
 ?>
 <article id="comment-<?= $escape($comment['id']) ?>" class="comment-card<?= $isReplyComment ? ' comment-reply-card' : '' ?>" aria-labelledby="comment-author-<?= $escape($comment['id']) ?>" data-comment-id="<?= $escape($comment['id']) ?>" data-comment-user-id="<?= $escape($comment['userId']) ?>"<?php if ($isReplyComment): ?> data-comment-parent-id="<?= $escape($comment['parentId']) ?>"<?php endif; ?>>
     <header class="comment-header">
-        <a id="comment-author-<?= $escape($comment['id']) ?>" class="comment-author" href="/users/<?= $escape($comment['userId']) ?>" aria-label="<?= $escape('Profil autora: ' . $comment['authorName']) ?>">
+        <a id="comment-author-<?= $escape($comment['id']) ?>" class="comment-author" href="/users/<?= $escape($comment['userId']) ?>" aria-label="<?= $escape($t('view.interface.author_profile') . ' ' . $comment['authorName']) ?>">
             <span class="comment-avatar" aria-hidden="true">
                 <?php if ($comment['avatarUrl'] !== null): ?>
                     <img src="<?= $escape($comment['avatarUrl']) ?>" alt="" width="48" height="48" loading="lazy" decoding="async">
@@ -32,30 +32,30 @@ $reportUrl = '/reports/comment/' . $comment['id'] . '?page=' . ($isReplyComment 
         <div class="comment-dates">
             <time datetime="<?= $escape($createdDate->format(DATE_ATOM)) ?>"><?= $escape($createdDate->format('d.m.Y H:i')) ?></time>
             <?php if ($updatedDate !== null && !$isDeletedComment): ?>
-                <span>Edytowano: <time datetime="<?= $escape($updatedDate->format(DATE_ATOM)) ?>"><?= $escape($updatedDate->format('d.m.Y H:i')) ?></time></span>
+                <span><?= $escape($t('view.interface.edited')) ?> <time datetime="<?= $escape($updatedDate->format(DATE_ATOM)) ?>"><?= $escape($updatedDate->format('d.m.Y H:i')) ?></time></span>
             <?php endif; ?>
         </div>
     </header>
-    <p class="comment-body"><?= $isDeletedComment ? 'Komentarz usunięty przez autora.' : ($comment['isRemoved'] ? 'Komentarz ukryty przez moderację.' : $escape($comment['body'])) ?></p>
+    <p class="comment-body"><?= $escape($isDeletedComment ? $t('view.interface.comment_deleted_by_its_author') : ($comment['isRemoved'] ? $t('view.interface.comment_hidden_by_moderation') : $comment['body'])) ?></p>
     <?php if (!$isDeletedComment && !$comment['isRemoved']): ?>
         <?php require __DIR__ . '/comment-reactions.html.php'; ?>
     <?php endif; ?>
     <footer class="comment-owner-actions comment-card-actions">
         <?php if (!$isReplyComment && !$isThreadView): ?>
-            <a class="comment-thread-link" href="<?= $escape($threadUrl) ?>#replies">Odpowiedzi: <?= $escape($comment['replyCount'] ?? 0) ?></a>
+            <a class="comment-thread-link" href="<?= $escape($threadUrl) ?>#replies"><?= $escape($t('view.interface.replies')) ?> <?= $escape($comment['replyCount'] ?? 0) ?></a>
         <?php endif; ?>
         <?php if (!$isReplyComment && !$comment['isRemoved'] && !$isDeletedComment && !$isThreadView): ?>
-            <a class="comment-reply-link" href="<?= $escape($threadUrl) ?>#reply-form">Odpowiedz</a>
+            <a class="comment-reply-link" href="<?= $escape($threadUrl) ?>#reply-form"><?= $escape($t('view.interface.reply')) ?></a>
         <?php endif; ?>
         <?php if ($isLoggedIn && !$isOwnComment && !$comment['isRemoved'] && !$isDeletedComment): ?>
-            <a class="community-report-link" href="<?= $escape($reportUrl) ?>">Zgłoś <?= $isReplyComment ? 'odpowiedź' : 'komentarz' ?></a>
+            <a class="community-report-link" href="<?= $escape($reportUrl) ?>"><?= $escape($t($isReplyComment ? 'view.social.report_reply' : 'view.social.report_comment')) ?></a>
         <?php endif; ?>
         <?php if ($isOwnComment && !$isDeletedComment): ?>
             <?php if (!$comment['isRemoved']): ?>
-                <a class="comment-edit" href="<?= $escape($editUrl) ?>">Edytuj</a>
+                <a class="comment-edit" href="<?= $escape($editUrl) ?>"><?= $escape($t('view.interface.edit')) ?></a>
             <?php endif; ?>
             <details class="comment-delete">
-                <summary>Usuń</summary>
+                <summary><?= $escape($t('view.interface.delete')) ?></summary>
                 <form action="/anime/<?= $escape($animeId) ?>/comments/<?= $escape($comment['id']) ?>/delete" method="post" class="comment-delete-form">
                     <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                     <input type="hidden" name="commentsPage" value="<?= $escape($mainCommentsPage) ?>">
@@ -63,8 +63,8 @@ $reportUrl = '/reports/comment/' . $comment['id'] . '?page=' . ($isReplyComment 
                         <input type="hidden" name="returnThread" value="<?= $escape($rootCommentId) ?>">
                         <input type="hidden" name="repliesPage" value="<?= $escape($replyPage) ?>">
                     <?php endif; ?>
-                    <p><?= $isReplyComment ? 'Usunąć tę odpowiedź?' : 'Usunąć ten komentarz?' ?></p>
-                    <button type="submit">Potwierdź usunięcie</button>
+                    <p><?= $escape($isReplyComment ? $t('view.interface.delete_this_reply') : $t('view.interface.delete_this_comment')) ?></p>
+                    <button type="submit"><?= $escape($t('view.interface.confirm_deletion')) ?></button>
                 </form>
             </details>
         <?php endif; ?>

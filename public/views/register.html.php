@@ -3,21 +3,21 @@
 <section class="auth-page auth-page-register" aria-labelledby="register-title">
     <a href="/login" class="auth-back">
         <span aria-hidden="true">←</span>
-        Wróć do logowania
+        <?= $escape($t('view.interface.back_to_sign_in')) ?>
     </a>
 
     <div class="auth-panel">
         <header class="auth-heading">
-            <p class="auth-kicker"><span class="auth-status-dot" aria-hidden="true"></span> Początek Twojej przygody</p>
-            <h1 id="register-title">Utwórz konto AniVibe</h1>
-            <p id="register-info">Wypełnij formularz, aby uzyskać dostęp do projektów.</p>
+            <p class="auth-kicker"><span class="auth-status-dot" aria-hidden="true"></span> <?= $escape($t('view.interface.your_adventure_begins')) ?></p>
+            <h1 id="register-title"><?= $escape($t('view.interface.create_an_anivibe_account')) ?></h1>
+            <p id="register-info"><?= $escape($t('view.interface.complete_the_form_to_access_projects')) ?></p>
         </header>
 
         <?php if (($errors ?? []) !== []): ?>
             <div class="auth-notice" role="alert">
                 <ul>
                     <?php foreach ($errors as $error): ?>
-                        <li><?= $escape($error) ?></li>
+                        <li><?= $escape($translateText($error)) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -27,10 +27,10 @@
             <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
 
             <fieldset class="auth-fields">
-                <legend class="auth-visually-hidden">Dane konta</legend>
+                <legend class="auth-visually-hidden"><?= $escape($t('view.interface.account_details')) ?></legend>
 
                 <div class="auth-field">
-                    <label for="register-name">Imię i nazwisko</label>
+                    <label for="register-name"><?= $escape($t('view.interface.full_name')) ?></label>
                     <input
                         id="register-name"
                         name="name"
@@ -38,13 +38,13 @@
                         autocomplete="name"
                         maxlength="120"
                         value="<?= $escape($form['name'] ?? '') ?>"
-                        placeholder="Jak się nazywasz?"
+                        placeholder="<?= $escape($t('view.interface.what_s_your_name')) ?>"
                         required
                     >
                 </div>
 
                 <div class="auth-field">
-                    <label for="register-email">E-mail</label>
+                    <label for="register-email"><?= $escape($t('view.interface.email')) ?></label>
                     <input
                         id="register-email"
                         name="email"
@@ -52,13 +52,13 @@
                         autocomplete="email"
                         maxlength="255"
                         value="<?= $escape($form['email'] ?? '') ?>"
-                        placeholder="np. otaku@example.com"
+                        placeholder="<?= $escape($t('view.interface.e_g_otaku_example_com')) ?>"
                         required
                     >
                 </div>
 
                 <div class="auth-field">
-                    <label for="register-password">Hasło</label>
+                    <label for="register-password"><?= $escape($t('view.interface.password')) ?></label>
                     <input
                         id="register-password"
                         name="password"
@@ -66,32 +66,32 @@
                         autocomplete="new-password"
                         minlength="8"
                         aria-describedby="register-password-help"
-                        placeholder="Co najmniej 8 znaków"
+                        placeholder="<?= $escape($t('view.interface.at_least_8_characters')) ?>"
                         required
                     >
-                    <p id="register-password-help" class="auth-help">Co najmniej 8 znaków, maksymalnie 72 bajty.</p>
+                    <p id="register-password-help" class="auth-help"><?= $escape($t('view.interface.at_least_8_characters_up_to_72_bytes')) ?></p>
                 </div>
 
                 <div class="auth-field">
-                    <label for="register-password-confirmation">Powtórz hasło</label>
+                    <label for="register-password-confirmation"><?= $escape($t('view.interface.confirm_password')) ?></label>
                     <input
                         id="register-password-confirmation"
                         name="passwordConfirmation"
                         type="password"
                         autocomplete="new-password"
                         minlength="8"
-                        placeholder="Wpisz hasło ponownie"
+                        placeholder="<?= $escape($t('view.interface.enter_your_password_again')) ?>"
                         required
                     >
                 </div>
 
-                <button type="submit" class="auth-submit"><span aria-hidden="true">→</span> Zarejestruj się</button>
+                <button type="submit" class="auth-submit"><span aria-hidden="true">→</span> <?= $escape($t('view.interface.sign_up')) ?></button>
             </fieldset>
         </form>
 
         <div class="auth-register">
-            <p>Masz już konto?</p>
-            <a href="/login" class="auth-text-button">Zaloguj się</a>
+            <p><?= $escape($t('view.interface.already_have_an_account')) ?></p>
+            <a href="/login" class="auth-text-button"><?= $escape($t('view.interface.sign_in')) ?></a>
         </div>
     </div>
 </section>

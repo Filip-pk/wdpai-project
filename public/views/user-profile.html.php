@@ -2,13 +2,13 @@
 
 <div class="profile-page profile-overview user-profile-page" data-profile-user-id="<?= $escape($profileUser['id']) ?>">
     <div class="user-profile-toolbar">
-        <a class="user-profile-back" href="/ranking">← Ranking użytkowników</a>
+        <a class="user-profile-back" href="/ranking"><?= $escape($t('view.catalog.back_user_ranking')) ?></a>
         <?php if ($isOwnProfile): ?>
-            <a class="profile-photo-link" href="/profile">Wróć do ustawień konta</a>
+            <a class="profile-photo-link" href="/profile"><?= $escape($t('view.catalog.back_account_settings')) ?></a>
         <?php endif; ?>
     </div>
     <?php if ($blockNotice !== null): ?>
-        <p class="profile-notice" role="status"><?= $escape($blockNotice) ?></p>
+        <p class="profile-notice" role="status"><?= $escape($translateText($blockNotice)) ?></p>
     <?php endif; ?>
 
     <div class="profile-grid">
@@ -22,30 +22,30 @@
                             ✦
                         <?php endif; ?>
                     </div>
-                    <span class="user-profile-badge">Profil publiczny</span>
+                    <span class="user-profile-badge"><?= $escape($t('view.catalog.public_profile')) ?></span>
                 </div>
                 <div class="profile-identity">
-                    <p class="profile-card-label"><?= $isOwnProfile ? 'Moja przestrzeń' : 'Społeczność AniVibe' ?></p>
+                    <p class="profile-card-label"><?= $isOwnProfile ? $escape($t('view.catalog.my_space')) : $escape($t('view.catalog.community')) ?></p>
                     <h1><?= $escape($profileUser['name']) ?></h1>
-                    <p class="user-profile-joined">Dołączono: <time datetime="<?= $escape(substr($profileUser['created_at'], 0, 10)) ?>"><?= $escape(substr($profileUser['created_at'], 0, 10)) ?></time></p>
+                    <p class="user-profile-joined"><?= $escape($t('view.catalog.joined')) ?> <time datetime="<?= $escape(substr($profileUser['created_at'], 0, 10)) ?>"><?= $escape(substr($profileUser['created_at'], 0, 10)) ?></time></p>
                 </div>
 
-                <p class="profile-interests"><?= $escape($profileUser['interests'] === '' ? 'Ten użytkownik nie dodał jeszcze zainteresowań.' : $profileUser['interests']) ?></p>
+                <p class="profile-interests"><?= $escape($profileUser['interests'] === '' ? $t('view.catalog.user_no_interests') : $profileUser['interests']) ?></p>
 
                 <div class="user-profile-actions">
-                    <a class="profile-public-link" href="#watchlist-title">Zobacz watchlistę <span aria-hidden="true">↓</span></a>
+                    <a class="profile-public-link" href="#watchlist-title"><?= $escape($t('view.catalog.see_watchlist')) ?> <span aria-hidden="true">↓</span></a>
                     <?php if ($isOwnProfile): ?>
-                        <a class="user-profile-action" href="/profile">Edytuj profil</a>
+                        <a class="user-profile-action" href="/profile"><?= $escape($t('view.catalog.edit_profile')) ?></a>
                     <?php else: ?>
                         <?php if (!$blockState['blockedEitherWay'] && $canMessageProfile): ?>
-                            <a class="user-profile-action" href="<?= $isLoggedIn ? '/messages/new/' . $escape($profileUser['id']) : '/login' ?>">Napisz wiadomość</a>
+                            <a class="user-profile-action" href="<?= $isLoggedIn ? '/messages/new/' . $escape($profileUser['id']) : '/login' ?>"><?= $escape($t('view.catalog.write_message')) ?></a>
                         <?php else: ?>
-                            <p>Wysyłanie wiadomości do tego konta jest niedostępne.</p>
+                            <p><?= $escape($t('view.catalog.messaging_unavailable')) ?></p>
                         <?php endif; ?>
                         <?php if ($isLoggedIn): ?>
                             <form class="community-inline-form" action="/users/<?= $escape($profileUser['id']) ?>/<?= $blockState['blockedByMe'] ? 'unblock' : 'block' ?>" method="post">
                                 <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                                <button type="submit" data-block-user-id="<?= $escape($profileUser['id']) ?>"><?= $blockState['blockedByMe'] ? 'Odblokuj użytkownika' : 'Zablokuj użytkownika' ?></button>
+                                <button type="submit" data-block-user-id="<?= $escape($profileUser['id']) ?>"><?= $blockState['blockedByMe'] ? $escape($t('view.catalog.unblock_user')) : $escape($t('view.catalog.block_user')) ?></button>
                             </form>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -54,7 +54,7 @@
 
             <?php if ($showStatistics): ?>
             <?php
-            $experienceTitle = $isOwnProfile ? 'Twój poziom' : 'Poziom użytkownika';
+            $experienceTitle = $isOwnProfile ? $t('view.catalog.your_level') : $t('view.catalog.user_level');
             require __DIR__ . '/partials/experience.html.php';
             ?>
             <?php endif; ?>
@@ -66,42 +66,42 @@
                 <header class="profile-editor-heading">
                     <span class="profile-editor-symbol" aria-hidden="true">♡</span>
                     <div>
-                        <h2 id="user-statistics-title">Statystyki oglądania</h2>
-                        <p>Anime, odcinki i ukończone historie.</p>
+                        <h2 id="user-statistics-title"><?= $escape($t('view.catalog.watching_stats')) ?></h2>
+                        <p><?= $escape($t('view.catalog.stats_intro')) ?></p>
                     </div>
                 </header>
                 <dl class="profile-stats">
-                    <div><dt>Tytuły na watchliście</dt><dd data-watchlist-count="<?= $escape($statistics['watchlistTotal']) ?>"><?= $escape($statistics['watchlistTotal']) ?></dd></div>
-                    <div><dt>Ukończone tytuły</dt><dd data-completed-count="<?= $escape($statistics['completedCount']) ?>"><?= $escape($statistics['completedCount']) ?></dd></div>
-                    <div><dt>W trakcie oglądania</dt><dd data-watching-count="<?= $escape($statistics['watchingCount']) ?>"><?= $escape($statistics['watchingCount']) ?></dd></div>
-                    <div><dt>Obejrzane odcinki</dt><dd data-watched-episodes="<?= $escape($statistics['watchedEpisodes']) ?>"><?= $escape(number_format($statistics['watchedEpisodes'], 0, ',', ' ')) ?></dd></div>
+                    <div><dt><?= $escape($t('view.catalog.titles_on_watchlist')) ?></dt><dd data-watchlist-count="<?= $escape($statistics['watchlistTotal']) ?>"><?= $escape($statistics['watchlistTotal']) ?></dd></div>
+                    <div><dt><?= $escape($t('view.catalog.completed_titles')) ?></dt><dd data-completed-count="<?= $escape($statistics['completedCount']) ?>"><?= $escape($statistics['completedCount']) ?></dd></div>
+                    <div><dt><?= $escape($t('view.catalog.currently_watching')) ?></dt><dd data-watching-count="<?= $escape($statistics['watchingCount']) ?>"><?= $escape($statistics['watchingCount']) ?></dd></div>
+                    <div><dt><?= $escape($t('view.catalog.watched_episodes')) ?></dt><dd data-watched-episodes="<?= $escape($statistics['watchedEpisodes']) ?>"><?= $escape(number_format($statistics['watchedEpisodes'], 0, ',', ' ')) ?></dd></div>
                 </dl>
-                <p>Statystyki obejmują całą aktualną watchlistę. EXP uwzględnia również postępy zachowane po usunięciu tytułu z listy.</p>
+                <p><?= $escape($t('view.catalog.stats_help')) ?></p>
             </section>
             <?php else: ?>
-                <p class="profile-notice">Ten użytkownik ukrył statystyki i poziom na publicznym profilu.</p>
+                <p class="profile-notice"><?= $escape($t('view.catalog.stats_hidden')) ?></p>
             <?php endif; ?>
 
             <div class="profile-watchlist">
                 <section aria-labelledby="watchlist-title">
-                    <h2 id="watchlist-title">Watchlista użytkownika</h2>
+                    <h2 id="watchlist-title"><?= $escape($t('view.catalog.user_watchlist')) ?></h2>
                     <?php if ($showStatistics): ?>
-                        <p>Liczba tytułów: <?= $escape($statistics['watchlistTotal']) ?><?php if ($statusFilter !== ''): ?> · W wybranym statusie: <?= $escape($watchlistPagination['total']) ?><?php endif; ?></p>
+                        <p><?= $escape($t('view.catalog.title_count')) ?> <?= $escape($statistics['watchlistTotal']) ?><?php if ($statusFilter !== ''): ?> <?= $escape($t('view.catalog.selected_status_count')) ?> <?= $escape($watchlistPagination['total']) ?><?php endif; ?></p>
                     <?php endif; ?>
 
                     <form action="<?= $escape($profilePath) ?>" method="get" class="watchlist-toolbar">
-                        <label for="watchlist-status">Status oglądania</label>
+                        <label for="watchlist-status"><?= $escape($t('view.catalog.watch_status')) ?></label>
                         <select id="watchlist-status" name="status">
-                            <option value="">Wszystkie</option>
+                            <option value=""><?= $escape($t('view.catalog.all')) ?></option>
                             <?php foreach ($watchlistStatuses as $value => $label): ?>
-                                <option value="<?= $escape($value) ?>"<?= $statusFilter === $value ? ' selected' : '' ?>><?= $escape($label) ?></option>
+                                <option value="<?= $escape($value) ?>"<?= $statusFilter === $value ? ' selected' : '' ?>><?= $escape($translateText($label)) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="submit">Filtruj</button>
+                        <button type="submit"><?= $escape($t('view.catalog.filter')) ?></button>
                     </form>
 
                     <?php if ($visibleWatchlist === []): ?>
-                        <p class="profile-empty"><?= $watchlistPagination['watchlistTotal'] === 0 ? 'Ten użytkownik nie dodał jeszcze anime do watchlisty.' : 'Brak anime o wybranym statusie.' ?></p>
+                        <p class="profile-empty"><?= $watchlistPagination['watchlistTotal'] === 0 ? $escape($t('view.catalog.user_watchlist_empty')) : $escape($t('view.catalog.watchlist_no_status')) ?></p>
                     <?php else: ?>
                         <ul class="anime-grid">
                             <?php foreach ($visibleWatchlist as $entry): ?>
@@ -113,14 +113,14 @@
                                     <article class="watchlist-card">
                                         <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
                                         <?php if ($showRatings && isset($profileRatings[$animeId])): ?>
-                                            <p data-profile-rating="<?= $escape($profileRatings[$animeId]) ?>">Ocena użytkownika: <?= $escape($profileRatings[$animeId]) ?> / 10</p>
+                                            <p data-profile-rating="<?= $escape($profileRatings[$animeId]) ?>"><?= $escape($t('view.catalog.user_score')) ?> <?= $escape($profileRatings[$animeId]) ?> / 10</p>
                                         <?php endif; ?>
-                                        <p>Status: <?= $escape($watchlistStatuses[$entry['status']]) ?></p>
+                                        <p><?= $escape($t('view.catalog.status_prefix')) ?> <?= $escape($translateText($watchlistStatuses[$entry['status']])) ?></p>
                                         <?php if ($anime['episodes'] !== null && $anime['episodes'] > 0): ?>
-                                            <label for="user-progress-<?= $escape($animeId) ?>">Obejrzane: <?= $escape($entry['watched']) ?> / <?= $escape($anime['episodes']) ?> odcinków</label>
-                                            <progress id="user-progress-<?= $escape($animeId) ?>" value="<?= $escape($entry['watched']) ?>" max="<?= $escape($anime['episodes']) ?>"><?= $escape($entry['watched']) ?> odcinków</progress>
+                                            <label for="user-progress-<?= $escape($animeId) ?>"><?= $escape($t('view.catalog.watched_prefix')) ?> <?= $escape($entry['watched']) ?> / <?= $escape($anime['episodes']) ?> <?= $escape($t('view.catalog.episodes_suffix')) ?></label>
+                                            <progress id="user-progress-<?= $escape($animeId) ?>" value="<?= $escape($entry['watched']) ?>" max="<?= $escape($anime['episodes']) ?>"><?= $escape($entry['watched']) ?> <?= $escape($t('view.catalog.episodes_suffix')) ?></progress>
                                         <?php else: ?>
-                                            <p>Obejrzane: <?= $escape($entry['watched']) ?> odcinków · Łączna liczba odcinków nieznana</p>
+                                            <p><?= $escape($t('view.catalog.watched_prefix')) ?> <?= $escape($entry['watched']) ?> <?= $escape($t('view.catalog.episodes_unknown_total')) ?></p>
                                         <?php endif; ?>
                                     </article>
                                 </li>
@@ -129,13 +129,13 @@
                     <?php endif; ?>
 
                     <?php if ($watchlistPagination['totalPages'] > 1): ?>
-                        <nav class="watchlist-pagination" aria-label="Strony watchlisty użytkownika">
+                        <nav class="watchlist-pagination" aria-label="<?= $escape($t('view.catalog.user_watchlist_pages')) ?>">
                             <?php if ($watchlistPagination['page'] > 1): ?>
-                                <a href="<?= $escape($watchlistPagination['previousUrl']) ?>" rel="prev">← Poprzednia</a>
+                                <a href="<?= $escape($watchlistPagination['previousUrl']) ?>" rel="prev"><?= $escape($t('view.catalog.previous')) ?></a>
                             <?php endif; ?>
-                            <span>Strona <?= $escape($watchlistPagination['page']) ?> z <?= $escape($watchlistPagination['totalPages']) ?></span>
+                            <span><?= $escape($t('view.catalog.page_position', ['page' => $watchlistPagination['page'], 'pages' => $watchlistPagination['totalPages']])) ?></span>
                             <?php if ($watchlistPagination['page'] < $watchlistPagination['totalPages']): ?>
-                                <a href="<?= $escape($watchlistPagination['nextUrl']) ?>" rel="next">Następna →</a>
+                                <a href="<?= $escape($watchlistPagination['nextUrl']) ?>" rel="next"><?= $escape($t('view.catalog.next')) ?></a>
                             <?php endif; ?>
                         </nav>
                     <?php endif; ?>
