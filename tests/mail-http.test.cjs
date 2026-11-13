@@ -8,19 +8,22 @@ const expectMailFailure = process.env.ANIVIBE_EXPECT_MAIL_FAILURE === '1';
 const password = 'Powitanie-Testowe-2026!';
 
 function browser() {
-    let cookie = '';
+    const cookies = new Map();
 
     return {
+        cookies,
         async request(route, fields) {
             const response = await fetch(new URL(route, baseUrl), {
                 method: fields === undefined ? 'GET' : 'POST',
-                headers: cookie ? { Cookie: cookie } : {},
+                headers: { Cookie: [...cookies].map(([name, value]) => `${name}=${value}`).join('; ') },
                 body: fields === undefined ? undefined : new URLSearchParams(fields),
                 redirect: 'manual',
                 signal: AbortSignal.timeout(10000),
             });
             for (const value of response.headers.getSetCookie()) {
-                if (value.startsWith('PHPSESSID=')) cookie = value.split(';', 1)[0];
+                const pair = value.split(';', 1)[0];
+                const separator = pair.indexOf('=');
+                cookies.set(pair.slice(0, separator), pair.slice(separator + 1));
             }
             const html = await response.text();
             assert.doesNotMatch(html, /SQLSTATE|PDOException|Stack trace|Fatal error|Warning:|stream_socket_client|Connection refused/i);
@@ -78,6 +81,40 @@ test('welcome notifications accept only known scalar query parameters', async ()
         assert.ok(page.html.includes(`data-mail-status="${status}"`));
         assert.doesNotMatch(page.html, /mailpit|SMTP|localhost:1025/i);
     }
+});
+
+test('registration and email confirmation use the recipient language', { skip: expectMailFailure }, async () => {
+    const client = browser();
+    const email = `welcome-locale-${randomUUID()}@example.test`;
+    const name = 'Ustawienia <Ada> Łucja';
+    let token = csrf(await client.request('/register'));
+    assert.equal((await client.request('/language', { language: 'de', csrfToken: token })).status, 303);
+    assert.equal((await client.request('/register', {
+        name, email, password, passwordConfirmation: password, csrfToken: token,
+    })).status, 303);
+    const welcomeResults = await messagesTo(email);
+    assert.equal(welcomeResults.messages_count, 1);
+    const welcome = await mailpit(`/api/v1/message/${encodeURIComponent(welcomeResults.messages[0].ID)}`);
+    assert.equal(welcome.Subject, 'Willkommen bei AniVibe — hallo!');
+    assert.ok(welcome.Text.includes(`Hallo ${name}!`));
+
+    assert.equal((await client.request('/login', { email, password, csrfToken: token })).status, 303);
+    const settings = await client.request('/settings');
+    assert.match(settings.html, /<html lang="de"/);
+    token = csrf(settings);
+    await client.request('/language', { language: 'fr', csrfToken: token });
+    client.cookies.set('anivibe_language', 'ru');
+    const newEmail = `confirmation-locale-${randomUUID()}@example.test`;
+    const requested = await client.request('/settings/email', {
+        csrfToken: token, currentPassword: password, newEmail, newEmailConfirmation: newEmail,
+    });
+    assert.equal(requested.status, 303);
+    const confirmationResults = await messagesTo(newEmail);
+    assert.equal(confirmationResults.messages_count, 1);
+    const confirmation = await mailpit(`/api/v1/message/${encodeURIComponent(confirmationResults.messages[0].ID)}`);
+    assert.equal(confirmation.Subject, 'AniVibe — confirmez votre nouvelle adresse e-mail');
+    assert.match(confirmation.Text, /Code de confirmation : [a-f0-9]{32}/);
+    assert.ok(!confirmation.Text.includes(password));
 });
 
 test(expectMailFailure ? 'SMTP failure preserves the account and allows login' : 'registration sends exactly one UTF-8 welcome message', async () => {
