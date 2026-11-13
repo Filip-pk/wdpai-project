@@ -139,6 +139,11 @@ final class MessageRepository
         $completed = false;
 
         try {
+            $this->lockUsers($userId, $recipientId);
+            if (!$this->canReceiveFromUser($userId, $recipientId)) {
+                return null;
+            }
+
             $statement = $this->database->prepare(
                 'INSERT INTO private_conversations (first_user_id, second_user_id)
                  SELECT first_user.id, second_user.id FROM users AS first_user
@@ -192,11 +197,55 @@ final class MessageRepository
     {
         $body = MessageService::normalize($body);
         $this->validateBody($body);
+        $conversation = $this->findForUser($userId, $conversationId);
+        if ($conversation === null) {
+            return null;
+        }
+
+        // CommunityService already holds these ordered locks for HTTP writes. Keep
+        // repository calls safe as well, including changes from another session.
+        return (new CommunityRepository($this->database))->withUsersLocked(
+            [$userId, $conversation['recipientId']],
+            fn (): ?int => $this->insertMessageForUser($userId, $conversationId, $body),
+        );
+    }
+
+    public function canReceiveFromUser(int $senderId, int $recipientId): bool
+    {
+        $statement = $this->database->prepare(
+            "SELECT 1 FROM users AS recipient WHERE recipient.id = :recipient
+               AND recipient.id <> :sender
+               AND (recipient.message_policy = 'everyone'
+                    OR (recipient.message_policy = 'existing' AND EXISTS (
+                        SELECT 1 FROM private_conversations
+                        WHERE first_user_id = :first_user AND second_user_id = :second_user
+                    )))"
+        );
+        $statement->execute([
+            'recipient' => $recipientId, 'sender' => $senderId,
+            'first_user' => min($senderId, $recipientId), 'second_user' => max($senderId, $recipientId),
+        ]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    private function lockUsers(int $userId, int $recipientId): void
+    {
+        $lock = $this->database->prepare('SELECT id FROM users WHERE id IN (:first, :second) ORDER BY id FOR UPDATE');
+        $lock->execute(['first' => min($userId, $recipientId), 'second' => max($userId, $recipientId)]);
+        $lock->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    private function insertMessageForUser(int $userId, int $conversationId, string $body): ?int
+    {
         $statement = $this->database->prepare(
             'INSERT INTO private_messages (conversation_id, sender_id, body)
              SELECT conversations.id, :sender_id, :body FROM private_conversations AS conversations
+             JOIN users AS recipient ON recipient.id = CASE WHEN conversations.first_user_id = :viewer_id
+                 THEN conversations.second_user_id ELSE conversations.first_user_id END
              WHERE conversations.id = :conversation_id
                AND (conversations.first_user_id = :first_participant OR conversations.second_user_id = :second_participant)
+               AND recipient.message_policy <> \'nobody\'
                AND NOT EXISTS (
                    SELECT 1 FROM user_blocks
                    WHERE (blocker_id = conversations.first_user_id AND blocked_id = conversations.second_user_id)
@@ -206,6 +255,7 @@ final class MessageRepository
         );
         $statement->execute([
             'sender_id' => $userId, 'body' => $body, 'conversation_id' => $conversationId,
+            'viewer_id' => $userId,
             'first_participant' => $userId, 'second_participant' => $userId,
         ]);
         $id = $statement->fetchColumn();

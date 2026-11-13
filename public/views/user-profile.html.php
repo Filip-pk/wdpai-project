@@ -37,7 +37,7 @@
                     <?php if ($isOwnProfile): ?>
                         <a class="user-profile-action" href="/profile">Edytuj profil</a>
                     <?php else: ?>
-                        <?php if (!$blockState['blockedEitherWay']): ?>
+                        <?php if (!$blockState['blockedEitherWay'] && $canMessageProfile): ?>
                             <a class="user-profile-action" href="<?= $isLoggedIn ? '/messages/new/' . $escape($profileUser['id']) : '/login' ?>">Napisz wiadomość</a>
                         <?php else: ?>
                             <p>Wysyłanie wiadomości do tego konta jest niedostępne.</p>
@@ -52,13 +52,16 @@
                 </div>
             </header>
 
+            <?php if ($showStatistics): ?>
             <?php
             $experienceTitle = $isOwnProfile ? 'Twój poziom' : 'Poziom użytkownika';
             require __DIR__ . '/partials/experience.html.php';
             ?>
+            <?php endif; ?>
         </div>
 
         <div class="user-profile-content">
+            <?php if ($showStatistics): ?>
             <section class="profile-summary user-profile-statistics" aria-labelledby="user-statistics-title">
                 <header class="profile-editor-heading">
                     <span class="profile-editor-symbol" aria-hidden="true">♡</span>
@@ -75,11 +78,16 @@
                 </dl>
                 <p>Statystyki obejmują całą aktualną watchlistę. EXP uwzględnia również postępy zachowane po usunięciu tytułu z listy.</p>
             </section>
+            <?php else: ?>
+                <p class="profile-notice">Ten użytkownik ukrył statystyki i poziom na publicznym profilu.</p>
+            <?php endif; ?>
 
             <div class="profile-watchlist">
                 <section aria-labelledby="watchlist-title">
                     <h2 id="watchlist-title">Watchlista użytkownika</h2>
-                    <p>Liczba tytułów: <?= $escape($statistics['watchlistTotal']) ?><?php if ($statusFilter !== ''): ?> · W wybranym statusie: <?= $escape($watchlistPagination['total']) ?><?php endif; ?></p>
+                    <?php if ($showStatistics): ?>
+                        <p>Liczba tytułów: <?= $escape($statistics['watchlistTotal']) ?><?php if ($statusFilter !== ''): ?> · W wybranym statusie: <?= $escape($watchlistPagination['total']) ?><?php endif; ?></p>
+                    <?php endif; ?>
 
                     <form action="<?= $escape($profilePath) ?>" method="get" class="watchlist-toolbar">
                         <label for="watchlist-status">Status oglądania</label>
@@ -93,7 +101,7 @@
                     </form>
 
                     <?php if ($visibleWatchlist === []): ?>
-                        <p class="profile-empty"><?= $statistics['watchlistTotal'] === 0 ? 'Ten użytkownik nie dodał jeszcze anime do watchlisty.' : 'Brak anime o wybranym statusie.' ?></p>
+                        <p class="profile-empty"><?= $watchlistPagination['watchlistTotal'] === 0 ? 'Ten użytkownik nie dodał jeszcze anime do watchlisty.' : 'Brak anime o wybranym statusie.' ?></p>
                     <?php else: ?>
                         <ul class="anime-grid">
                             <?php foreach ($visibleWatchlist as $entry): ?>
@@ -104,6 +112,9 @@
                                 <li data-anime-id="<?= $escape($animeId) ?>" data-watchlist-status="<?= $escape($entry['status']) ?>" data-watched="<?= $escape($entry['watched']) ?>">
                                     <article class="watchlist-card">
                                         <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
+                                        <?php if ($showRatings && isset($profileRatings[$animeId])): ?>
+                                            <p data-profile-rating="<?= $escape($profileRatings[$animeId]) ?>">Ocena użytkownika: <?= $escape($profileRatings[$animeId]) ?> / 10</p>
+                                        <?php endif; ?>
                                         <p>Status: <?= $escape($watchlistStatuses[$entry['status']]) ?></p>
                                         <?php if ($anime['episodes'] !== null && $anime['episodes'] > 0): ?>
                                             <label for="user-progress-<?= $escape($animeId) ?>">Obejrzane: <?= $escape($entry['watched']) ?> / <?= $escape($anime['episodes']) ?> odcinków</label>

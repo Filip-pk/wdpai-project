@@ -112,16 +112,15 @@ final class UserRepository
             : null;
     }
 
-    public function updateProfile(int $userId, string $name, string $email, string $interests, string $theme): void
+    public function updateProfile(int $userId, string $name, string $interests, string $theme): void
     {
         $statement = $this->database->prepare(
-            'UPDATE users SET name = :name, email = :email, interests = :interests, theme = :theme
+            'UPDATE users SET name = :name, interests = :interests, theme = :theme
              WHERE id = :id'
         );
         $statement->execute([
             'id' => $userId,
             'name' => $name,
-            'email' => $email,
             'interests' => $interests,
             'theme' => $theme,
         ]);

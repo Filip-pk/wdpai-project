@@ -50,6 +50,10 @@ final class MessageController extends AppController
 
         $body = MessageService::normalize($this->postString('body'));
         $errors = $this->validateMessage($body);
+        if ($errors === [] && !$this->messages()->canReceiveFromUser($user['id'], $id)) {
+            http_response_code(403);
+            $errors[] = 'Wysyłanie wiadomości do tego konta jest niedostępne.';
+        }
         if ($errors !== []) {
             $this->renderMessages($user, recipient: $recipient, errors: $errors, body: $body);
             return;
@@ -88,6 +92,10 @@ final class MessageController extends AppController
         if ($this->isPost()) {
             $body = MessageService::normalize($this->postString('body'));
             $errors = $this->validateMessage($body);
+            if ($errors === [] && !$this->messages()->canReceiveFromUser($user['id'], $conversation['recipientId'])) {
+                http_response_code(403);
+                $errors[] = 'Wysyłanie wiadomości do tego konta jest niedostępne.';
+            }
             if ($errors !== []) {
                 $this->renderMessages($user, $conversation, errors: $errors, body: $body);
                 return;
@@ -180,7 +188,8 @@ final class MessageController extends AppController
             'messagePage' => $messagePage,
             'errors' => $errors,
             'body' => $body,
-            'canSend' => !$blockState['blockedEitherWay'],
+            'canSend' => !$blockState['blockedEitherWay'] && ($conversation === null
+                || $this->messages()->canReceiveFromUser($user['id'], $conversation['recipientId'])),
             'isBlockedByMe' => $blockState['blockedByMe'],
             'sent' => !$this->isPost() && ($_GET['sent'] ?? null) === '1',
         ]);

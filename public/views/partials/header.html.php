@@ -51,10 +51,12 @@ $isRedesignPage = $isWelcome || $isAuthPage
     || str_starts_with((string) $currentPath, '/users/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
 $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
+$isSettingsPage = $currentPath === '/settings' || str_starts_with((string) $currentPath, '/settings/');
+$isRedesignPage = $isRedesignPage || $isSettingsPage;
 ?>
 
 <!doctype html>
-<html lang="pl"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>"<?php endif; ?>>
+<html lang="pl"<?php if ($accountId !== null): ?> data-account-id="<?= $escape($accountId) ?>" data-account-theme="<?= $escape($accountTheme) ?>" data-font-size="<?= $escape($accountPreferences['font_size'] ?? 'standard') ?>" data-line-height="<?= $escape($accountPreferences['line_height'] ?? 'standard') ?>" data-density="<?= $escape($accountPreferences['interface_density'] ?? 'comfortable') ?>" data-high-contrast="<?= $escape($accountPreferences['high_contrast'] ?? '0') ?>" data-reduced-motion="<?= $escape($accountPreferences['reduced_motion'] ?? '0') ?>" data-strong-focus="<?= $escape($accountPreferences['strong_focus'] ?? '0') ?>" data-large-controls="<?= $escape($accountPreferences['large_controls'] ?? '0') ?>" data-message-text-size="<?= $escape($accountPreferences['message_text_size'] ?? 'standard') ?>" data-comment-text-size="<?= $escape($accountPreferences['comment_text_size'] ?? 'standard') ?>"<?php endif; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -178,6 +180,13 @@ $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
     <?php endif; ?>
     <?php if ($isErrorPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/error.css') ?>">
+    <?php endif; ?>
+    <?php if ($isSettingsPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/settings.css') ?>">
+        <script src="<?= $assetUrl('/js/settings.js') ?>" defer></script>
+    <?php endif; ?>
+    <?php if ($isLoggedIn): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/preferences.css') ?>">
     <?php endif; ?>
 </head>
 <body class="<?= $isWelcome ? 'page-welcome' : 'page-standard' ?><?= $isWorkspace ? ' page-workspace' : ' page-public' ?><?= $isRedesignPage ? ' page-redesign' : '' ?><?= $isAuthPage ? ' page-auth' : '' ?><?= $isDiscoveryPage ? ' page-discovery' : '' ?><?= $isLibraryPage ? ' page-library' : '' ?><?= $isErrorPage ? ' page-error' : '' ?><?= $isCommunityPage ? ' page-community' : '' ?><?= $isAiPage ? ' page-ai' : '' ?><?= $isProjectsPage ? ' page-projects' : '' ?><?= $isImportPage ? ' page-import' : '' ?><?= $isModerationPage ? ' page-moderation' : '' ?>">

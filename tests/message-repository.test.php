@@ -110,6 +110,23 @@ try {
         $assert($messages->findMessagesPageForUser(101, PHP_INT_MAX) === null);
     });
 
+    $run('Polityki odbiorcy chronią bezpośrednie zapisy i zachowują historię rozmowy', static function () use ($messages, $connection, $assert): void {
+        $connection->exec("UPDATE users SET message_policy = 'existing' WHERE id = 202");
+        $assert(!$messages->canReceiveFromUser(101, 202));
+        $assert($messages->startWithMessageForUser(101, 202, 'Nieistniejąca rozmowa') === null);
+        $assert((int) $connection->query('SELECT count(*) FROM private_conversations')->fetchColumn() === 0);
+        $conversation = $messages->startWithMessageForUser(202, 101, 'Odbiorca rozpoczyna rozmowę');
+        $assert($conversation !== null);
+        $assert($messages->canReceiveFromUser(101, 202));
+        $assert($messages->sendForUser(101, $conversation, 'Istniejąca rozmowa') !== null);
+        $connection->exec("UPDATE users SET message_policy = 'nobody' WHERE id = 202");
+        $assert(!$messages->canReceiveFromUser(101, 202));
+        $assert($messages->sendForUser(101, $conversation, 'Odmowa odpowiedzi') === null);
+        $assert($messages->startWithMessageForUser(101, 202, 'Odmowa przez compose') === null);
+        $assert($messages->findMessagesPageForUser(101, $conversation)['total'] === 2);
+        $assert($messages->sendForUser(202, $conversation, 'Wiadomość wychodząca') !== null);
+    });
+
     $run('Rozpoczęcie rozmowy w obu kierunkach tworzy jedną uporządkowaną parę', static function () use ($messages, $connection, $assert): void {
         $first = $messages->startWithMessageForUser(202, 101, 'Pierwsza wiadomość');
         $second = $messages->startWithMessageForUser(101, 202, 'Odpowiedź');

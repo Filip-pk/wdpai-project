@@ -5,12 +5,19 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\CommunityRepository;
+use App\Repository\PreferencesRepository;
 use App\Repository\UserRepository;
 use Closure;
 
 abstract class AppController
 {
     private CommunityRepository|Closure|null $communityRepository = null;
+    private PreferencesRepository|Closure|null $preferencesRepository = null;
+
+    public function setPreferencesRepository(PreferencesRepository|Closure $repository): void
+    {
+        $this->preferencesRepository = $repository;
+    }
 
     public function setCommunityRepository(CommunityRepository|Closure $repository): void
     {
@@ -87,6 +94,15 @@ abstract class AppController
         $currentUserAvatarUrl = $isLoggedIn ? ($_SESSION['user_avatar_url'] ?? null) : null;
         $accountId = $isLoggedIn ? $_SESSION['user_id'] : null;
         $accountTheme = $isLoggedIn ? ($_SESSION['user_theme'] ?? 'system') : null;
+        $accountPreferences = [];
+        if ($isLoggedIn && $this->preferencesRepository !== null) {
+            if ($this->preferencesRepository instanceof Closure) {
+                $this->preferencesRepository = ($this->preferencesRepository)();
+            }
+            $accountPreferences = $this->preferencesRepository->forUser($accountId);
+            $accountTheme = $accountPreferences['theme'] ?? $accountTheme;
+            $_SESSION['user_theme'] = $accountTheme;
+        }
         $csrfToken = $this->csrfToken();
         $unreadMessageCount = 0;
         $unreadReplyCount = 0;

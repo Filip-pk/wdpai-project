@@ -167,21 +167,20 @@ test('profiles, preferences and watchlists belong to the signed-in account', asy
         counts(await first.client.request('/profile'), 0, 0);
     });
 
-    await t.test('changing email requires the current password and preserves account preferences', async () => {
+    await t.test('profile writes cannot bypass email confirmation and preserve account preferences', async () => {
         const email = `changed-${randomUUID()}@example.test`;
         const fields = { name: changedName, email, interests, theme: 'light', csrfToken: first.token };
-        for (const currentPassword of ['', 'Wrong-password!']) {
+        for (const currentPassword of ['', 'Wrong-password!', password]) {
             const page = await first.client.request('/profile', { ...fields, currentPassword });
             assert.equal(page.status, 422);
             if (currentPassword) assert.ok(!page.html.includes(currentPassword));
             assert.doesNotMatch(page.html, /<input\b[^>]*type="password"[^>]*\bvalue=/);
         }
-        redirected(await first.client.request('/profile', { ...fields, currentPassword: password }), '/profile?saved=1');
-        assert.ok((await first.client.request('/profile')).html.includes(email));
+        assert.ok(!(await first.client.request('/profile')).html.includes(email));
         redirected(await first.client.request('/logout', { csrfToken: first.token }), '/login');
         const token = csrf(await first.client.request('/login'));
-        assert.equal((await first.client.request('/login', { email: first.email, password, csrfToken: token })).status, 401);
-        redirected(await first.client.request('/login', { email: email.toUpperCase(), password, csrfToken: token }), '/projects');
+        assert.equal((await first.client.request('/login', { email, password, csrfToken: token })).status, 401);
+        redirected(await first.client.request('/login', { email: first.email.toUpperCase(), password, csrfToken: token }), '/projects');
         const page = await first.client.request('/profile');
         assert.match(page.html, /value="light"\s+selected/);
         assert.ok(page.html.includes('Łucja'));
