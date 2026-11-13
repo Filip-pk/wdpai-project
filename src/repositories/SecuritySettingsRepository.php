@@ -72,7 +72,12 @@ final class SecuritySettingsRepository
 
     public function confirmEmailChange(int $userId, string $tokenHash): ?string
     {
-        $this->database->beginTransaction();
+        $ownsTransaction = !$this->database->inTransaction();
+        if ($ownsTransaction) {
+            $this->database->beginTransaction();
+        } else {
+            $this->database->exec('SAVEPOINT confirm_email_change');
+        }
 
         try {
             // Serializacja z równoległą zmianą hasła lub danych tego samego konta.
@@ -89,18 +94,30 @@ final class SecuritySettingsRepository
             $email = $pending->fetchColumn();
 
             if (!is_string($email)) {
-                $this->database->rollBack();
+                if ($ownsTransaction) {
+                    $this->database->rollBack();
+                } else {
+                    $this->database->exec('ROLLBACK TO SAVEPOINT confirm_email_change');
+                    $this->database->exec('RELEASE SAVEPOINT confirm_email_change');
+                }
                 return null;
             }
 
             $update = $this->database->prepare('UPDATE users SET email = :email WHERE id = :id');
             $update->execute(['id' => $userId, 'email' => $email]);
-            $this->database->commit();
+            if ($ownsTransaction) {
+                $this->database->commit();
+            } else {
+                $this->database->exec('RELEASE SAVEPOINT confirm_email_change');
+            }
 
             return $email;
         } catch (Throwable $exception) {
-            if ($this->database->inTransaction()) {
+            if ($ownsTransaction && $this->database->inTransaction()) {
                 $this->database->rollBack();
+            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
+                $this->database->exec('ROLLBACK TO SAVEPOINT confirm_email_change');
+                $this->database->exec('RELEASE SAVEPOINT confirm_email_change');
             }
             throw $exception;
         }

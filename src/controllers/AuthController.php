@@ -56,6 +56,9 @@ final class AuthController extends AppController
                         'logged_in_at' => time(),
                     ];
                     $this->csrfToken();
+                    if ($this->accountModeration()?->activeBanForUser((int) $user['id']) !== null) {
+                        $this->redirect('/account/banned');
+                    }
                     $this->redirect('/projects');
                 }
             }
