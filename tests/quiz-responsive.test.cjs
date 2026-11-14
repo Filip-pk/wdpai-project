@@ -123,7 +123,7 @@ async function inspect(cdp, route, state, width, theme) {
     await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: width < 768 });
     const previousOrigin = await cdp.evaluate('performance.timeOrigin');
     await cdp.send('Page.navigate', { url: new URL(route, baseUrl).href });
-    const selector = route === '/dashboard' ? '.daily-quiz-card' : '[data-quiz-page]';
+    const selector = route === '/dashboard' ? '.daily-quiz-card' : (route.startsWith('/quiz/ranking') ? '[data-quiz-ranking-period]' : '[data-quiz-page]');
     await waitFor(cdp, `performance.timeOrigin !== ${previousOrigin} && document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(selector)}))`);
     await cdp.evaluate(`document.documentElement.dataset.theme = ${JSON.stringify(theme)}`);
     await cdp.evaluate('document.fonts.ready');
@@ -136,9 +136,11 @@ async function inspect(cdp, route, state, width, theme) {
         if (target) target.focus();
         const style = target ? getComputedStyle(target) : null;
         const root = document.querySelector('[data-quiz-page]');
+        const ranking = document.querySelector('[data-quiz-ranking-period]');
+        const summary = document.querySelector('[data-quiz-correct][data-quiz-answered]');
         return {
             viewport: window.innerWidth, documentWidth: document.documentElement.scrollWidth,
-            state: root?.dataset.quizState ?? 'dashboard',
+            state: root?.dataset.quizState ?? (ranking ? 'ranking' : 'dashboard'),
             unlabelled: fields.filter(field => ![...field.labels ?? []].some(label => visible(label) && label.textContent.trim())).map(field => field.id),
             unnamed: controls.filter(control => !(control.textContent.trim() || control.getAttribute('aria-label'))).map(control => control.outerHTML),
             questionCount: document.querySelectorAll('[data-quiz-question-id]').length,
@@ -148,6 +150,13 @@ async function inspect(cdp, route, state, width, theme) {
             errors: /SQLSTATE|PDOException|Fatal error|Warning:/.test(document.body.textContent),
             score: document.querySelector('[data-quiz-score]')?.dataset.quizScore,
             streak: document.querySelector('[data-quiz-streak]')?.dataset.quizStreak,
+            correct: summary?.dataset.quizCorrect,
+            answered: summary?.dataset.quizAnswered,
+            period: ranking?.dataset.quizRankingPeriod,
+            activeTab: document.querySelector('.quiz-ranking-tabs [aria-current="page"]')?.getAttribute('href'),
+            ownRank: document.querySelector('[data-own-quiz-rank]')?.dataset.ownQuizRank,
+            sourceLinks: document.querySelectorAll('.quiz-source, .quiz-review a[href^="http"]').length,
+            leakedAnswerKey: /correctOption|data-correct-option|data-quiz-answer-key/.test(document.querySelector('main')?.innerHTML ?? ''),
         };
     })()`);
     assert.equal(metrics.state, state, route + ' state');
@@ -156,16 +165,31 @@ async function inspect(cdp, route, state, width, theme) {
     assert.deepEqual(metrics.unnamed, [], 'All controls have accessible names');
     assert.ok(metrics.visibleFocus, 'Keyboard focus is visible: ' + JSON.stringify({ route, width, theme, focus: metrics.focus }));
     assert.equal(metrics.errors, false, 'No runtime warnings in the page');
+    assert.equal(metrics.sourceLinks, 0, 'Quiz views do not show source references');
+    assert.equal(metrics.leakedAnswerKey, false, 'The browser does not receive the answer key');
     if (state === 'available') {
         assert.equal(metrics.questionCount, 5);
         assert.equal(metrics.legendCount, 5);
     }
-    if (state === 'completed') assert.equal(metrics.score, '5');
+    if (state === 'completed') {
+        assert.equal(metrics.score, '5');
+        assert.equal(metrics.correct, '5');
+        assert.equal(metrics.answered, '5');
+    }
+    if (state === 'available') {
+        assert.equal(metrics.correct, '0');
+        assert.equal(metrics.answered, '0');
+    }
+    if (state === 'ranking') {
+        const period = route.includes('period=monthly') ? 'monthly' : 'overall';
+        assert.equal(metrics.period, period);
+        assert.equal(metrics.activeTab, period === 'monthly' ? '/quiz/ranking?period=monthly' : '/quiz/ranking');
+    }
     assert.deepEqual(cdp.errors, [], 'No JavaScript exceptions');
     return metrics;
 }
 
-test('daily quiz fits mobile, tablet and desktop in both themes, with keyboard completion and no JavaScript', { timeout: 180000 }, async t => {
+test('daily quiz and rankings fit all viewports, preserve translated drafts and support completion without JavaScript', { timeout: 240000 }, async t => {
     const fixture = createQuizFixture();
     let browser;
     try {
@@ -189,6 +213,47 @@ test('daily quiz fits mobile, tablet and desktop in both themes, with keyboard c
                 });
             }
         }
+
+        await t.test('changing the language preserves checked indices while translating questions and options', async () => {
+            await inspect(cdp, '/quiz', 'available', 768, 'light');
+            const readQuestions = `(() => [...document.querySelectorAll('[data-quiz-question-id]')].map(fieldset => ({
+                id: Number(fieldset.dataset.quizQuestionId),
+                question: fieldset.querySelector('legend > span:last-child').textContent.trim(),
+                options: [...fieldset.querySelectorAll('.quiz-option > span:last-child')].map(option => option.textContent.trim()),
+                values: [...fieldset.querySelectorAll('input[type="radio"]')].map(input => input.value),
+                checked: fieldset.querySelector('input:checked')?.value ?? null,
+            })))()`;
+            const before = await cdp.evaluate(readQuestions);
+            assert.equal(before.length, 5);
+            const selectedId = before[0].id;
+            await cdp.evaluate(`document.querySelector('input[name="answers[${selectedId}]"][value="2"]').click()`);
+            const changeLanguage = async locale => {
+                const previousOrigin = await cdp.evaluate('performance.timeOrigin');
+                await cdp.evaluate(`(() => {
+                    const form = document.querySelector('form[action="/language"]');
+                    form.closest('details')?.setAttribute('open', '');
+                    form.querySelector('[name="language"]').value = ${JSON.stringify(locale)};
+                    form.requestSubmit();
+                })()`);
+                await waitFor(cdp, `performance.timeOrigin !== ${previousOrigin} && document.readyState === 'complete' && document.documentElement.lang === ${JSON.stringify(locale)} && Boolean(document.querySelector('[data-quiz-form]'))`);
+            };
+            await changeLanguage('en');
+            const translated = await cdp.evaluate(readQuestions);
+            assert.deepEqual(translated.map(question => question.id), before.map(question => question.id));
+            assert.deepEqual(translated.map(question => question.values), before.map(question => question.values));
+            assert.equal(translated.find(question => question.id === selectedId).checked, '2');
+            assert.ok(translated.some((question, index) => question.question !== before[index].question), 'Question wording changes into English');
+            for (const question of translated) {
+                const expected = fixture.localized.en.questions.find(entry => entry.id === question.id);
+                assert.equal(question.question, expected.question);
+                assert.deepEqual(question.options, expected.options, 'Each translated option retains its original answer index');
+            }
+            await changeLanguage('pl');
+            const restored = await cdp.evaluate(readQuestions);
+            assert.deepEqual(restored.map(question => question.question), before.map(question => question.question));
+            assert.deepEqual(restored.map(question => question.options), before.map(question => question.options));
+            assert.equal(restored.find(question => question.id === selectedId).checked, '2');
+        });
 
         await cdp.send('Emulation.setScriptExecutionDisabled', { value: true });
         await inspect(cdp, '/quiz', 'available', 320, 'dark');
@@ -218,7 +283,30 @@ test('daily quiz fits mobile, tablet and desktop in both themes, with keyboard c
                     await inspect(cdp, '/quiz', 'completed', width, theme);
                     const dashboard = await inspect(cdp, '/dashboard', 'dashboard', width, theme);
                     assert.equal(dashboard.streak, '1', 'Dashboard displays the recorded streak');
+                    assert.equal(dashboard.correct, '5');
+                    assert.equal(dashboard.answered, '5');
                 });
+            }
+        }
+
+        for (const period of ['overall', 'monthly']) {
+            const route = period === 'overall' ? '/quiz/ranking' : '/quiz/ranking?period=monthly';
+            for (const theme of ['light', 'dark']) {
+                for (const width of [320, 768, 1440]) {
+                    await t.test('ranking / ' + period + ' / ' + theme + ' / ' + width + 'px', async () => {
+                        const ranking = await inspect(cdp, route, 'ranking', width, theme);
+                        assert.ok(Number(ranking.ownRank) >= 1, 'The participant has a position in the selected ranking');
+                        const ownCorrect = await cdp.evaluate(`document.querySelector('[data-quiz-ranking-user="${fixture.owner.id}"]')?.dataset.quizRankingCorrect`);
+                        // The own-rank card remains visible even when the account is outside the top 100.
+                        if (ownCorrect !== undefined) assert.equal(ownCorrect, '5');
+                        if (period === 'overall' && ((width === 320 && theme === 'dark') || (width === 1440 && theme === 'light'))) {
+                            const screenshot = path.join(os.tmpdir(), 'anivibe-quiz-ranking-' + width + '-' + theme + '-' + fixture.marker + '.png');
+                            const captured = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+                            fs.writeFileSync(screenshot, Buffer.from(captured.data, 'base64'));
+                            t.diagnostic('Ranking screenshot: ' + screenshot);
+                        }
+                    });
+                }
             }
         }
         await inspect(cdp, '/quiz', 'completed', 1440, 'light');

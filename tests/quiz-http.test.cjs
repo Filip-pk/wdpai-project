@@ -2,6 +2,8 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { createQuizFixture, cleanupQuizFixture, browser, csrf, login, quizFields } = require('./helpers/quiz-fixtures.cjs');
 
+const escapeHtml = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
 function score(page, expected) {
     assert.equal(page.status, 200);
     assert.match(page.html, new RegExp('data-quiz-score="' + expected + '"'));
@@ -29,6 +31,26 @@ test('daily quiz validates on the server, saves once per account and preserves E
             const post = await guest.request('/quiz', fields);
             assert.equal(post.status, 303);
             assert.equal(post.headers.get('location'), '/login');
+            const ranking = await guest.request('/quiz/ranking');
+            assert.equal(ranking.status, 303);
+            assert.equal(ranking.headers.get('location'), '/login');
+        });
+
+        await t.test('questions, choices and explanations follow all six languages without changing IDs', async () => {
+            for (const locale of ['en', 'de', 'fr', 'es', 'ru', 'pl']) {
+                const changed = await owner.request('/language', { language: locale, returnTo: '/quiz', csrfToken: token });
+                assert.equal(changed.status, 303);
+                const translated = await owner.request('/quiz');
+                assert.equal(translated.status, 200);
+                assert.match(translated.html, new RegExp('<html lang="' + locale + '"'));
+                assert.doesNotMatch(translated.html, /quiz-language-note/);
+                if (locale !== 'pl') assert.doesNotMatch(translated.html, /<fieldset[^>]*\blang="pl"/);
+                for (const question of fixture.localized[locale].questions) {
+                    assert.ok(translated.html.includes(escapeHtml(question.question)), locale + ': translated question');
+                    question.options.forEach(option => assert.ok(translated.html.includes(escapeHtml(option)), locale + ': translated option'));
+                    assert.ok(!translated.html.includes(escapeHtml(question.explanation)), locale + ': no early explanation');
+                }
+            }
         });
 
         await t.test('daily questions are stable and answers stay on the server', async () => {
@@ -110,7 +132,8 @@ test('daily quiz validates on the server, saves once per account and preserves E
             score(await owner.request('/quiz'), 0);
             score(await sameAccount.request('/quiz'), 0);
             const result = await owner.request('/quiz');
-            assert.ok(result.html.includes(fixture.quiz.questions[0].explanation));
+            assert.ok(result.html.includes(escapeHtml(fixture.quiz.questions[0].explanation)));
+            assert.doesNotMatch(result.html, /quiz-source|Sprawdź źródło|sourceUrl/);
         });
 
         await t.test('the second account has an independent result and a fresh session retains participation', async () => {
@@ -119,6 +142,28 @@ test('daily quiz validates on the server, saves once per account and preserves E
             score(await other.request('/quiz'), 5);
             const freshSession = await login(fixture.owner, fixture.password);
             score(await freshSession.request('/quiz'), 0);
+        });
+
+        await t.test('aggregate scores and both leaderboard tabs use completed answers only', async () => {
+            const ownerPage = await owner.request('/quiz');
+            assert.match(ownerPage.html, /data-quiz-correct="0" data-quiz-answered="5"/);
+            const otherPage = await other.request('/quiz');
+            assert.match(otherPage.html, /data-quiz-correct="5" data-quiz-answered="5"/);
+            for (const period of ['overall', 'monthly']) {
+                const route = '/quiz/ranking?period=' + period;
+                const ranked = await other.request(route);
+                assert.equal(ranked.status, 200);
+                assert.match(ranked.html, new RegExp('data-quiz-ranking-period="' + period + '"'));
+                const row = ranked.html.match(new RegExp('<li[^>]+data-quiz-ranking-user="' + fixture.other.id + '"[^>]*>'));
+                if (row) assert.match(row[0], /data-quiz-ranking-correct="5"/);
+                assert.match(ranked.html, /data-own-quiz-rank="\d+"/);
+                assert.match(ranked.html, /data-own-quiz-correct="5" data-own-quiz-total="5"/);
+                assert.ok(!ranked.html.includes(fixture.owner.email) && !ranked.html.includes(fixture.other.email));
+                assert.ok(!ranked.html.includes('<svg onload=alert(1)>'));
+                if (row) assert.ok(ranked.html.includes('Quiz other &lt;svg onload=alert(1)&gt;'));
+            }
+            assert.equal((await owner.request('/quiz/ranking?period=forged')).status, 400);
+            assert.equal((await owner.request('/quiz/ranking?period[]=monthly')).status, 400);
         });
     } finally {
         assert.equal(cleanupQuizFixture(fixture).removed, 2);

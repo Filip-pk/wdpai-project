@@ -30,6 +30,9 @@ try {
         $result[$role] = ['id' => $id, 'email' => $email];
     }
     $result['quiz'] = (new App\Service\QuizService(new App\Repository\QuizRepository($db)))->dailyQuiz();
+    foreach (array_keys(App\Service\Translator::LANGUAGES) as $locale) {
+        $result['localized'][$locale] = App\Service\QuizQuestionLocalizer::localize($result['quiz'], $locale);
+    }
     $db->commit();
     echo json_encode($result, JSON_THROW_ON_ERROR);
 } catch (Throwable $exception) {
