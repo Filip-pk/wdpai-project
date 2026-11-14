@@ -28,6 +28,8 @@
         <p class="dashboard-demo-notice"><?= $escape($t('view.catalog.dashboard_demo')) ?></p>
     </header>
 
+    <?php require __DIR__ . '/partials/daily-quiz.html.php'; ?>
+
     <section class="mood-panel" aria-labelledby="mood-title">
         <header class="dashboard-section-heading">
             <div class="dashboard-section-title">

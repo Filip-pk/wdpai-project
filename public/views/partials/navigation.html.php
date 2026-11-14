@@ -29,6 +29,7 @@ $primaryNavigation = [
     '/profile' => $t('navigation.profile'),
 ];
 $secondaryNavigation = [
+    '/quiz' => $t('navigation.quiz'),
     '/anime' => $t('navigation.catalog'),
     '/anime/ranking' => $t('navigation.anime_ranking'),
     '/messages' => $t('navigation.messages'),
@@ -57,6 +58,7 @@ $navigationIcon = static function (string $url): string {
         '/watchlist' => '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
         '/profile' => '<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/>',
         '/anime' => '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m10 8 6 4-6 4Z"/>',
+        '/quiz' => '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 8a3 3 0 0 1 6 0c0 2-3 2-3 4M12 16h.01"/>',
         '/messages' => '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3h3a8.5 8.5 0 0 1 8.5 8.5Z"/><path d="M7 9h8M7 13h5"/>',
         '/notifications/comments' => '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
         '/projects' => '<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V3h8v3M3 12h18M10 12v3h4v-3"/>',

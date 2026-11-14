@@ -11,6 +11,7 @@ use App\Repository\AnimeRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Service\RecommendationService;
+use App\Service\QuizService;
 use Closure;
 
 final class DashboardController extends AppController
@@ -20,6 +21,7 @@ final class DashboardController extends AppController
         private AnimeRepository|Closure $animes,
         private RatingRepository|Closure $ratings,
         private RecommendationService|Closure $recommendationService,
+        private QuizService|Closure $quizService,
     ) {
     }
 
@@ -97,6 +99,15 @@ final class DashboardController extends AppController
             'recommendationMode' => $mode,
             'recommendationSourceCount' => $sourceCount,
             'communityRatings' => $this->ratings->communityForAnimeIds(array_keys($animes)),
+            'quizStats' => $user === null ? null : $this->quizService()->statistics($user['id']),
         ]);
+    }
+
+    private function quizService(): QuizService
+    {
+        if ($this->quizService instanceof Closure) {
+            $this->quizService = ($this->quizService)();
+        }
+        return $this->quizService;
     }
 }
