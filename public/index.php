@@ -19,6 +19,7 @@ use App\Controller\MessageController;
 use App\Controller\ModerationController;
 use App\Controller\ProfileController;
 use App\Controller\ProjectController;
+use App\Controller\QuizController;
 use App\Controller\RankingController;
 use App\Controller\ReplyNotificationController;
 use App\Controller\SettingsController;
@@ -36,6 +37,7 @@ use App\Repository\MalImportRepository;
 use App\Repository\MessageRepository;
 use App\Repository\ModerationRepository;
 use App\Repository\ProjectRepository;
+use App\Repository\QuizRepository;
 use App\Repository\RatingRepository;
 use App\Repository\RecommendationRepository;
 use App\Repository\ReplyNotificationRepository;
@@ -49,6 +51,7 @@ use App\Service\AccountAccessGuard;
 use App\Service\MailService;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
+use App\Service\QuizService;
 use App\Service\Translator;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
@@ -210,6 +213,14 @@ $createController = static function (string $controllerClass) use ($connect): Ap
             static fn (): AnimeRepository => new AnimeRepository($connect()),
             static fn (): RatingRepository => new RatingRepository($connect()),
             static fn (): RecommendationService => new RecommendationService(new RecommendationRepository($connect())),
+            static fn (): QuizService => new QuizService(new QuizRepository($connect())),
+        );
+    }
+
+    if ($controllerClass === QuizController::class) {
+        return new QuizController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): QuizService => new QuizService(new QuizRepository($connect())),
         );
     }
 
@@ -264,6 +275,8 @@ $routing->get('/register', AuthController::class, 'register');
 $routing->post('/register', AuthController::class, 'register');
 $routing->post('/logout', AuthController::class, 'logout');
 $routing->get('/dashboard', DashboardController::class, 'index');
+$routing->get('/quiz', QuizController::class, 'index');
+$routing->post('/quiz', QuizController::class, 'index');
 $routing->get('/ranking', RankingController::class, 'index');
 $routing->get('/users/{id}', ProfileController::class, 'show');
 
