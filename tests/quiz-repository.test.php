@@ -125,8 +125,10 @@ try {
         $assert($result['score'] === 5 && $result['total'] === 5 && $result['answers'] === $answers);
         $assert($service->resultForUser(101, $quiz['id']) === $result);
         $assert($service->resultForUser(202, $quiz['id']) === null);
-        $assert($service->statistics(101) === ['currentStreak' => 1, 'bestStreak' => 1, 'completedToday' => true]);
-        $assert($service->statistics(202) === ['currentStreak' => 0, 'bestStreak' => 0, 'completedToday' => false]);
+        $assert($service->statistics(101) === ['currentStreak' => 1, 'bestStreak' => 1, 'completedToday' => true,
+            'correct' => 5, 'total' => 5, 'completedQuizzes' => 1]);
+        $assert($service->statistics(202) === ['currentStreak' => 0, 'bestStreak' => 0, 'completedToday' => false,
+            'correct' => 0, 'total' => 0, 'completedQuizzes' => 0]);
         $assert($connection->inTransaction(), 'Repozytorium nie może zamykać transakcji AccountAccessGuard.');
     });
 
