@@ -15,7 +15,10 @@ $quizStats = $quizStats ?? null;
             <h1><?= $escape($t('quiz.title')) ?></h1>
             <p><?= $escape($t('quiz.intro')) ?></p>
         </div>
-        <a class="quiz-back-link" href="/dashboard"><?= $escape($t('quiz.back')) ?> <span aria-hidden="true">↗</span></a>
+        <div class="quiz-heading-links">
+            <a class="quiz-back-link" href="/quiz/ranking"><?= $escape($t('quiz.ranking.title')) ?> <span aria-hidden="true">↗</span></a>
+            <a class="quiz-back-link" href="/dashboard"><?= $escape($t('quiz.back')) ?> <span aria-hidden="true">↗</span></a>
+        </div>
     </header>
 
     <?php if ($quizErrors !== []): ?>
@@ -54,6 +57,10 @@ $quizStats = $quizStats ?? null;
                 <dt><?= $escape($t('quiz.today')) ?></dt>
                 <dd class="quiz-participation"><?= $escape($t($quizStats['completedToday'] ? 'quiz.completed' : 'quiz.pending')) ?></dd>
             </div>
+            <div data-quiz-correct="<?= $escape($quizStats['correct']) ?>" data-quiz-answered="<?= $escape($quizStats['total']) ?>">
+                <dt><?= $escape($t('quiz.total_score')) ?></dt>
+                <dd><strong><?= $escape($quizStats['correct']) ?></strong> / <?= $escape($quizStats['total']) ?></dd>
+            </div>
         </dl>
         <?php endif; ?>
 
@@ -62,10 +69,6 @@ $quizStats = $quizStats ?? null;
                 <p><?= $escape($t('quiz.set_date')) ?> <time datetime="<?= $escape($quiz['date']) ?>"><?= $escape($quiz['date']) ?></time></p>
                 <p><?= $escape($t('quiz.rollover')) ?></p>
             </div>
-
-            <?php if ($locale !== 'pl'): ?>
-                <p class="quiz-language-note" id="quiz-language-note"><?= $escape($t('quiz.language_note')) ?></p>
-            <?php endif; ?>
 
             <?php if ($quizResult !== null): ?>
                 <section class="quiz-result" aria-labelledby="quiz-result-title" data-quiz-score="<?= $escape($quizResult['score']) ?>" data-quiz-total="<?= $escape($quizResult['total']) ?>">
@@ -80,7 +83,7 @@ $quizStats = $quizStats ?? null;
                     </div>
                 </section>
 
-                <section class="quiz-review" aria-labelledby="quiz-review-title"<?= $locale !== 'pl' ? ' lang="pl"' : '' ?>>
+                <section class="quiz-review" aria-labelledby="quiz-review-title">
                     <h2 id="quiz-review-title" lang="<?= $escape($locale) ?>"><?= $escape($t('quiz.review')) ?></h2>
                     <ol class="quiz-review-list">
                         <?php foreach ($quiz['questions'] as $question): ?>
@@ -107,9 +110,6 @@ $quizStats = $quizStats ?? null;
                                         <?php endif; ?>
                                     </dl>
                                     <p class="quiz-explanation"><?= $escape($question['explanation']) ?></p>
-                                    <?php if (!empty($question['sourceUrl'])): ?>
-                                        <a class="quiz-source" href="<?= $escape($question['sourceUrl']) ?>" rel="external noreferrer" lang="<?= $escape($locale) ?>"><?= $escape($t('quiz.source')) ?> <span aria-hidden="true">↗</span></a>
-                                    <?php endif; ?>
                                 </article>
                             </li>
                         <?php endforeach; ?>
@@ -118,10 +118,11 @@ $quizStats = $quizStats ?? null;
             <?php else: ?>
                 <div class="quiz-rules" id="quiz-rules">
                     <p><?= $escape($t('quiz.form_intro')) ?></p>
+                    <p><?= $escape($t('quiz.variety')) ?></p>
                     <p><?= $escape($t('quiz.streak_rule')) ?></p>
                 </div>
 
-                <form class="quiz-form" action="/quiz" method="post" data-quiz-form aria-describedby="quiz-rules<?= $quizErrors !== [] ? ' quiz-errors' : '' ?><?= $locale !== 'pl' ? ' quiz-language-note' : '' ?>">
+                <form class="quiz-form" action="/quiz" method="post" data-quiz-form aria-describedby="quiz-rules<?= $quizErrors !== [] ? ' quiz-errors' : '' ?>">
                     <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                     <input type="hidden" name="quizId" value="<?= $escape($quiz['id']) ?>">
 
@@ -130,9 +131,10 @@ $quizStats = $quizStats ?? null;
                         $selectedAnswer = $quizAnswers[$question['id']] ?? null;
                         $selectedOption = is_int($selectedAnswer) || is_string($selectedAnswer) ? (string) $selectedAnswer : '';
                         ?>
-                        <fieldset class="quiz-question" data-quiz-question-id="<?= $escape($question['id']) ?>" lang="pl">
+                        <fieldset class="quiz-question" data-quiz-question-id="<?= $escape($question['id']) ?>" data-quiz-type="<?= $escape($question['type']) ?>" data-quiz-difficulty="<?= $escape($question['difficulty']) ?>">
                             <legend>
                                 <span class="quiz-question-number" lang="<?= $escape($locale) ?>"><?= $escape($t('quiz.question_number', ['number' => $questionIndex + 1, 'total' => count($quiz['questions'])])) ?></span>
+                                <span class="quiz-question-meta"><?= $escape($t('quiz.difficulty.' . $question['difficulty'])) ?> · <?= $escape($t('quiz.type.' . $question['type'])) ?></span>
                                 <span><?= $escape($question['question']) ?></span>
                             </legend>
                             <div class="quiz-options">

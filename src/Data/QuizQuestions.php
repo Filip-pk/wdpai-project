@@ -4,13 +4,36 @@ declare(strict_types=1);
 
 namespace App\Data;
 
-/** Curated Polish questions; daily quizzes persist their own immutable snapshot. */
+/** Curated questions; daily quizzes persist their own multilingual snapshot. */
 final class QuizQuestions
 {
     /**
      * @return list<array{id: int, question: string, options: list<string>, correctOption: int, explanation: string, sourceUrl: string}>
      */
     public static function all(): array
+    {
+        $translations = QuizQuestionTranslations::all();
+        $animeKeys = [
+            'naruto', 'one-piece', 'death-note', 'spy-family', 'demon-slayer',
+            'my-hero-academia', 'haikyu', 'dr-stone', 'fullmetal-alchemist',
+            'jujutsu-kaisen', 'dragon-ball', 'sailor-moon', 'hunter-x-hunter',
+            'one-punch-man', 'chainsaw-man',
+        ];
+        $originals = self::originals();
+        foreach ($originals as &$question) {
+            $question['animeKey'] = $animeKeys[intdiv($question['id'] - 1, 4)];
+            $question['difficulty'] = in_array($question['id'], [4, 8, 12, 19, 24, 28, 37, 38, 40, 43, 46, 47, 51, 52, 56, 60], true)
+                ? 'medium' : 'easy';
+            $question['type'] = 'trivia';
+            $question['translations'] = $translations[$question['id']];
+        }
+        unset($question);
+
+        return [...$originals, ...QuizQuestionExpansion::all()];
+    }
+
+    /** Original IDs, Polish wording and answer order remain compatible with saved quizzes. */
+    private static function originals(): array
     {
         return [
             [

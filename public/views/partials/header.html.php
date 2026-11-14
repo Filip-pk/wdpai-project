@@ -48,7 +48,7 @@ $isLibraryPage = !$isErrorPage && (str_starts_with((string) $currentPath, '/prof
     || $isImportPage || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
 $isRedesignPage = $isWelcome || $isAuthPage
     || $isDiscoveryPage || $isLibraryPage || $isErrorPage || $isCommunityPage || $isAiPage || $isProjectsPage
-    || in_array($currentPath, ['/profile', '/profile/avatar', '/quiz'], true)
+    || in_array($currentPath, ['/profile', '/profile/avatar', '/quiz', '/quiz/ranking'], true)
     || str_starts_with((string) $currentPath, '/users/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
 $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
@@ -123,8 +123,11 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
         <link rel="stylesheet" href="<?= $assetUrl('/css/dashboard.css') ?>">
     <?php endif; ?>
 
-    <?php if (in_array($currentPath, ['/quiz', '/dashboard'], true)): ?>
+    <?php if (in_array($currentPath, ['/quiz', '/quiz/ranking', '/dashboard'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/quiz.css') ?>">
+    <?php endif; ?>
+    <?php if ($currentPath === '/quiz'): ?>
+        <script src="<?= $assetUrl('/js/quiz.js') ?>" defer></script>
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>

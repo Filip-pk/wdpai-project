@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Repository\UserRepository;
 use App\Service\QuizService;
+use App\Service\QuizQuestionLocalizer;
 use App\Service\Translator;
 use Closure;
 use InvalidArgumentException;
@@ -76,12 +77,30 @@ final class QuizController extends AppController
         // a freshly inserted daily snapshot that would disappear after a 409/422.
         $quiz = $errors === [] ? $this->service()->dailyQuiz() : $this->service()->availableQuiz();
         $this->show(
-            quiz: $quiz,
+            quiz: $quiz === null ? null : QuizQuestionLocalizer::localize($quiz, Translator::current()->locale()),
             result: $quiz === null ? null : $this->service()->resultForUser($user['id'], $quiz['id']),
             statistics: $this->service()->statistics($user['id']),
             errors: $errors,
             answers: $answers,
         );
+    }
+
+    public function ranking(): void
+    {
+        $this->requireLogin();
+        $user = $this->currentUser($this->users());
+        $period = $_GET['period'] ?? 'overall';
+        $errors = [];
+        if (!is_string($period) || !in_array($period, ['overall', 'monthly'], true)) {
+            http_response_code(400);
+            $errors[] = $this->message('quiz.error.period');
+            $period = 'overall';
+        }
+        $this->render('quiz-ranking', [
+            'pageTitle' => $this->message('quiz.ranking.title'),
+            'quizRanking' => $this->service()->ranking($user['id'], $period),
+            'quizErrors' => $errors,
+        ]);
     }
 
     private function show(

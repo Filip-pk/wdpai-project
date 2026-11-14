@@ -46,15 +46,7 @@ final class QuizService
         if (count($pool) < self::QUESTION_COUNT) {
             throw new RuntimeException('Pula pytań quizu jest zbyt mała.');
         }
-        shuffle($pool);
-        $questions = array_slice($pool, 0, self::QUESTION_COUNT);
-        foreach ($questions as &$question) {
-            $order = [0, 1, 2, 3];
-            shuffle($order);
-            $question['options'] = array_map(static fn (int $index): string => $question['options'][$index], $order);
-            $question['correctOption'] = array_search($question['correctOption'], $order, true);
-        }
-        unset($question);
+        $questions = QuizQuestionSelector::select($pool, $this->quizzes->questionUsageBeforeDate($date));
 
         return $this->quizzes->createForDate($date, $questions);
     }
@@ -88,12 +80,29 @@ final class QuizService
         return $this->quizzes->saveResult($userId, $quizId, $scored['score'], $scored['answers'], $now);
     }
 
-    /** @return array{currentStreak: int, bestStreak: int, completedToday: bool} */
+    /** @return array{currentStreak: int, bestStreak: int, completedToday: bool, correct: int, total: int, completedQuizzes: int} */
     public function statistics(int $userId): array
     {
         $this->validateUser($userId);
 
-        return self::streaks($this->quizzes->completedDates($userId), $this->now()->format('Y-m-d'));
+        return self::streaks($this->quizzes->completedDates($userId), $this->now()->format('Y-m-d'))
+            + $this->quizzes->totalsForUser($userId);
+    }
+
+    public function ranking(int $userId, string $period = 'overall'): array
+    {
+        $this->validateUser($userId);
+        if (!in_array($period, ['overall', 'monthly'], true)) {
+            throw new InvalidArgumentException('quiz.error.period');
+        }
+        $month = $this->now()->modify('first day of this month')->setTime(0, 0);
+        $ranking = $this->quizzes->rankingForUser(
+            $userId,
+            $period === 'monthly' ? $month->format('Y-m-d') : null,
+            $period === 'monthly' ? $month->modify('+1 month')->format('Y-m-d') : null,
+        );
+
+        return $ranking + ['period' => $period, 'month' => $month->format('Y-m')];
     }
 
     /**

@@ -34,9 +34,9 @@ for ($index = 0; $index < 5; $index++) {
     $wrong[$id] = ($index + 1) % 4;
 }
 
-$run('Pula ma co najmniej 60 jednoznacznych pytań z kompletem odpowiedzi i źródeł', static function () use ($assert): void {
+$run('Pula ma 200 jednoznacznych pytań z kompletem odpowiedzi i źródeł', static function () use ($assert): void {
     $pool = QuizQuestions::all();
-    $assert(count($pool) >= 60);
+    $assert(count($pool) === 200);
     $ids = [];
     $prompts = [];
     foreach ($pool as $question) {

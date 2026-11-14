@@ -277,6 +277,7 @@ $routing->post('/logout', AuthController::class, 'logout');
 $routing->get('/dashboard', DashboardController::class, 'index');
 $routing->get('/quiz', QuizController::class, 'index');
 $routing->post('/quiz', QuizController::class, 'index');
+$routing->get('/quiz/ranking', QuizController::class, 'ranking');
 $routing->get('/ranking', RankingController::class, 'index');
 $routing->get('/users/{id}', ProfileController::class, 'show');
 
