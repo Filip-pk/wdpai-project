@@ -37,6 +37,7 @@ $secondaryNavigation = [
     '/projects' => $t('navigation.projects'),
 ];
 if ($isLoggedIn) {
+    $secondaryNavigation['/achievements'] = $t('navigation.achievements');
     $secondaryNavigation['/notifications/comments'] = $t('navigation.notifications');
     $secondaryNavigation['/account/notices'] = $t('moderation.notices');
     $secondaryNavigation['/settings'] = $t('navigation.settings');
@@ -60,6 +61,7 @@ $navigationIcon = static function (string $url): string {
         '/profile' => '<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/>',
         '/anime' => '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m10 8 6 4-6 4Z"/>',
         '/quiz' => '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 8a3 3 0 0 1 6 0c0 2-3 2-3 4M12 16h.01"/>',
+        '/achievements' => '<path d="m8 3 4 7 4-7M5 3h5l2 4 2-4h5l-5 8H10Z"/><circle cx="12" cy="16" r="5"/><path d="m12 13 1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L9 15.3l2-.3Z"/>',
         '/messages' => '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3h3a8.5 8.5 0 0 1 8.5 8.5Z"/><path d="M7 9h8M7 13h5"/>',
         '/notifications/comments' => '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
         '/projects' => '<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V3h8v3M3 12h18M10 12v3h4v-3"/>',

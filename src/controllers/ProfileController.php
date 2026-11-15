@@ -14,6 +14,7 @@ use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Service\AvatarService;
+use App\Service\AchievementService;
 use App\Service\ExperienceService;
 use App\Service\ProfileService;
 use Closure;
@@ -36,6 +37,7 @@ final class ProfileController extends AppController
         private ExperienceRepository|Closure $experience,
         private CommunityRepository|Closure|null $community = null,
         private PrivacySettingsRepository|Closure|null $privacy = null,
+        private AchievementService|Closure|null $achievements = null,
     ) {
     }
 
@@ -101,6 +103,13 @@ final class ProfileController extends AppController
             ?? ['messagePolicy' => 'everyone', 'publicRatings' => false, 'publicStatistics' => true];
         $showRatings = $isOwnProfile || $settings['publicRatings'];
         $showStatistics = $isOwnProfile || $settings['publicStatistics'];
+        $profileAchievements = [];
+        if ($showStatistics && $this->achievements() !== null) {
+            if ($isOwnProfile) {
+                $this->achievements()->synchronize($id);
+            }
+            $profileAchievements = $this->achievements()->earnedForUser($id);
+        }
 
         $this->render('user-profile', [
             'pageTitle' => $profileUser['name'] . Translator::current()->translate('message.page.user_suffix'),
@@ -109,6 +118,7 @@ final class ProfileController extends AppController
             'isOwnProfile' => $isOwnProfile,
             'showRatings' => $showRatings,
             'showStatistics' => $showStatistics,
+            'profileAchievements' => $profileAchievements,
             'profileRatings' => $showRatings ? $this->ratings()->findByAnimeIdsForUser($id, $animeIds) : [],
             'canMessageProfile' => $settings['messagePolicy'] === 'everyone'
                 || ($settings['messagePolicy'] === 'existing' && is_int($_SESSION['user_id'] ?? null)
@@ -270,6 +280,7 @@ final class ProfileController extends AppController
             }
 
             if ($errors === []) {
+                $this->achievements()?->synchronize($user['id']);
                 $page = filter_var($this->postString('listPage'), FILTER_VALIDATE_INT, [
                     'options' => ['min_range' => 1],
                 ]);
@@ -288,6 +299,13 @@ final class ProfileController extends AppController
 
     private function renderProfile(bool $watchlistOnly, array $user, array $errors = [], array $form = []): void
     {
+        $profileAchievements = [];
+        if (!$watchlistOnly && $this->achievements() !== null) {
+            if (!$this->isPost()) {
+                $this->achievements()->synchronize($user['id']);
+            }
+            $profileAchievements = $this->achievements()->earnedForUser($user['id']);
+        }
         $requestedStatus = $_POST['listStatus'] ?? $_GET['status'] ?? '';
         $statusFilter = is_string($requestedStatus) && isset(self::STATUSES[$requestedStatus])
             ? $requestedStatus : '';
@@ -301,6 +319,8 @@ final class ProfileController extends AppController
             'pageTitle' => ($watchlistOnly ? Translator::current()->translate('message.page.watchlist') : Translator::current()->translate('message.page.profile')) . ' — AniVibe',
             'watchlistOnly' => $watchlistOnly,
             'user' => $user,
+            'profileAchievements' => $profileAchievements,
+            'isOwnProfile' => true,
             'form' => $form,
             'errors' => $errors,
             'saved' => !$this->isPost() && ($_GET['saved'] ?? null) === '1',
@@ -349,6 +369,14 @@ final class ProfileController extends AppController
             $this->privacy = ($this->privacy)();
         }
         return $this->privacy;
+    }
+
+    private function achievements(): ?AchievementService
+    {
+        if ($this->achievements instanceof Closure) {
+            $this->achievements = ($this->achievements)();
+        }
+        return $this->achievements;
     }
 
     private function users(): UserRepository

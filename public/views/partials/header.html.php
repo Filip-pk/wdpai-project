@@ -48,7 +48,7 @@ $isLibraryPage = !$isErrorPage && (str_starts_with((string) $currentPath, '/prof
     || $isImportPage || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
 $isRedesignPage = $isWelcome || $isAuthPage
     || $isDiscoveryPage || $isLibraryPage || $isErrorPage || $isCommunityPage || $isAiPage || $isProjectsPage
-    || in_array($currentPath, ['/profile', '/profile/avatar', '/quiz', '/quiz/ranking'], true)
+    || in_array($currentPath, ['/profile', '/profile/avatar', '/quiz', '/quiz/ranking', '/achievements'], true)
     || str_starts_with((string) $currentPath, '/users/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
 $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
@@ -128,6 +128,9 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
     <?php endif; ?>
     <?php if ($currentPath === '/quiz'): ?>
         <script src="<?= $assetUrl('/js/quiz.js') ?>" defer></script>
+    <?php endif; ?>
+    <?php if ($currentPath === '/achievements' || $isUserProfilePage || in_array($currentPath, ['/profile', '/profile/avatar'], true)): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/achievements.css') ?>">
     <?php endif; ?>
 
     <script src="<?= $assetUrl('/js/theme.js') ?>" defer></script>

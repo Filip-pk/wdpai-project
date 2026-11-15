@@ -62,6 +62,7 @@
 
         <div class="user-profile-content">
             <?php if ($showStatistics): ?>
+            <?php require __DIR__ . '/partials/achievements.html.php'; ?>
             <section class="profile-summary user-profile-statistics" aria-labelledby="user-statistics-title">
                 <header class="profile-editor-heading">
                     <span class="profile-editor-symbol" aria-hidden="true">♡</span>

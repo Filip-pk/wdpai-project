@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\AdminController;
+use App\Controller\AchievementController;
 use App\Controller\AnimeController;
 use App\Controller\AnimeRankingController;
 use App\Controller\AppController;
@@ -27,6 +28,7 @@ use App\Controller\SecuritySettingsController;
 use App\Controller\PrivacySettingsController;
 use App\Database;
 use App\Repository\AnimeRepository;
+use App\Repository\AchievementRepository;
 use App\Repository\AnimeRankingRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\CommentRepository;
@@ -48,6 +50,7 @@ use App\Repository\PrivacySettingsRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\AccountAccessGuard;
+use App\Service\AchievementService;
 use App\Service\MailService;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
@@ -188,6 +191,7 @@ $createController = static function (string $controllerClass) use ($connect): Ap
             static fn (): ExperienceRepository => new ExperienceRepository($connect()),
             static fn (): CommunityRepository => new CommunityRepository($connect()),
             static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
+            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
         );
     }
 
@@ -196,6 +200,7 @@ $createController = static function (string $controllerClass) use ($connect): Ap
         return new MalImportController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): MalImportService => new MalImportService(new MalImportRepository($connect())),
+            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
         );
     }
 
@@ -221,6 +226,14 @@ $createController = static function (string $controllerClass) use ($connect): Ap
         return new QuizController(
             static fn (): UserRepository => new UserRepository($connect()),
             static fn (): QuizService => new QuizService(new QuizRepository($connect())),
+            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
+        );
+    }
+
+    if ($controllerClass === AchievementController::class) {
+        return new AchievementController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
         );
     }
 
@@ -278,6 +291,7 @@ $routing->get('/dashboard', DashboardController::class, 'index');
 $routing->get('/quiz', QuizController::class, 'index');
 $routing->post('/quiz', QuizController::class, 'index');
 $routing->get('/quiz/ranking', QuizController::class, 'ranking');
+$routing->get('/achievements', AchievementController::class, 'index');
 $routing->get('/ranking', RankingController::class, 'index');
 $routing->get('/users/{id}', ProfileController::class, 'show');
 
