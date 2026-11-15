@@ -29,6 +29,7 @@
     </header>
 
     <?php require __DIR__ . '/partials/daily-quiz.html.php'; ?>
+    <?php require __DIR__ . '/partials/anime-clue-card.html.php'; ?>
 
     <section class="mood-panel" aria-labelledby="mood-title">
         <header class="dashboard-section-heading">

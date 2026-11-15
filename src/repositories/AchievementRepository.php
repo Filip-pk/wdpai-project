@@ -94,6 +94,47 @@ final class AchievementRepository
         ];
     }
 
+    /** @return array{guessCompletedDays: int, guessPerfectDays: int, guessFirstClueCorrect: int, guessCorrectAnswers: int, guessDates: list<string>} */
+    public function clueMetricsForUser(int $userId, string $today): array
+    {
+        $this->validateUser($userId);
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $today);
+        if ($parsed === false || $parsed->format('Y-m-d') !== $today) {
+            throw new InvalidArgumentException('Nieprawidłowa data osiągnięć.');
+        }
+        $statement = $this->database->prepare(
+            'WITH days AS (
+                SELECT COUNT(*) AS completed, COUNT(*) FILTER (WHERE attempts.score = 15) AS perfect
+                FROM anime_clue_attempts AS attempts
+                JOIN daily_anime_clues AS games ON games.id = attempts.game_id
+                WHERE attempts.user_id = :day_user AND attempts.completed_at IS NOT NULL
+                  AND games.game_date <= CAST(:day_date AS date)
+             ), answers AS (
+                SELECT COUNT(*) FILTER (WHERE answers.correct) AS correct,
+                       COUNT(*) FILTER (WHERE answers.correct AND answers.hints_used = 1) AS sharp
+                FROM anime_clue_answers AS answers
+                JOIN daily_anime_clues AS games ON games.id = answers.game_id
+                WHERE answers.user_id = :answer_user AND games.game_date <= CAST(:answer_date AS date)
+             ) SELECT days.*, answers.* FROM days CROSS JOIN answers'
+        );
+        $statement->execute(['day_user' => $userId, 'day_date' => $today, 'answer_user' => $userId, 'answer_date' => $today]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $dates = $this->database->prepare(
+            'SELECT games.game_date FROM anime_clue_attempts AS attempts
+             JOIN daily_anime_clues AS games ON games.id = attempts.game_id
+             WHERE attempts.user_id = :user_id AND attempts.completed_at IS NOT NULL
+               AND games.game_date <= CAST(:today AS date) ORDER BY games.game_date'
+        );
+        $dates->execute(['user_id' => $userId, 'today' => $today]);
+        return [
+            'guessCompletedDays' => (int) $row['completed'],
+            'guessPerfectDays' => (int) $row['perfect'],
+            'guessFirstClueCorrect' => (int) $row['sharp'],
+            'guessCorrectAnswers' => (int) $row['correct'],
+            'guessDates' => $dates->fetchAll(PDO::FETCH_COLUMN),
+        ];
+    }
+
     /** @return array<string, string> Achievement code mapped to its first unlock timestamp. */
     public function unlockedForUser(int $userId): array
     {

@@ -111,8 +111,11 @@ final class AchievementService
         $metrics = $this->achievements->metricsForUser($userId, $today);
         $metrics['bestQuizStreak'] = QuizService::streaks($metrics['quizDates'], $today)['bestStreak'];
         unset($metrics['quizDates']);
+        $guess = $this->achievements->clueMetricsForUser($userId, $today);
+        $guess['bestGuessStreak'] = QuizService::streaks($guess['guessDates'], $today)['bestStreak'];
+        unset($guess['guessDates']);
 
-        return $metrics;
+        return $metrics + $guess;
     }
 
     private function now(): DateTimeImmutable

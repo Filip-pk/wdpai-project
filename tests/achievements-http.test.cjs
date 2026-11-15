@@ -30,8 +30,8 @@ test('achievements follow saved activity, preserve unlocks and respect profile p
             redirected(await guest.request('/achievements'), '/login');
             assert.equal(initial.status, 200);
             assert.match(initial.html, /data-achievements-page/);
-            assert.equal([...initial.html.matchAll(/data-achievement-code="/g)].length, 10);
-            assert.equal([...initial.html.matchAll(/data-achievement-unlocked="0"/g)].length, 10);
+            assert.equal([...initial.html.matchAll(/data-achievement-code="/g)].length, 15);
+            assert.equal([...initial.html.matchAll(/data-achievement-unlocked="0"/g)].length, 15);
             assert.equal(ownedAchievementRecords(fixture).length, 0);
             const forged = await owner.request('/achievements?userId=' + fixture.other.id + '&achievement_code=quiz_perfect&progress=999');
             card(forged, 'quiz_perfect', false, 0);

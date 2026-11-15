@@ -44,7 +44,7 @@ if (($argv[1] ?? '') === 'worker') {
 try {
     $connection = (new Database())->connect();
     $connection->beginTransaction();
-    foreach (['users', 'anime', 'genres', 'anime_genres', 'user_watchlist', 'user_anime_experience', 'daily_quizzes', 'quiz_attempts', 'user_achievements'] as $table) {
+    foreach (['users', 'anime', 'genres', 'anime_genres', 'user_watchlist', 'user_anime_experience', 'daily_quizzes', 'quiz_attempts', 'user_achievements', 'daily_anime_clues', 'anime_clue_attempts', 'anime_clue_answers'] as $table) {
         $connection->exec('CREATE TEMP TABLE ' . $table . ' (LIKE public.' . $table . ' INCLUDING ALL) ON COMMIT DROP');
         $verify = $connection->prepare("SELECT count(*) FROM pg_class WHERE oid = to_regclass(:table)
             AND relnamespace = pg_my_temp_schema() AND relpersistence = 't'");
@@ -88,7 +88,7 @@ try {
 
     $run('Puste konto ma zero postępu i odczyt nie przyznaje odznak', static function () use ($service, $repository, $assert): void {
         $overview = $service->overviewForUser(101);
-        $assert($overview['unlockedCount'] === 0 && $overview['totalCount'] === 10);
+        $assert($overview['unlockedCount'] === 0 && $overview['totalCount'] === 15);
         $assert($service->earnedForUser(101) === [] && $repository->unlockedForUser(101) === []);
         $assert($service->synchronize(101) === []);
     });

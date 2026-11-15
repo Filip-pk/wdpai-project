@@ -1,6 +1,6 @@
 # Osiągnięcia i odznaki
 
-`GET /achievements` wymaga zalogowania. Pokazuje dziesięć osiągnięć,
+`GET /achievements` wymaga zalogowania. Pokazuje piętnaście osiągnięć,
 warunki zdobycia, postęp i daty odblokowania. Odnośniki prowadzą do niego
 z nawigacji i zakładek profilu. Zdobyte odznaki są też widoczne na własnym
 profilu i publicznej stronie użytkownika.
@@ -14,6 +14,11 @@ profilu i publicznej stronie użytkownika.
 | `quiz_correct_100` | Łącznie 100 poprawnych odpowiedzi w quizach. |
 | `quiz_streak_7` | Rekord udziału przez 7 kolejnych dni kalendarzowych. |
 | `quiz_streak_30` | Rekord udziału przez 30 kolejnych dni kalendarzowych. |
+| `guess_first` | Ukończenie pierwszego zestawu rozpoznawania anime. |
+| `guess_sharp` | Poprawne rozpoznanie po pierwszej wskazówce. |
+| `guess_perfect` | Wynik 15/15 w jednym zestawie rozpoznawania. |
+| `guess_correct_50` | Łącznie 50 rozpoznanych anime. |
+| `guess_streak_7` | Siedem kolejnych ukończonych zestawów dziennych. |
 | `anime_first` | Pierwszy ukończony tytuł anime. |
 | `anime_completed_10` | 10 ukończonych tytułów. |
 | `anime_completed_50` | 50 ukończonych tytułów. |
@@ -26,7 +31,8 @@ Odznaki nie przyznają EXP ani punktów w rankingach.
 
 ## Naliczanie i trwałość
 
-Serwer sprawdza warunki po poprawnym zakończeniu quizu, zapisie lub usunięciu
+Serwer sprawdza warunki po poprawnej akcji w grze rozpoznawania,
+zakończeniu quizu, zapisie lub usunięciu
 wpisu watchlisty oraz potwierdzeniu importu MAL. Podgląd importu i błędne
 formularze nie przyznają osiągnięć. Nagrody i zapis aktywności należą do
 tej samej transakcji żądania.
@@ -100,3 +106,7 @@ zestawów, których tożsamość sprawdzają przed posprzątaniem. Nie nadpisuj�
 istniejących zestawów dnia. Test widoków wymaga Chrome lub Edge;
 opcjonalnie `ANIVIBE_BROWSER` wskazuje ścieżkę przeglądarki, a
 `ANIVIBE_TEST_URL` adres aplikacji (domyślnie `http://127.0.0.1:8080`).
+
+Pięć odznak rozpoznawania anime wymaga także migracji 26. Zasady punktacji,
+stan rund i osobny test integracji odznak opisuje
+[dokumentacja gry](anime-clues.md).
