@@ -41,14 +41,14 @@ try {
     $game = new AnimeClueService($repository, static function () use (&$gameNow): DateTimeImmutable { return $gameNow; });
     $awards = new AchievementService(new AchievementRepository($db), static fn (): DateTimeImmutable => new DateTimeImmutable('2026-11-15T12:00:00+01:00'));
     $first = $repository->createForDate('2026-10-01', $entries);
-    $game->answer(101, $first['id'], 0, 'Fixture 0');
+    $game->answer(101, $first['id'], 0, 'Fixture 0', 1);
     $assert($awards->synchronize(101) === ['guess_sharp'], 'Pierwsza poprawna odpowiedź odblokowuje tylko Sokole oko.');
     $items = array_column($awards->overviewForUser(101)['items'], null, 'code');
     $assert(!$items['guess_first']['unlocked'] && $items['guess_correct_50']['progress'] === 1, 'Częściowy dzień nie jest ukończonym zestawem.');
     echo '[OK] Pierwsza wskazówka daje odznakę, a częściowy dzień nie zalicza zestawu.' . PHP_EOL;
 
     for ($round = 1; $round < 5; $round++) {
-        $game->answer(101, $first['id'], $round, 'Fixture ' . $round);
+        $game->answer(101, $first['id'], $round, 'Fixture ' . $round, 1);
     }
     $assert($awards->synchronize(101) === ['guess_first', 'guess_perfect'], 'Pełne 15/15 daje pierwszy zestaw i perfekcyjny wynik.');
     echo '[OK] Pięć odpowiedzi po jednej wskazówce odblokowuje zestaw i 15/15.' . PHP_EOL;
@@ -58,7 +58,7 @@ try {
         $gameNow = new DateTimeImmutable($date . 'T12:00:00+02:00');
         $daily = $repository->createForDate($date, $entries);
         for ($round = 0; $round < 5; $round++) {
-            $game->answer(101, $daily['id'], $round, 'Fixture ' . $round);
+            $game->answer(101, $daily['id'], $round, 'Fixture ' . $round, 1);
         }
     }
     $assert($awards->synchronize(101) === ['guess_streak_7'], 'Siedem ukończonych dni daje odznakę serii.');
@@ -71,7 +71,7 @@ try {
         $gameNow = new DateTimeImmutable($date . 'T12:00:00+02:00');
         $daily = $repository->createForDate($date, $entries);
         for ($round = 0; $round < 5; $round++) {
-            $game->answer(101, $daily['id'], $round, 'Fixture ' . $round);
+            $game->answer(101, $daily['id'], $round, 'Fixture ' . $round, 1);
         }
     }
     $assert($awards->synchronize(101) === ['guess_correct_50'], 'Pięćdziesiąte trafienie odblokowuje próg 50.');
@@ -83,7 +83,7 @@ try {
     $gameNow = new DateTimeImmutable('2026-11-16T12:00:00+01:00');
     $future = $repository->createForDate('2026-11-16', $entries);
     for ($round = 0; $round < 5; $round++) {
-        $game->answer(202, $future['id'], $round, 'Fixture ' . $round);
+        $game->answer(202, $future['id'], $round, 'Fixture ' . $round, 1);
     }
     $assert($awards->synchronize(202) === [] && $awards->earnedForUser(202) === [], 'Przyszłe wyniki nie przyznają odznak innemu kontu.');
     $assert($db->inTransaction(), 'Usługi nie mogą zatwierdzić zewnętrznej transakcji.');

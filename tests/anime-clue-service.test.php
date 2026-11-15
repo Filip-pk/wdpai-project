@@ -121,5 +121,20 @@ $run('Omówienie ujawnia wyłącznie zamknięte rundy, a koniec dnia nie pokazuj
     $assert($completed['completed'] && $completed['clues'] === [] && $completed['maxPoints'] === 15 && $completed['roundCount'] === 5);
 });
 
+$run('Historia błędów oddziela bieżącą rundę od zamkniętych i obsługuje starsze wyniki', static function () use ($assert, $entries): void {
+    $game = ['id' => 22, 'date' => '2026-11-15', 'entries' => array_slice($entries, 0, 5)];
+    $attempt = ['roundIndex' => 1, 'hintsUsed' => 2, 'score' => 0, 'correctCount' => 0,
+        'wrongAnswers' => [['roundIndex' => 0, 'answer' => 'Earlier wrong', 'hintsUsed' => 1],
+            ['roundIndex' => 1, 'answer' => '<wrong current>', 'hintsUsed' => 1]]];
+    $answer = ['roundIndex' => 0, 'answer' => 'Final old wrong', 'correct' => false, 'points' => 0, 'hintsUsed' => 3, 'skipped' => false];
+    $state = AnimeClueService::publicState($game, $attempt, [$answer], 'pl');
+    $assert($state['wrongAnswers'] === [['answer' => '<wrong current>', 'hintsUsed' => 1]]);
+    $assert($state['results'][0]['wrongAnswers'] === [['answer' => 'Earlier wrong', 'hintsUsed' => 1], ['answer' => 'Final old wrong', 'hintsUsed' => 3]]);
+    $attempt['wrongAnswers'][] = ['roundIndex' => 0, 'answer' => 'Final old wrong', 'hintsUsed' => 3];
+    $state = AnimeClueService::publicState($game, $attempt, [$answer], 'pl');
+    $assert(count($state['results'][0]['wrongAnswers']) === 2, 'The final wrong answer is not duplicated.');
+    $assert(!str_contains(json_encode($state, JSON_THROW_ON_ERROR), $entries[1]['title']));
+});
+
 echo sprintf('Wynik: %d poprawnych, %d błędnych.', $passed, $failed) . PHP_EOL;
 exit($failed === 0 ? 0 : 1);

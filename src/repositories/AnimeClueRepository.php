@@ -100,7 +100,7 @@ final class AnimeClueRepository
     public function attemptForUser(int $userId, int $gameId): ?array
     {
         $statement = $this->database->prepare(
-            'SELECT round_index, hints_used, score, correct_count, completed_at FROM anime_clue_attempts
+            'SELECT round_index, hints_used, score, correct_count, completed_at, wrong_answers FROM anime_clue_attempts
              WHERE user_id = :user_id AND game_id = :game_id'
         );
         $statement->execute(['user_id' => $userId, 'game_id' => $gameId]);
@@ -122,7 +122,7 @@ final class AnimeClueRepository
         $parameters = ['user_id' => $userId, 'game_id' => $gameId];
         $create->execute($parameters);
         $lock = $this->database->prepare(
-            'SELECT round_index, hints_used, score, correct_count, completed_at FROM anime_clue_attempts
+            'SELECT round_index, hints_used, score, correct_count, completed_at, wrong_answers FROM anime_clue_attempts
              WHERE user_id = :user_id AND game_id = :game_id FOR UPDATE'
         );
         $lock->execute($parameters);
@@ -138,6 +138,23 @@ final class AnimeClueRepository
              WHERE user_id = :user_id AND game_id = :game_id AND hints_used = :hints AND hints_used < 3 AND completed_at IS NULL'
         );
         $statement->execute(['user_id' => $userId, 'game_id' => $gameId, 'hints' => $expectedHints]);
+    }
+
+    /** Records a failed guess without closing the round; the caller holds the attempt lock. */
+    public function recordWrongAnswer(int $userId, int $gameId, int $roundIndex, string $answer, int $hintsUsed): void
+    {
+        if (!$this->database->inTransaction()) {
+            throw new RuntimeException('Zapis odpowiedzi wymaga transakcji.');
+        }
+        $statement = $this->database->prepare(
+            'UPDATE anime_clue_attempts SET wrong_answers = wrong_answers || CAST(:answer AS jsonb)
+             WHERE user_id = :user_id AND game_id = :game_id AND round_index = :round AND hints_used = :hints AND completed_at IS NULL'
+        );
+        $statement->execute(['user_id' => $userId, 'game_id' => $gameId, 'round' => $roundIndex, 'hints' => $hintsUsed,
+            'answer' => json_encode([['roundIndex' => $roundIndex, 'answer' => $answer, 'hintsUsed' => $hintsUsed]], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
+        if ($statement->rowCount() !== 1) {
+            throw new RuntimeException('Stan rozgrywki zmienił się w trakcie zapisu.');
+        }
     }
 
     public function finalizeRound(int $userId, int $gameId, int $roundIndex, string $answer, bool $correct, int $points, int $hintsUsed, bool $skipped, DateTimeImmutable $now): void
@@ -296,6 +313,7 @@ final class AnimeClueRepository
     {
         return ['roundIndex' => (int) $row['round_index'], 'hintsUsed' => (int) $row['hints_used'],
             'score' => (int) $row['score'], 'correctCount' => (int) $row['correct_count'],
+            'wrongAnswers' => json_decode((string) $row['wrong_answers'], true, 512, JSON_THROW_ON_ERROR),
             'completedAt' => $row['completed_at'] === null ? null : (string) $row['completed_at']];
     }
 }

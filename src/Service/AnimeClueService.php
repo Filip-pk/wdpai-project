@@ -54,13 +54,26 @@ final class AnimeClueService
         });
     }
 
-    public function answer(int $userId, int $gameId, int $roundIndex, mixed $answer): void
+    public function answer(int $userId, int $gameId, int $roundIndex, mixed $answer, int $expectedHints): void
     {
+        if ($expectedHints < 1 || $expectedHints > 3) {
+            throw new InvalidArgumentException('guess.error.hints');
+        }
         // Validate after the lock/current-round check: a retry can carry stale fields
         // but must still leave the already recorded answer untouched.
-        $this->mutate($userId, $gameId, $roundIndex, function (array $game, array $attempt, DateTimeImmutable $now) use ($userId, $gameId, $roundIndex, $answer): void {
+        $this->mutate($userId, $gameId, $roundIndex, function (array $game, array $attempt, DateTimeImmutable $now) use ($userId, $gameId, $roundIndex, $answer, $expectedHints): void {
+            if ($attempt['hintsUsed'] !== $expectedHints) {
+                return;
+            }
             $answer = self::validateAnswer($answer);
             $correct = self::matchesAnswer($answer, $game['entries'][$roundIndex]);
+            if (!$correct) {
+                $this->games->recordWrongAnswer($userId, $gameId, $roundIndex, $answer, $expectedHints);
+                if ($expectedHints < 3) {
+                    $this->games->revealForUser($userId, $gameId, $expectedHints);
+                    return;
+                }
+            }
             $this->games->finalizeRound($userId, $gameId, $roundIndex, $answer, $correct,
                 self::points($correct, $attempt['hintsUsed']), $attempt['hintsUsed'], false, $now);
         });
@@ -178,18 +191,34 @@ final class AnimeClueService
     public static function publicState(array $game, array $attempt, array $answers, string $locale): array
     {
         $completed = $attempt['roundIndex'] === self::ROUND_COUNT;
+        $wrongAnswersForRound = static function (int $roundIndex) use ($attempt): array {
+            $wrongAnswers = [];
+            foreach ($attempt['wrongAnswers'] ?? [] as $wrongAnswer) {
+                if ($wrongAnswer['roundIndex'] === $roundIndex) {
+                    $wrongAnswers[] = ['answer' => $wrongAnswer['answer'], 'hintsUsed' => $wrongAnswer['hintsUsed']];
+                }
+            }
+            return $wrongAnswers;
+        };
         $results = [];
         foreach ($answers as $answer) {
             if ($answer['roundIndex'] >= $attempt['roundIndex']) {
                 continue;
             }
-            $results[] = $answer + ['title' => $game['entries'][$answer['roundIndex']]['title']];
+            $wrongAnswers = $wrongAnswersForRound($answer['roundIndex']);
+            // Completed rounds recorded before retries were introduced still show their wrong answer.
+            $lastWrong = ['answer' => $answer['answer'], 'hintsUsed' => $answer['hintsUsed']];
+            if (!$answer['correct'] && !$answer['skipped'] && !in_array($lastWrong, $wrongAnswers, true)) {
+                $wrongAnswers[] = $lastWrong;
+            }
+            $results[] = $answer + ['title' => $game['entries'][$answer['roundIndex']]['title'], 'wrongAnswers' => $wrongAnswers];
         }
         $entry = $completed ? null : $game['entries'][$attempt['roundIndex']];
         $clues = $entry === null ? [] : array_slice($entry['clues'][$locale] ?? $entry['clues']['pl'], 0, $attempt['hintsUsed']);
 
         return ['id' => $game['id'], 'date' => $game['date'], 'roundIndex' => $attempt['roundIndex'],
             'hintsUsed' => $attempt['hintsUsed'], 'clues' => $clues, 'completed' => $completed,
+            'wrongAnswers' => $completed ? [] : $wrongAnswersForRound($attempt['roundIndex']),
             'score' => $attempt['score'], 'correctCount' => $attempt['correctCount'], 'results' => $results,
             'roundCount' => self::ROUND_COUNT, 'maxPoints' => self::MAX_POINTS];
     }

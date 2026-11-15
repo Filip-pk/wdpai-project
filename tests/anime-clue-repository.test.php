@@ -45,7 +45,10 @@ if (($argv[1] ?? '') === 'worker') {
             $service->reveal(101, $gameId, 0, 1);
             $result = $service->stateForUser(101);
         } elseif ($operation === 'answer') {
-            $service->answer(101, $gameId, 0, 'wrong anime');
+            $service->answer(101, $gameId, 0, 'wrong anime', 2);
+            $result = $service->stateForUser(101);
+        } elseif ($operation === 'wrong') {
+            $service->answer(101, $gameId, 1, 'second concurrent wrong', 1);
             $result = $service->stateForUser(101);
         } else {
             throw new RuntimeException('Unknown worker operation.');
@@ -116,8 +119,8 @@ try {
 
     $run('Pierwsza odpowiedź wygrywa, a opóźnione reveal i skip nie dotykają następnej rundy', static function () use ($repo, $service, $fixture, $assert): void {
         $game = $repo->createForDate('2026-11-15', $fixture);
-        $service->answer(101, $game['id'], 0, '  ALIAS-1! ');
-        $service->answer(101, $game['id'], 0, 'wrong');
+        $service->answer(101, $game['id'], 0, '  ALIAS-1! ', 1);
+        $service->answer(101, $game['id'], 0, 'wrong', 1);
         $service->reveal(101, $game['id'], 0, 1);
         $service->skip(101, $game['id'], 0);
         $state = $service->stateForUser(101);
@@ -125,16 +128,18 @@ try {
         $assert(count($state['results']) === 1 && $state['results'][0]['answer'] === 'ALIAS-1!');
     });
 
-    $run('Pięć rund sumuje 3/2/1, błędne odpowiedzi i pominięcia bez dodatkowych prób', static function () use ($repo, $service, $fixture, $assert): void {
+    $run('Pięć rund sumuje 3/2/1, trzy błędne odpowiedzi i pominięcie', static function () use ($repo, $service, $fixture, $assert): void {
         $game = $repo->createForDate('2026-11-15', $fixture);
-        $service->answer(101, $game['id'], 0, 'Anime 1');
+        $service->answer(101, $game['id'], 0, 'Anime 1', 1);
         $service->reveal(101, $game['id'], 1, 1);
-        $service->answer(101, $game['id'], 1, 'Anime 2');
+        $service->answer(101, $game['id'], 1, 'Anime 2', 2);
         $service->reveal(101, $game['id'], 2, 1);
         $service->reveal(101, $game['id'], 2, 2);
-        $service->answer(101, $game['id'], 2, 'Anime 3');
-        $service->answer(101, $game['id'], 3, 'wrong');
-        $service->answer(101, $game['id'], 3, 'Anime 4');
+        $service->answer(101, $game['id'], 2, 'Anime 3', 3);
+        $service->answer(101, $game['id'], 3, 'wrong one', 1);
+        $service->answer(101, $game['id'], 3, 'wrong two', 2);
+        $service->answer(101, $game['id'], 3, 'wrong three', 3);
+        $service->answer(101, $game['id'], 3, 'Anime 4', 3);
         $service->skip(101, $game['id'], 4);
         $state = $service->stateForUser(101);
         $assert($state['completed'] && $state['roundIndex'] === 5 && $state['clues'] === [] && $state['score'] === 6 && $state['correctCount'] === 3);
@@ -144,11 +149,49 @@ try {
         $assert($service->statistics(202)['answered'] === 0);
     });
 
+    $run('Błędne odpowiedzi odsłaniają wskazówki, zachowują historię i pozwalają zdobyć 2 lub 1 punkt', static function () use ($repo, $service, $fixture, $assert): void {
+        $game = $repo->createForDate('2026-11-15', $fixture);
+        $service->answer(101, $game['id'], 0, 'Wrong first', 1);
+        $state = $service->stateForUser(101);
+        $assert($state['roundIndex'] === 0 && $state['hintsUsed'] === 2 && $state['score'] === 0 && $state['results'] === []);
+        $assert($state['wrongAnswers'] === [['answer' => 'Wrong first', 'hintsUsed' => 1]]);
+        $assert(!str_contains(json_encode($state, JSON_THROW_ON_ERROR), 'Anime 1'), 'Active title remains hidden after a wrong guess.');
+        $service->answer(101, $game['id'], 0, 'Another old guess', 1);
+        $service->answer(101, $game['id'], 0, [], 1);
+        $assert($service->stateForUser(101) === $state, 'Stale guesses neither consume chances nor validate stale fields.');
+        $assert($service->statistics(101)['answered'] === 0 && $service->statistics(101)['points'] === 0);
+        $assert($service->stateForUser(202)['wrongAnswers'] === []);
+        $service->answer(101, $game['id'], 0, 'Alias 1', 2);
+        $state = $service->stateForUser(101);
+        $assert($state['score'] === 2 && $state['roundIndex'] === 1 && $state['wrongAnswers'] === []);
+        $assert($state['results'][0]['wrongAnswers'] === [['answer' => 'Wrong first', 'hintsUsed' => 1]]);
+        $service->answer(101, $game['id'], 1, 'Wrong A', 1);
+        $service->answer(101, $game['id'], 1, 'Wrong B', 2);
+        $service->answer(101, $game['id'], 1, 'Alias 2', 3);
+        $state = $service->stateForUser(101);
+        $assert($state['score'] === 3 && $state['correctCount'] === 2 && count($state['results'][1]['wrongAnswers']) === 2);
+        $assert($service->statistics(101)['answered'] === 2, 'Statistics count resolved rounds, not guesses.');
+    });
+
+    $run('Pominięcie po błędzie zamyka rundę i zachowuje podaną odpowiedź', static function () use ($repo, $service, $fixture, $assert): void {
+        $game = $repo->createForDate('2026-11-15', $fixture);
+        $service->answer(101, $game['id'], 0, 'Wrong before skip', 1);
+        $service->skip(101, $game['id'], 0);
+        $state = $service->stateForUser(101);
+        $assert($state['roundIndex'] === 1 && $state['score'] === 0 && $state['results'][0]['skipped']);
+        $assert($state['results'][0]['wrongAnswers'] === [['answer' => 'Wrong before skip', 'hintsUsed' => 1]]);
+    });
+
     $run('Niepoprawna odpowiedź, przyszła runda i fałszywy dzień nie zużywają próby', static function () use ($repo, $service, $fixture, $db, $assert): void {
         $game = $repo->createForDate('2026-11-15', $fixture);
         foreach (['', [], str_repeat('a', 201)] as $answer) {
             $rejected = false;
-            try { $service->answer(101, $game['id'], 0, $answer); } catch (InvalidArgumentException $exception) { $rejected = $exception->getMessage() === 'guess.error.answer'; }
+            try { $service->answer(101, $game['id'], 0, $answer, 1); } catch (InvalidArgumentException $exception) { $rejected = $exception->getMessage() === 'guess.error.answer'; }
+            $assert($rejected);
+        }
+        foreach ([0, 4] as $hints) {
+            $rejected = false;
+            try { $service->answer(101, $game['id'], 0, 'Anime 1', $hints); } catch (InvalidArgumentException $exception) { $rejected = $exception->getMessage() === 'guess.error.hints'; }
             $assert($rejected);
         }
         $rejected = false;
@@ -166,10 +209,10 @@ try {
     $run('Północ warszawska wygasza stary formularz bez tworzenia nowego zestawu', static function () use ($repo, $service, $fixture, &$now, $db, $assert): void {
         $now = new DateTimeImmutable('2026-11-15T22:59:59Z');
         $game = $repo->createForDate('2026-11-15', $fixture);
-        $service->answer(101, $game['id'], 0, 'Anime 1');
+        $service->answer(101, $game['id'], 0, 'Anime 1', 1);
         $now = new DateTimeImmutable('2026-11-15T23:00:00Z');
         $rejected = false;
-        try { $service->answer(101, $game['id'], 1, 'Anime 2'); } catch (InvalidArgumentException $exception) { $rejected = $exception->getMessage() === 'guess.error.expired'; }
+        try { $service->answer(101, $game['id'], 1, 'Anime 2', 1); } catch (InvalidArgumentException $exception) { $rejected = $exception->getMessage() === 'guess.error.expired'; }
         $assert($rejected && $service->stateForUser(101, createDay: false) === null);
         $assert((int) $db->query('SELECT count(*) FROM daily_anime_clues')->fetchColumn() === 1);
         $stats = $service->statistics(101);
@@ -199,7 +242,7 @@ try {
         $game = $repo->createForDate('2026-11-15', $fixture);
         $db->exec('SAVEPOINT outer_request');
         $service->reveal(101, $game['id'], 0, 1);
-        $service->answer(101, $game['id'], 0, 'Anime 1');
+        $service->answer(101, $game['id'], 0, 'Anime 1', 2);
         $assert($repo->attemptForUser(101, $game['id'])['score'] === 2);
         $db->exec('ROLLBACK TO SAVEPOINT outer_request');
         $db->exec('RELEASE SAVEPOINT outer_request');
@@ -281,7 +324,7 @@ try {
     echo '[OK] Dwa równoległe odkrycia tego samego formularza odkrywają tylko jedną wskazówkę' . PHP_EOL;
 
     $db->beginTransaction();
-    $service->answer(101, $game['id'], 0, 'Anime 1');
+    $service->answer(101, $game['id'], 0, 'Anime 1', 2);
     $worker = $launch('answer', $game['id']);
     $blocked($worker);
     $db->commit();
@@ -290,6 +333,18 @@ try {
     $assert((int) $db->query('SELECT count(*) FROM anime_clue_answers')->fetchColumn() === 1);
     $passed++;
     echo '[OK] Dwie równoległe odpowiedzi zachowują pierwszy wynik i nie zużywają kolejnej rundy' . PHP_EOL;
+
+    $db->beginTransaction();
+    $service->answer(101, $game['id'], 1, 'first concurrent wrong', 1);
+    $worker = $launch('wrong', $game['id']);
+    $blocked($worker);
+    $db->commit();
+    $state = $result($worker);
+    $assert($state['roundIndex'] === 1 && $state['hintsUsed'] === 2 && $state['score'] === 2);
+    $assert($state['wrongAnswers'] === [['answer' => 'first concurrent wrong', 'hintsUsed' => 1]]);
+    $assert((int) $db->query('SELECT count(*) FROM anime_clue_answers')->fetchColumn() === 1);
+    $passed++;
+    echo '[OK] Równoległe błędne odpowiedzi zużywają jedną szansę i zapisują jeden błąd' . PHP_EOL;
 } catch (Throwable $exception) {
     $failed++;
     fwrite(STDERR, '[BŁĄD] Współbieżność: ' . $exception->getMessage() . PHP_EOL);
