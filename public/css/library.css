@@ -30,40 +30,9 @@
     line-height: 1.75;
 }
 
-.page-library .profile-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-1);
-    padding: var(--space-1);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-small);
-    background: var(--color-surface);
-}
-
-.page-library .profile-tabs a {
-    display: grid;
-    place-items: center;
-    min-height: 2.75rem;
-    padding: var(--space-2);
-    border: 0;
-    font-size: 0.8rem;
-    text-align: center;
-}
-
-.page-library .profile-tabs a[aria-current="page"] {
-    color: var(--color-accent);
-    background: var(--color-surface-raised);
-}
-
 .page-library :is(.collection-pagination, .anime-ranking-pagination) a {
     border-radius: var(--radius-small);
     font-size: 0.75rem;
     font-weight: 600;
     text-decoration: none;
-}
-
-@media (min-width: 40rem) {
-    .page-library .profile-tabs {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
 }

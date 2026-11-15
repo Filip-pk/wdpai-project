@@ -21,6 +21,9 @@
     <?php if ($avatarSaved ?? false): ?>
         <p class="profile-notice" data-kind="success" role="status"><?= $escape($t('view.catalog.avatar_saved')) ?></p>
     <?php endif; ?>
+    <?php if ($showcaseSaved ?? false): ?>
+        <p class="profile-notice" data-kind="success" role="status"><?= $escape($t('showcase.saved')) ?></p>
+    <?php endif; ?>
     <?php if ($errors !== []): ?>
         <div class="profile-notice" data-kind="error" role="alert">
             <ul><?php foreach ($errors as $error): ?><li><?= $escape($translateText($error)) ?></li><?php endforeach; ?></ul>
@@ -32,6 +35,7 @@
     <?php endif; ?>
 
     <?php if (!$watchlistOnly): ?>
+        <?php require __DIR__ . '/partials/profile-showcase.html.php'; ?>
         <div class="profile-grid">
             <div class="profile-sidebar">
                 <section class="profile-summary" aria-labelledby="profile-title">

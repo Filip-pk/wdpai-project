@@ -54,8 +54,9 @@ $isRedesignPage = $isWelcome || $isAuthPage
     || str_starts_with((string) $currentPath, '/users/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
 $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
+$isShowcasePage = $currentPath === '/profile/showcase';
 $isSettingsPage = $currentPath === '/settings' || str_starts_with((string) $currentPath, '/settings/');
-$isRedesignPage = $isRedesignPage || $isSettingsPage;
+$isRedesignPage = $isRedesignPage || $isSettingsPage || $isShowcasePage;
 ?>
 
 <!doctype html>
@@ -146,8 +147,14 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
         <link rel="stylesheet" href="<?= $assetUrl('/css/community.css') ?>">
         <script src="<?= $assetUrl('/js/notifications.js') ?>" defer></script>
     <?php endif; ?>
-    <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
+    <?php if ($isUserProfilePage || $isImportPage || $isCollectionsPage || $isShowcasePage || in_array($currentPath, ['/profile', '/profile/avatar', '/watchlist', '/watchlist/remove'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/profile.css') ?>">
+    <?php endif; ?>
+    <?php if ($isUserProfilePage || $isShowcasePage || (isset($watchlistOnly) && !$watchlistOnly)): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/profile-showcase.css') ?>">
+    <?php endif; ?>
+    <?php if ($isShowcasePage): ?>
+        <script src="<?= $assetUrl('/js/profile-showcase.js') ?>" defer></script>
     <?php endif; ?>
     <?php if ($isCollectionsPage || str_starts_with((string) $currentPath, '/anime/')): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/collections.css') ?>">
