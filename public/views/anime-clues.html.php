@@ -66,6 +66,16 @@
                             <li data-guess-clue="<?= $escape($index + 1) ?>"><span><?= $escape($t('guess.clue_number', ['number' => $index + 1])) ?></span><p><?= $escape($clue) ?></p></li>
                         <?php endforeach; ?>
                     </ol>
+                    <?php if (($gameState['wrongAnswers'] ?? []) !== []): ?>
+                        <div class="guess-retry" role="status" data-guess-wrong-answers>
+                            <p><?= $escape($t('guess.retry')) ?></p>
+                            <ul class="guess-wrong-answers">
+                                <?php foreach ($gameState['wrongAnswers'] as $wrongAnswer): ?>
+                                    <li data-guess-wrong-answer><span><?= $escape($t('guess.wrong_attempt', ['number' => $wrongAnswer['hintsUsed']])) ?></span> <?= $escape($wrongAnswer['answer']) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
                     <?php if ($gameState['hintsUsed'] < 3): ?>
                         <form action="/guess/reveal" method="post" class="guess-hint-form">
                             <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
@@ -79,9 +89,20 @@
                         <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                         <input type="hidden" name="gameId" value="<?= $escape($gameState['id']) ?>">
                         <input type="hidden" name="roundIndex" value="<?= $escape($gameState['roundIndex']) ?>">
+                        <input type="hidden" name="expectedHints" value="<?= $escape($gameState['hintsUsed']) ?>">
                         <label for="guess-answer"><?= $escape($t('guess.answer_label')) ?></label>
-                        <input id="guess-answer" name="answer" type="text" maxlength="200" autocomplete="off" spellcheck="false" required aria-describedby="guess-answer-help">
+                        <div class="guess-autocomplete" data-guess-autocomplete
+                            data-help="<?= $escape($t('guess.suggestions.help')) ?>"
+                            data-loading="<?= $escape($t('guess.suggestions.loading')) ?>"
+                            data-results="<?= $escape($t('guess.suggestions.results')) ?>"
+                            data-empty="<?= $escape($t('guess.suggestions.empty')) ?>"
+                            data-error="<?= $escape($t('guess.suggestions.error')) ?>"
+                            data-selected="<?= $escape($t('guess.suggestions.selected')) ?>">
+                            <input id="guess-answer" name="answer" type="text" maxlength="200" autocomplete="off" spellcheck="false" required aria-describedby="guess-answer-help">
+                            <ul id="guess-suggestions" class="guess-suggestions" role="listbox" aria-label="<?= $escape($t('guess.suggestions.label')) ?>" hidden></ul>
+                        </div>
                         <p class="guess-help" id="guess-answer-help"><?= $escape($t('guess.answer_help')) ?></p>
+                        <p class="guess-help guess-suggestions-status" id="guess-suggestions-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
                         <button type="submit" class="button button-primary"><?= $escape($t('guess.submit')) ?></button>
                     </form>
                     <form action="/guess/skip" method="post" class="guess-skip-form">
@@ -102,7 +123,14 @@
                             <li class="guess-panel" data-guess-result="<?= $escape($result['roundIndex']) ?>" data-guess-points="<?= $escape($result['points']) ?>">
                                 <div class="guess-result-heading"><h3><?= $escape($result['title']) ?></h3><strong><?= $escape($t('guess.points', ['points' => $result['points']])) ?></strong></div>
                                 <p class="guess-answer-status"><?= $escape($t($result['skipped'] ? 'guess.skipped' : ($result['correct'] ? 'guess.correct' : 'guess.incorrect'))) ?></p>
-                                <?php if (!$result['skipped']): ?><p><?= $escape($t('guess.your_answer')) ?> <?= $escape($result['answer']) ?></p><?php endif; ?>
+                                <?php if (!$result['skipped'] && ($result['correct'] || ($result['wrongAnswers'] ?? []) === [])): ?><p><?= $escape($t('guess.your_answer')) ?> <?= $escape($result['answer']) ?></p><?php endif; ?>
+                                <?php if (($result['wrongAnswers'] ?? []) !== []): ?>
+                                    <ul class="guess-wrong-answers">
+                                        <?php foreach ($result['wrongAnswers'] as $wrongAnswer): ?>
+                                            <li data-guess-wrong-answer><span><?= $escape($t('guess.wrong_attempt', ['number' => $wrongAnswer['hintsUsed']])) ?></span> <?= $escape($wrongAnswer['answer']) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
                                 <p class="guess-help"><?= $escape($t('guess.hints_used', ['count' => $result['hintsUsed']])) ?></p>
                             </li>
                         <?php endforeach; ?>
@@ -113,4 +141,5 @@
     <?php endif; ?>
 </div>
 
+<script src="/js/anime-clues.js" defer></script>
 <?php require __DIR__ . '/partials/footer.html.php'; ?>

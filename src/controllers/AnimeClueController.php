@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Repository\UserRepository;
 use App\Service\AchievementService;
 use App\Service\AnimeClueService;
+use App\Service\AnimeClueTitleSearch;
 use App\Service\Translator;
 use Closure;
 use InvalidArgumentException;
@@ -53,6 +54,15 @@ final class AnimeClueController extends AppController
         $this->act('answer');
     }
 
+    public function suggestions(): void
+    {
+        $this->requireLogin();
+        $this->currentUser($this->users());
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['suggestions' => AnimeClueTitleSearch::suggestions($_GET['q'] ?? '')],
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    }
+
     public function skip(): void
     {
         $this->act('skip');
@@ -74,14 +84,16 @@ final class AnimeClueController extends AppController
             if ($id === false || $round === false) {
                 throw new InvalidArgumentException('guess.error.round');
             }
-            if ($action === 'reveal') {
+            if (in_array($action, ['reveal', 'answer'], true)) {
                 $hints = filter_var($this->postString('expectedHints'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 3]]);
                 if ($hints === false) {
                     throw new InvalidArgumentException('guess.error.hints');
                 }
+            }
+            if ($action === 'reveal') {
                 $this->game()->reveal($user['id'], $id, $round, $hints);
             } elseif ($action === 'answer') {
-                $this->game()->answer($user['id'], $id, $round, $this->postString('answer'));
+                $this->game()->answer($user['id'], $id, $round, $this->postString('answer'), $hints);
             } else {
                 $this->game()->skip($user['id'], $id, $round);
             }

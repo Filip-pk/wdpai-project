@@ -303,6 +303,7 @@ $routing->post('/quiz', QuizController::class, 'index');
 $routing->get('/quiz/ranking', QuizController::class, 'ranking');
 $routing->get('/achievements', AchievementController::class, 'index');
 $routing->get('/guess', AnimeClueController::class, 'index');
+$routing->get('/guess/suggestions', AnimeClueController::class, 'suggestions');
 $routing->get('/guess/ranking', AnimeClueController::class, 'ranking');
 $routing->post('/guess/reveal', AnimeClueController::class, 'reveal');
 $routing->post('/guess/answer', AnimeClueController::class, 'answer');

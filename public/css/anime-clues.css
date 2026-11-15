@@ -166,6 +166,79 @@
     min-width: 0;
 }
 
+.guess-autocomplete {
+    position: relative;
+    min-width: 0;
+}
+
+.guess-page .guess-suggestions {
+    position: absolute;
+    z-index: 5;
+    inset: calc(100% + var(--space-1)) 0 auto;
+    max-height: 18rem;
+    margin: 0;
+    padding: var(--space-1);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    background: var(--color-surface);
+    list-style: none;
+    box-shadow: 0 0.5rem 1.5rem var(--color-glow-violet);
+}
+
+.guess-suggestions[hidden] {
+    display: none;
+}
+
+.guess-suggestions > li {
+    display: grid;
+    gap: var(--space-1);
+    min-height: 2.75rem;
+    padding: var(--space-3);
+    border: 2px solid transparent;
+    border-radius: var(--radius-small);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.guess-suggestions > li:hover,
+.guess-suggestions > li[aria-selected="true"] {
+    border-color: var(--color-accent);
+    background: var(--color-surface-raised);
+}
+
+.guess-suggestions small {
+    color: var(--color-muted);
+    font-size: 0.75rem;
+}
+
+.guess-suggestions-status:empty {
+    display: none;
+}
+
+.guess-retry {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-left: 3px solid var(--color-brand);
+    border-radius: var(--radius-small);
+    background: var(--color-surface-raised);
+}
+
+.guess-wrong-answers {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    overflow-wrap: anywhere;
+}
+
+.guess-wrong-answers span {
+    color: var(--color-muted);
+}
+
 .guess-answer-form button,
 .guess-secondary {
     justify-self: start;
