@@ -81,7 +81,7 @@ function browser() {
             const response = await fetch(new URL(route, baseUrl), {
                 method: fields === undefined ? 'GET' : 'POST',
                 headers: cookie ? { Cookie: cookie } : {},
-                body: fields === undefined ? undefined : new URLSearchParams(fields),
+                body: fields === undefined ? undefined : fields instanceof FormData ? fields : new URLSearchParams(fields),
                 redirect: 'manual', signal: AbortSignal.timeout(15000),
             });
             for (const value of response.headers.getSetCookie()) {

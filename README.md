@@ -259,6 +259,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Powiadomienia, blokady, zgłoszenia i rola moderatora](docs/community-moderation.md)
 - [Poziomy, EXP i ranking TOP 100](docs/user-experience.md)
 - [Quiz dnia: 200 tłumaczonych pytań, serie i rankingi](docs/daily-quiz.md)
+- [Osiągnięcia, odznaki i postęp użytkownika](docs/achievements.md)
 - [Import listy MyAnimeList z XML/XML.GZ](docs/mal-watchlist-import.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)
 - [Środowisko PostgreSQL i przechowywanie danych](docs/postgresql-environment.md)
