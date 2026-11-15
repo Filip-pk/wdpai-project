@@ -24,11 +24,11 @@
 
     <p class="achievements-help"><?= $escape($t('achievements.permanent_help')) ?></p>
 
-    <?php foreach (['quiz', 'anime'] as $achievementCategory): ?>
+    <?php foreach (['quiz', 'guess', 'anime'] as $achievementCategory): ?>
         <section class="achievements-category" aria-labelledby="achievements-category-<?= $escape($achievementCategory) ?>">
             <header class="achievements-category-heading">
                 <h2 id="achievements-category-<?= $escape($achievementCategory) ?>"><?= $escape($t('achievements.category.' . $achievementCategory)) ?></h2>
-                <a href="<?= $achievementCategory === 'quiz' ? '/quiz' : '/watchlist' ?>"><?= $escape($t('achievements.action.' . $achievementCategory)) ?> <span aria-hidden="true">→</span></a>
+                <a href="<?= $escape(match ($achievementCategory) { 'quiz' => '/quiz', 'guess' => '/guess', default => '/watchlist' }) ?>"><?= $escape($t('achievements.action.' . $achievementCategory)) ?> <span aria-hidden="true">→</span></a>
             </header>
             <ul class="achievements-grid">
                 <?php foreach ($achievementOverview['items'] as $achievement): ?>

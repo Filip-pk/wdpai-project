@@ -25,13 +25,13 @@ $run = static function (string $name, callable $test) use (&$passed, &$failed): 
     }
 };
 
-$run('Katalog ma dziesięć stabilnych, unikalnych kodów i dodatnie cele', static function () use ($assert): void {
+$run('Katalog ma piętnaście stabilnych, unikalnych kodów i dodatnie cele', static function () use ($assert): void {
     $catalogue = Achievements::all();
-    $assert(count($catalogue) === 10 && count(array_unique(array_column($catalogue, 'code'))) === 10);
+    $assert(count($catalogue) === 15 && count(array_unique(array_column($catalogue, 'code'))) === 15);
     $assert(count(array_filter($catalogue, static fn (array $entry): bool => $entry['category'] === 'quiz')) === 5);
     foreach ($catalogue as $entry) {
         $assert(preg_match('/\A[a-z][a-z0-9_]*\z/', $entry['code']) === 1);
-        $assert(in_array($entry['category'], ['quiz', 'anime'], true));
+        $assert(in_array($entry['category'], ['quiz', 'guess', 'anime'], true));
         $assert(is_int($entry['target']) && $entry['target'] > 0 && $entry['metric'] !== '' && $entry['icon'] !== '');
     }
 });
@@ -39,7 +39,7 @@ $run('Katalog ma dziesięć stabilnych, unikalnych kodów i dodatnie cele', stat
 $run('Puste konto nie spełnia żadnego warunku i ma zerowy postęp', static function () use ($assert): void {
     $assert(AchievementService::eligibleCodes([]) === []);
     $overview = AchievementService::overview([]);
-    $assert($overview['unlockedCount'] === 0 && $overview['totalCount'] === 10);
+    $assert($overview['unlockedCount'] === 0 && $overview['totalCount'] === 15);
     foreach ($overview['items'] as $item) {
         $assert(!$item['unlocked'] && $item['unlockedAt'] === null && $item['progress'] === 0);
     }
@@ -73,7 +73,7 @@ $run('Zdobyte odznaki zachowują datę i pełny pasek po korekcie zapisanej akty
     $time = '2026-11-14 12:00:00+00';
     $overview = AchievementService::overview([], ['anime_completed_10' => $time, 'unknown_future_code' => $time]);
     $items = array_column($overview['items'], null, 'code');
-    $assert($overview['unlockedCount'] === 1 && $overview['totalCount'] === 10);
+    $assert($overview['unlockedCount'] === 1 && $overview['totalCount'] === 15);
     $assert($items['anime_completed_10']['unlocked'] && $items['anime_completed_10']['progress'] === 10
         && $items['anime_completed_10']['unlockedAt'] === $time);
     $assert(!$items['anime_first']['unlocked']);
@@ -81,7 +81,9 @@ $run('Zdobyte odznaki zachowują datę i pełny pasek po korekcie zapisanej akty
 
 $run('Jedna synchronizacja może spełnić wszystkie progi bez zmiany danych wejściowych', static function () use ($assert): void {
     $metrics = ['quizCount' => 30, 'correctAnswers' => 150, 'perfectQuizzes' => 30,
-        'bestQuizStreak' => 30, 'episodes' => 1000, 'completedAnime' => 50, 'completedGenres' => 8];
+        'bestQuizStreak' => 30, 'episodes' => 1000, 'completedAnime' => 50, 'completedGenres' => 8,
+        'guessCompletedDays' => 10, 'guessFirstClueCorrect' => 50, 'guessPerfectDays' => 10,
+        'guessCorrectAnswers' => 50, 'bestGuessStreak' => 10];
     $original = $metrics;
     $assert(AchievementService::eligibleCodes($metrics) === array_column(Achievements::all(), 'code'));
     $assert($metrics === $original);

@@ -157,7 +157,7 @@ async function inspect(cdp, route, width, theme, expected, hidden = false) {
     assert.equal(metrics.unsafeName, 0);
     assert.deepEqual(cdp.errors, [], 'No JavaScript exceptions');
     if (route === '/achievements') {
-        assert.equal(metrics.cards.length, 10);
+        assert.equal(metrics.cards.length, 15);
         assert.equal(metrics.cards.filter(card => card.unlocked === '1').length, expected);
     } else {
         assert.equal(metrics.section, !hidden);
