@@ -23,6 +23,7 @@ $currentPath = parse_url(
 );
 
 $isErrorPage = $isErrorPage ?? false;
+$isGuessPage = !$isErrorPage && ($currentPath === '/guess' || str_starts_with((string) $currentPath, '/guess/'));
 $isWelcome = !$isErrorPage && $currentPath === '/';
 $isAuthPage = !$isErrorPage && in_array($currentPath, ['/login', '/register'], true);
 $isWorkspace = !$isWelcome && !$isAuthPage && !$isErrorPage;
@@ -48,6 +49,7 @@ $isLibraryPage = !$isErrorPage && (str_starts_with((string) $currentPath, '/prof
     || $isImportPage || in_array($currentPath, ['/anime/ranking', '/ranking'], true));
 $isRedesignPage = $isWelcome || $isAuthPage
     || $isDiscoveryPage || $isLibraryPage || $isErrorPage || $isCommunityPage || $isAiPage || $isProjectsPage
+    || $isGuessPage
     || in_array($currentPath, ['/profile', '/profile/avatar', '/quiz', '/quiz/ranking', '/achievements'], true)
     || str_starts_with((string) $currentPath, '/users/');
 $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collections');
@@ -128,6 +130,9 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage;
     <?php endif; ?>
     <?php if ($currentPath === '/quiz'): ?>
         <script src="<?= $assetUrl('/js/quiz.js') ?>" defer></script>
+    <?php endif; ?>
+    <?php if ($isGuessPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/anime-clues.css') ?>">
     <?php endif; ?>
     <?php if ($currentPath === '/achievements' || $isUserProfilePage || in_array($currentPath, ['/profile', '/profile/avatar'], true)): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/achievements.css') ?>">

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controller\AdminController;
 use App\Controller\AchievementController;
 use App\Controller\AnimeController;
+use App\Controller\AnimeClueController;
 use App\Controller\AnimeRankingController;
 use App\Controller\AppController;
 use App\Controller\AuthController;
@@ -28,6 +29,7 @@ use App\Controller\SecuritySettingsController;
 use App\Controller\PrivacySettingsController;
 use App\Database;
 use App\Repository\AnimeRepository;
+use App\Repository\AnimeClueRepository;
 use App\Repository\AchievementRepository;
 use App\Repository\AnimeRankingRepository;
 use App\Repository\CollectionRepository;
@@ -51,6 +53,7 @@ use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\AccountAccessGuard;
 use App\Service\AchievementService;
+use App\Service\AnimeClueService;
 use App\Service\MailService;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
@@ -84,6 +87,13 @@ $connect = static function () use (&$connection): PDO {
 };
 
 $createController = static function (string $controllerClass) use ($connect): AppController {
+    if ($controllerClass === AnimeClueController::class) {
+        return new AnimeClueController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): AnimeClueService => new AnimeClueService(new AnimeClueRepository($connect())),
+            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
+        );
+    }
     if ($controllerClass === ModerationController::class) {
         return new ModerationController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -292,6 +302,11 @@ $routing->get('/quiz', QuizController::class, 'index');
 $routing->post('/quiz', QuizController::class, 'index');
 $routing->get('/quiz/ranking', QuizController::class, 'ranking');
 $routing->get('/achievements', AchievementController::class, 'index');
+$routing->get('/guess', AnimeClueController::class, 'index');
+$routing->get('/guess/ranking', AnimeClueController::class, 'ranking');
+$routing->post('/guess/reveal', AnimeClueController::class, 'reveal');
+$routing->post('/guess/answer', AnimeClueController::class, 'answer');
+$routing->post('/guess/skip', AnimeClueController::class, 'skip');
 $routing->get('/ranking', RankingController::class, 'index');
 $routing->get('/users/{id}', ProfileController::class, 'show');
 
