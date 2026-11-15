@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Service\Translator;
 
 use App\Repository\UserRepository;
+use App\Service\AchievementService;
 use App\Service\MalImportChangedException;
 use App\Service\MalImportService;
 use App\Service\MalXmlParser;
@@ -21,6 +22,7 @@ final class MalImportController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private MalImportService|Closure $imports,
+        private AchievementService|Closure|null $achievements = null,
     ) {
     }
 
@@ -91,6 +93,10 @@ final class MalImportController extends AppController
             return;
         }
 
+        if ($this->achievements instanceof Closure) {
+            $this->achievements = ($this->achievements)();
+        }
+        $this->achievements?->synchronize($user['id']);
         unset($_SESSION['mal_import_pending']);
         $_SESSION['mal_import_report'] = ['userId' => $user['id'], 'report' => $report];
         $this->redirect('/profile/import?imported=1');

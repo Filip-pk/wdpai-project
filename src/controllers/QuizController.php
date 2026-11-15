@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Service\AchievementService;
 use App\Service\QuizService;
 use App\Service\QuizQuestionLocalizer;
 use App\Service\Translator;
@@ -16,6 +17,7 @@ final class QuizController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private QuizService|Closure $quizService,
+        private AchievementService|Closure|null $achievements = null,
     ) {
     }
 
@@ -54,6 +56,7 @@ final class QuizController extends AppController
                     throw new InvalidArgumentException('quiz.error.answers');
                 }
                 $this->service()->submit($user['id'], $quizId, $submittedAnswers);
+                $this->achievements()?->synchronize($user['id']);
                 $this->redirect('/quiz');
             } catch (InvalidArgumentException $exception) {
                 $key = $exception->getMessage();
@@ -139,5 +142,13 @@ final class QuizController extends AppController
             $this->quizService = ($this->quizService)();
         }
         return $this->quizService;
+    }
+
+    private function achievements(): ?AchievementService
+    {
+        if ($this->achievements instanceof Closure) {
+            $this->achievements = ($this->achievements)();
+        }
+        return $this->achievements;
     }
 }
