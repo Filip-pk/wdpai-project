@@ -167,7 +167,7 @@ try {
 }
 
 function guessFields(fixture, token, roundIndex = 0, extra = {}) {
-    return { csrfToken: token, gameId: String(fixture.game.id), roundIndex: String(roundIndex), ...extra };
+    return { csrfToken: token, gameId: String(fixture.game.id), roundIndex: String(roundIndex), expectedHints: '1', ...extra };
 }
 
 module.exports = { createAnimeClueFixture, cleanupAnimeClueFixture, clueRecords, seedHistoricalClueProgress, guessFields };

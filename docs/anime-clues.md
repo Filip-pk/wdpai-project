@@ -11,12 +11,19 @@ językach AniVibe.
   po polsku, angielsku, niemiecku, francusku, hiszpańsku i rosyjsku.
 - Wszyscy dostają ten sam trwały zestaw pięciu anime na dzień w strefie
   `Europe/Warsaw`. Każde anime pochodzi z innej franczyzy.
-- Pierwsza wskazówka jest dostępna od razu. Kolejne gracz odkrywa osobno.
+- Pierwsza wskazówka jest dostępna od razu. Błędna odpowiedź odkrywa następną;
+  można też odkryć ją ręcznie, rezygnując z próby na bieżącym poziomie.
 - Poprawna odpowiedź po jednej, dwóch lub trzech wskazówkach daje
   odpowiednio **3, 2 lub 1 punkt**. Maksymalny wynik dnia to **15/15**.
-- Każda runda ma jedną próbę odpowiedzi. Błąd lub pominięcie daje zero
-  punktów i kończy rundę. Pusty lub nieprawidłowy formularz nie zużywa próby.
-- Tytuł jest wpisywany samodzielnie. Akceptowane są nazwa kanoniczna
+- Każda runda ma do trzech prób, po jednej na wskazówkę. Błędy po pierwszej
+  i drugiej wskazówce pozostają widoczne i pozwalają zgadywać dalej.
+  Dopiero trzeci błąd lub pominięcie kończy rundę z zerem punktów.
+  Pusty lub nieprawidłowy formularz nie zużywa próby.
+- Po wpisaniu co najmniej dwóch znaków lista podpowiada pasujące tytuły
+  z całej puli 200 anime, również po fragmencie alternatywnej nazwy.
+  Obsługuje strzałki, Enter, Escape oraz wybór myszą lub dotykiem.
+  Bez JavaScript tytuł nadal można wpisać samodzielnie.
+  Akceptowane są nazwa kanoniczna
   i zapisane popularne aliasy. Wielkość liter, odstępy, interpunkcja
   i diakrytyka są normalizowane. Nie stosujemy dopasowania podobnych słów.
 - Zakończenie wszystkich pięciu rund zalicza dzień do serii, także przy
@@ -72,7 +79,11 @@ Migracja 26 dodaje trzy tabele:
 - `daily_anime_clues` — jeden wspólny zestaw na datę.
 - `anime_clue_attempts` — bieżąca runda, liczba odkrytych wskazówek,
   wynik i ukończenie zestawu dla konta.
-- `anime_clue_answers` — pierwsza odpowiedź i punkty każdej rozegranej rundy.
+- `anime_clue_answers` — końcowa odpowiedź i punkty każdej rozegranej rundy.
+
+Migracja 27 dodaje do `anime_clue_attempts` historię błędnych prób
+`wrong_answers`, również dla bieżącej rundy. Zachowuje istniejące wyniki
+i nie otwiera ponownie wcześniej zakończonych rund.
 
 `AnimeClueController` obsługuje formularze `POST /guess/reveal`,
 `POST /guess/answer` i `POST /guess/skip`, pobierając konto z sesji
@@ -80,11 +91,19 @@ i sprawdzając CSRF. `AnimeClueService` sprawdza datę, kolejność rund,
 tytuł i punktację na serwerze. Blokada wiersza oraz unikalne klucze
 chronią wynik przy równoległych żądaniach i ponownym wysłaniu formularza.
 Powtórzenie tej samej prośby o podpowiedź nie odkrywa dwóch wskazówek.
+Formularz odpowiedzi przekazuje także oczekiwaną liczbę wskazówek.
+Ponowienie starego formularza po błędzie nie zużywa następnej próby.
 
-Do widoku trafiają tylko już odkryte wskazówki i zakończone rundy.
-Nie trafiają tam ukryte podpowiedzi, aliasy, identyfikatory anime ani
-tytuły kolejnych rund. Dopiero odpowiedź lub pominięcie ujawnia tytuł
-tej konkretnej rundy. Zmiana języka i odświeżenie strony zachowują stan
+`GET /guess/suggestions?q=nar` wymaga zalogowania i zwraca najwyżej
+dziesięć pasujących tytułów i dopasowanych nazw alternatywnych.
+Wynik nie zależy od dziennego zestawu, bieżącej rundy ani jej odpowiedzi.
+Nie zawiera identyfikatorów anime, wskazówek ani oznaczenia poprawnego tytułu.
+
+Stan rozgrywki zawiera odkryte wskazówki, własne błędne próby i zakończone rundy.
+Nie ujawnia ukrytych podpowiedzi, aliasów, identyfikatorów anime ani
+tytułów kolejnych rund. Lista dopasowanych tytułów pochodzi z osobnej
+wyszukiwarki całej puli. Dopiero zakończenie lub pominięcie wskazuje
+poprawny tytuł tej konkretnej rundy. Zmiana języka i odświeżenie strony zachowują stan
 zapisany na koncie, także w innej karcie lub po ponownym zalogowaniu.
 
 Serwis respektuje transakcję `AccountAccessGuard`. Odpowiedź błędu
@@ -119,6 +138,12 @@ Pusta baza wykona skrypt w standardowej inicjalizacji. Restart istniejącej
 bazy nie stosuje nowych migracji. Skrypt dodaje tabele nowej gry
 i zachowuje wcześniejsze dane aplikacji.
 
+Po migracji 26 wykonaj **raz** aktualizację trzech prób:
+
+```cmd
+docker compose exec -T php php -r "require 'vendor/autoload.php'; (new App\Database())->connect()->exec(file_get_contents('database/27-anime-clue-retries.sql'));"
+```
+
 ## Sprawdzenie
 
 Przy uruchomionych usługach `db`, `php` i `server`:
@@ -126,6 +151,7 @@ Przy uruchomionych usługach `db`, `php` i `server`:
 ```cmd
 docker compose exec -T php php tests/anime-clue-data.test.php
 docker compose exec -T php php tests/anime-clue-service.test.php
+docker compose exec -T php php tests/anime-clue-title-search.test.php
 docker compose exec -T php php tests/anime-clue-repository.test.php
 docker compose exec -T php php tests/anime-clue-ranking.test.php
 docker compose exec -T php php tests/anime-clue-achievements.test.php

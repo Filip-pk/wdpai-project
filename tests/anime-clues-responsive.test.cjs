@@ -185,7 +185,7 @@ async function inspect(cdp, width, theme, expected) {
     return metrics;
 }
 
-test('anime clue rounds and weekly ranking fit all viewports and work with the keyboard without JavaScript', { timeout: 240000 }, async t => {
+test('anime clue suggestions, retries and weekly ranking fit all viewports and support keyboard and no-JavaScript play', { timeout: 300000 }, async t => {
     const fixture = createAnimeClueFixture();
     let browser;
     try {
@@ -201,13 +201,57 @@ test('anime clue rounds and weekly ranking fit all viewports and work with the k
         await cdp.send('Network.setCookie', { name: 'PHPSESSID', value: owner.session(), url: baseUrl, path: '/' });
         for (const hints of [1, 2, 3]) {
             if (hints > 1) {
-                const response = await owner.request('/guess/reveal', guessFields(fixture, token, 0, { expectedHints: hints - 1 }));
+                const response = await owner.request('/guess/answer', guessFields(fixture, token, 0, { answer: 'Wrong <svg onload=alert(1)> ' + hints, expectedHints: hints - 1 }));
                 assert.equal(response.status, 303);
             }
             for (const theme of ['light', 'dark']) {
                 for (const width of [320, 768, 1440]) {
                     await t.test('hint ' + hints + ' / ' + theme + ' / ' + width, async () => inspect(cdp, width, theme, { hints }));
                 }
+            }
+            if (hints === 1) {
+                await t.test('title suggestions can be chosen by keyboard or pointer without submitting the answer', async () => {
+                    for (const [width, theme] of [[320, 'dark'], [1440, 'light']]) {
+                        await inspect(cdp, width, theme, { hints: 1 });
+                        await cdp.evaluate(`(() => { const field = document.getElementById('guess-answer'); field.value = ''; field.focus(); })()`);
+                        await cdp.send('Input.insertText', { text: 'nar' });
+                        await waitFor(cdp, `document.querySelector('#guess-suggestions:not([hidden]) [role="option"]') && document.getElementById('guess-answer').getAttribute('aria-expanded') === 'true'`);
+                        const options = await cdp.evaluate(`(() => {
+                            const box = document.getElementById('guess-suggestions');
+                            const rect = box.getBoundingClientRect();
+                            return { options: [...box.querySelectorAll('[role="option"]')].map(option => option.textContent.trim()),
+                                left: rect.left, right: rect.right, viewport: innerWidth,
+                                overflow: document.documentElement.scrollWidth > innerWidth + 1,
+                                role: document.getElementById('guess-answer').getAttribute('role') };
+                        })()`);
+                        assert.ok(options.options.some(option => option.includes('Naruto')));
+                        assert.ok(options.left >= 0 && options.right <= options.viewport + 1 && !options.overflow);
+                        assert.equal(options.role, 'combobox');
+                        const screenshot = path.join(os.tmpdir(), 'anivibe-clue-suggestions-' + width + '-' + theme + '-' + fixture.marker + '.png');
+                        const captured = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+                        fs.writeFileSync(screenshot, Buffer.from(captured.data, 'base64'));
+                        t.diagnostic('Suggestions screenshot: ' + screenshot);
+                        await key(cdp, 'ArrowDown', 'ArrowDown', 40);
+                        assert.ok(await cdp.evaluate(`Boolean(document.getElementById('guess-answer').getAttribute('aria-activedescendant'))`));
+                        await key(cdp, 'Enter', 'Enter', 13);
+                        await waitFor(cdp, `document.getElementById('guess-answer').value === 'Naruto' && document.getElementById('guess-suggestions').hidden`);
+                        assert.equal(await cdp.evaluate(`document.querySelector('[data-guess-round]').dataset.guessRound`), '0');
+                        await cdp.evaluate(`(() => { const field = document.getElementById('guess-answer'); field.value = ''; field.focus(); })()`);
+                        await cdp.send('Input.insertText', { text: 'nar' });
+                        await waitFor(cdp, `!document.getElementById('guess-suggestions').hidden`);
+                        await key(cdp, 'Escape', 'Escape', 27);
+                        assert.ok(await cdp.evaluate(`document.getElementById('guess-suggestions').hidden && document.getElementById('guess-answer').getAttribute('aria-expanded') === 'false'`));
+                        await cdp.send('Input.insertText', { text: 'u' });
+                        await waitFor(cdp, `document.querySelector('#guess-suggestions:not([hidden]) [role="option"]')`);
+                        const pointer = await cdp.evaluate(`(() => { const option = document.querySelector('#guess-suggestions [role="option"]'); option.scrollIntoView({ block: 'center' }); const rect = option.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }; })()`);
+                        for (const type of ['mousePressed', 'mouseReleased']) await cdp.send('Input.dispatchMouseEvent', { type, button: 'left', clickCount: 1, ...pointer });
+                        await waitFor(cdp, `document.getElementById('guess-answer').value === 'Naruto' && document.getElementById('guess-suggestions').hidden`);
+                        assert.equal(await cdp.evaluate(`document.querySelector('[data-guess-round]').dataset.guessHints`), '1');
+                    }
+                });
+            } else {
+                assert.equal(await cdp.evaluate(`document.querySelectorAll('[data-guess-wrong-answers] [data-guess-wrong-answer]').length`), hints - 1);
+                assert.equal(await cdp.evaluate(`document.querySelectorAll('main svg[onload]').length`), 0);
             }
         }
 
@@ -224,6 +268,7 @@ test('anime clue rounds and weekly ranking fit all viewports and work with the k
                 await waitFor(cdp, `performance.timeOrigin !== ${previousOrigin} && document.readyState === 'complete' && document.documentElement.lang === ${JSON.stringify(locale)} && document.querySelector('[data-guess-round]')?.dataset.guessHints === '3'`);
                 const clues = await cdp.evaluate(`JSON.stringify([...document.querySelectorAll('[data-guess-clue] p')].map(clue => clue.textContent.trim()))`);
                 assert.deepEqual(JSON.parse(clues), fixture.game.entries[0].clues[locale]);
+                assert.equal(await cdp.evaluate(`document.querySelectorAll('[data-guess-wrong-answers] [data-guess-wrong-answer]').length`), 2);
             }
         });
 
@@ -234,8 +279,16 @@ test('anime clue rounds and weekly ranking fit all viewports and work with the k
         t.diagnostic('Hints screenshot: ' + hintScreenshot);
 
         await cdp.send('Emulation.setScriptExecutionDisabled', { value: true });
-        await t.test('all five answers can be entered and submitted with the keyboard without JavaScript', async () => {
+        await t.test('all five rounds and a wrong-answer retry work with the keyboard without JavaScript', async () => {
             for (let round = 0; round < 5; round++) {
+                if (round === 1) {
+                    await cdp.evaluate(`(() => { const field = document.getElementById('guess-answer'); field.scrollIntoView({ block: 'center' }); field.focus(); })()`);
+                    await cdp.send('Input.insertText', { text: 'No-JavaScript wrong answer' });
+                    await cdp.evaluate(`(() => { const button = document.querySelector('[data-guess-answer-form] button[type="submit"]'); button.scrollIntoView({ block: 'center' }); button.focus(); })()`);
+                    await key(cdp, ' ', 'Space', 32);
+                    await waitFor(cdp, `document.readyState === 'complete' && document.querySelector('[data-guess-round="1"]')?.dataset.guessHints === '2'`);
+                    assert.ok(await cdp.evaluate(`document.querySelector('[data-guess-wrong-answers]').textContent.includes('No-JavaScript wrong answer')`));
+                }
                 await cdp.evaluate(`(() => { const field = document.getElementById('guess-answer'); field.scrollIntoView({ block: 'center' }); field.focus(); })()`);
                 await cdp.send('Input.insertText', { text: fixture.game.entries[round].title });
                 await cdp.evaluate(`(() => { const button = document.querySelector('[data-guess-answer-form] button[type="submit"]'); button.scrollIntoView({ block: 'center' }); button.focus(); })()`);
@@ -243,17 +296,17 @@ test('anime clue rounds and weekly ranking fit all viewports and work with the k
                 const expected = round === 4 ? `document.querySelector('[data-guess-completed="1"]')` : `document.querySelector('[data-guess-round="${round + 1}"]')`;
                 await waitFor(cdp, `document.readyState === 'complete' && Boolean(${expected})`);
             }
-            assert.equal(await cdp.evaluate(`document.querySelector('[data-guess-score]').dataset.guessScore`), '13');
+            assert.equal(await cdp.evaluate(`document.querySelector('[data-guess-score]').dataset.guessScore`), '12');
         });
         for (const theme of ['light', 'dark']) {
             for (const width of [320, 768, 1440]) {
-                await t.test('completed / ' + theme + ' / ' + width, async () => inspect(cdp, width, theme, { completed: true, score: 13 }));
+                await t.test('completed / ' + theme + ' / ' + width, async () => inspect(cdp, width, theme, { completed: true, score: 12 }));
             }
         }
         for (const theme of ['light', 'dark']) {
             for (const width of [320, 768, 1440]) {
                 await t.test('weekly ranking / ' + theme + ' / ' + width, async () => {
-                    await inspect(cdp, width, theme, { ranking: true, points: 13 });
+                    await inspect(cdp, width, theme, { ranking: true, points: 12 });
                     if ((theme === 'dark' && width === 320) || (theme === 'light' && width === 1440)) {
                         const screenshot = path.join(os.tmpdir(), 'anivibe-clue-ranking-' + width + '-' + theme + '-' + fixture.marker + '.png');
                         const captured = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
@@ -263,7 +316,7 @@ test('anime clue rounds and weekly ranking fit all viewports and work with the k
                 });
             }
         }
-        await inspect(cdp, 1440, 'light', { completed: true, score: 13 });
+        await inspect(cdp, 1440, 'light', { completed: true, score: 12 });
         const resultScreenshot = path.join(os.tmpdir(), 'anivibe-clue-result-1440-light-' + fixture.marker + '.png');
         const resultImage = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
         fs.writeFileSync(resultScreenshot, Buffer.from(resultImage.data, 'base64'));
