@@ -61,6 +61,7 @@
         </div>
 
         <div class="user-profile-content">
+            <?php require __DIR__ . '/partials/profile-showcase.html.php'; ?>
             <?php if ($showStatistics): ?>
             <?php require __DIR__ . '/partials/achievements.html.php'; ?>
             <section class="profile-summary user-profile-statistics" aria-labelledby="user-statistics-title">

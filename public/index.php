@@ -20,6 +20,7 @@ use App\Controller\LanguageController;
 use App\Controller\MessageController;
 use App\Controller\ModerationController;
 use App\Controller\ProfileController;
+use App\Controller\ProfileShowcaseController;
 use App\Controller\ProjectController;
 use App\Controller\QuizController;
 use App\Controller\RankingController;
@@ -49,6 +50,7 @@ use App\Repository\UserRepository;
 use App\Repository\PreferencesRepository;
 use App\Repository\SecuritySettingsRepository;
 use App\Repository\PrivacySettingsRepository;
+use App\Repository\ProfileShowcaseRepository;
 use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\AccountAccessGuard;
@@ -87,6 +89,14 @@ $connect = static function () use (&$connection): PDO {
 };
 
 $createController = static function (string $controllerClass) use ($connect): AppController {
+    if ($controllerClass === ProfileShowcaseController::class) {
+        return new ProfileShowcaseController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): AnimeRepository => new AnimeRepository($connect()),
+            static fn (): ProfileShowcaseRepository => new ProfileShowcaseRepository($connect()),
+            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
+        );
+    }
     if ($controllerClass === AnimeClueController::class) {
         return new AnimeClueController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -202,6 +212,7 @@ $createController = static function (string $controllerClass) use ($connect): Ap
             static fn (): CommunityRepository => new CommunityRepository($connect()),
             static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
             static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
+            static fn (): ProfileShowcaseRepository => new ProfileShowcaseRepository($connect()),
         );
     }
 
@@ -357,6 +368,9 @@ $routing->get('/account/notices', ModerationController::class, 'notices');
 $routing->post('/account/notices/{id}/read', ModerationController::class, 'readNotice');
 
 $routing->get('/profile', ProfileController::class, 'index');
+$routing->get('/profile/showcase', ProfileShowcaseController::class, 'index');
+$routing->post('/profile/showcase', ProfileShowcaseController::class, 'index');
+$routing->get('/profile/showcase/anime', ProfileShowcaseController::class, 'anime');
 $routing->get('/settings', SettingsController::class, 'index');
 $routing->post('/settings', SettingsController::class, 'index');
 $routing->post('/settings/accessibility', SettingsController::class, 'accessibility');

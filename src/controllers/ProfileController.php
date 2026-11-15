@@ -10,6 +10,7 @@ use App\Repository\AnimeRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\PrivacySettingsRepository;
+use App\Repository\ProfileShowcaseRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
@@ -38,6 +39,7 @@ final class ProfileController extends AppController
         private CommunityRepository|Closure|null $community = null,
         private PrivacySettingsRepository|Closure|null $privacy = null,
         private AchievementService|Closure|null $achievements = null,
+        private ProfileShowcaseRepository|Closure|null $showcases = null,
     ) {
     }
 
@@ -143,7 +145,7 @@ final class ProfileController extends AppController
                 'previousUrl' => $this->publicWatchlistPath($id, $result['page'] - 1, $statusFilter),
                 'nextUrl' => $this->publicWatchlistPath($id, $result['page'] + 1, $statusFilter),
             ],
-        ]);
+        ] + $this->showcaseData($id, $profileAchievements, $isOwnProfile));
     }
 
     private function publicWatchlistPath(int $id, int $page, string $status): string
@@ -325,6 +327,7 @@ final class ProfileController extends AppController
             'errors' => $errors,
             'saved' => !$this->isPost() && ($_GET['saved'] ?? null) === '1',
             'avatarSaved' => !$this->isPost() && ($_GET['avatarSaved'] ?? null) === '1',
+            'showcaseSaved' => !$this->isPost() && ($_GET['showcaseSaved'] ?? null) === '1',
             'animes' => $this->animes()->findByIds($animeIds),
             'watchlistTotal' => $result['watchlistTotal'],
             'watchlistPagination' => $result + [
@@ -338,7 +341,35 @@ final class ProfileController extends AppController
             'visibleWatchlist' => $result['entries'],
             'watchlistStatuses' => self::STATUSES,
             'completedCount' => $result['completedCount'],
-        ]);
+        ] + ($watchlistOnly ? [] : $this->showcaseData($user['id'], $profileAchievements, true)));
+    }
+
+    private function showcaseData(int $userId, array $earnedBadges, bool $canEdit): array
+    {
+        if ($this->showcases instanceof Closure) {
+            $this->showcases = ($this->showcases)();
+        }
+        $selection = $this->showcases?->findForUser($userId) ?? ['animeIds' => [], 'badgeCodes' => []];
+        $animes = $this->animes()->findByIds($selection['animeIds']);
+        $showcaseAnimes = [];
+        foreach ($selection['animeIds'] as $id) {
+            if (isset($animes[$id])) {
+                $showcaseAnimes[$id] = $animes[$id];
+            }
+        }
+        $badgesByCode = array_column($earnedBadges, null, 'code');
+        $showcaseBadges = [];
+        foreach ($selection['badgeCodes'] as $code) {
+            if (isset($badgesByCode[$code])) {
+                $showcaseBadges[] = $badgesByCode[$code];
+            }
+        }
+
+        return [
+            'showcaseAnimes' => $showcaseAnimes,
+            'showcaseBadges' => $showcaseBadges,
+            'canEditShowcase' => $canEdit,
+        ];
     }
 
     private function watchlistPath(bool $watchlistOnly, int $page, string $status): string
