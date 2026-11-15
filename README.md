@@ -17,6 +17,8 @@ AI i rozmowy z postaciami.
 - Import własnej listy MyAnimeList z XML/XML.GZ: podgląd i zatwierdzenie,
   zachowanie istniejących danych lub jawna aktualizacja oraz raport i EXP.
 - Edycja profilu, zainteresowania i zdjęcie profilowe JPG/PNG do 4 MB.
+- Gablotka profilu: do 3 ulubionych anime i 3 zdobytych odznak z animowanym
+  neonowym obramowaniem, wyszukiwarką i zapisem na koncie.
 - Publiczne profile otwierane przez nazwę lub avatar: poziom, EXP, statystyki
   i watchlista do przeglądania. Przycisk „Napisz wiadomość” otwiera prywatną rozmowę.
 - Zakładka „Wiadomości”: własne rozmowy i wysyłanie tekstu, jedna rozmowa na parę
@@ -248,6 +250,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Autorzy źródeł i licencje danych](docs/anime-catalog.md#źródła-i-licencje)
 - [Konta i logowanie](docs/authentication.md)
 - [Profile, zdjęcia i watchlisty](docs/user-profiles.md)
+- [Gablotka profilu i migracja bazy](docs/profile-showcase.md)
 - [Prywatne kolekcje anime i migracja istniejącej bazy](docs/user-collections.md)
 - [Własne oceny anime i migracja istniejącej bazy](docs/user-ratings.md)
 - [Oceny społeczności AniVibe](docs/community-ratings.md)
