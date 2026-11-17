@@ -189,14 +189,17 @@ final class ModerationRepository
             || !$this->canModerate($actor)) {
             return false;
         }
-        $lookup = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
+        $lookup = $this->connection->prepare("SELECT is_moderator, COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id");
         $lookup->execute(['id' => $userId]);
         $target = $lookup->fetch();
-        if ($target === false || in_array($target['is_moderator'], [true, 1, '1', 't'], true)) {
+        if ($target === false || in_array($target['is_moderator'], [true, 1, '1', 't'], true)
+            || in_array($target['is_admin'], [true, 1, '1', 't'], true)) {
             return false;
         }
         return $this->exclusiveUserMutation($userId, fn (): bool => $this->decision($actor, $userId, $reason, $key, function (array $user, string $reason) use ($actor, $userId, $durationSeconds, $key): bool {
-            if (in_array($user['is_moderator'], [true, 1, '1', 't'], true) || $this->activeBanForUser($userId) !== null) {
+            if (in_array($user['is_moderator'], [true, 1, '1', 't'], true)
+                || in_array($user['is_admin'], [true, 1, '1', 't'], true)
+                || $this->activeBanForUser($userId) !== null) {
                 return false;
             }
             // One database timestamp determines both ends, independent of the PHP host clock.
@@ -329,7 +332,7 @@ final class ModerationRepository
             if ($existing->fetchColumn() !== false) {
                 return false;
             }
-            $lookup = $this->connection->prepare('SELECT id, name, is_moderator FROM users WHERE id = :id');
+            $lookup = $this->connection->prepare("SELECT id, name, is_moderator, COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id");
             $lookup->execute(['id' => $userId]);
             $user = $lookup->fetch();
             return $user !== false && $callback($user, $reason);
