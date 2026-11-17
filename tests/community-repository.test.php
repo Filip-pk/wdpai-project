@@ -144,7 +144,7 @@ SQL);
         $assert($repository->unreadCountForUser(101) === 3, 'Only three received messages belong to Alice');
         $assert($repository->unreadCountForUser(102) === 1, 'Bob sees only the own-to-Alice message');
         $assert($repository->unreadCountForUser(999) === 0, 'Missing user has no conversations');
-        $assert($repository->navigationStateForUser(101) === ['unreadCount' => 3, 'unreadReplyCount' => 0, 'isModerator' => false], 'Navigation returns DB-derived state');
+        $assert($repository->navigationStateForUser(101) === ['unreadCount' => 3, 'unreadReplyCount' => 0, 'isModerator' => false, 'isAdmin' => false], 'Navigation returns DB-derived state');
     };
 
     $tests['conversation unread count is private and follows only its own cursor'] = static function () use ($repository, $assert): void {

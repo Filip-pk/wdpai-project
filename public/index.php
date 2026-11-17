@@ -30,6 +30,7 @@ use App\Controller\SecuritySettingsController;
 use App\Controller\PrivacySettingsController;
 use App\Database;
 use App\Repository\AnimeRepository;
+use App\Repository\AdminRepository;
 use App\Repository\AnimeClueRepository;
 use App\Repository\AchievementRepository;
 use App\Repository\AnimeRankingRepository;
@@ -57,12 +58,18 @@ use App\Service\AccountAccessGuard;
 use App\Service\AchievementService;
 use App\Service\AnimeClueService;
 use App\Service\MailService;
+use App\Service\ApplicationLogger;
+use App\Service\ApplicationErrorHandler;
+use App\Service\DiagnosticService;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
 use App\Service\QuizService;
 use App\Service\Translator;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+$applicationLogger = new ApplicationLogger(dirname(__DIR__) . '/storage/logs');
+ApplicationErrorHandler::register($applicationLogger);
 
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', '1');
@@ -88,7 +95,22 @@ $connect = static function () use (&$connection): PDO {
     return $connection ??= (new Database())->connect();
 };
 
-$createController = static function (string $controllerClass) use ($connect): AppController {
+$createController = static function (string $controllerClass) use ($connect, $applicationLogger): AppController {
+    if ($controllerClass === AdminController::class) {
+        $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
+        return new AdminController(
+            static fn (): UserRepository => new UserRepository($connect()),
+            static fn (): AdminRepository => new AdminRepository($connect()),
+            new DiagnosticService(
+                static fn (): PDO => (new Database())->connect(),
+                $mailConfiguration,
+                $applicationLogger,
+                dirname(__DIR__),
+            ),
+            $applicationLogger,
+            new MailService(...$mailConfiguration),
+        );
+    }
     if ($controllerClass === ProfileShowcaseController::class) {
         return new ProfileShowcaseController(
             static fn (): UserRepository => new UserRepository($connect()),
@@ -398,6 +420,9 @@ $routing->post('/watchlist', ProfileController::class, 'saveWatchlist');
 $routing->post('/watchlist/remove', ProfileController::class, 'removeWatchlist');
 
 $routing->get('/admin', AdminController::class, 'index');
+$routing->post('/admin/diagnostics', AdminController::class, 'checkDiagnostics');
+$routing->post('/admin/mail-test', AdminController::class, 'testMail');
+$routing->post('/admin/users/{id}/moderator', AdminController::class, 'changeModerator');
 
 // Projekty zapisane w PostgreSQL.
 $routing->get('/projects', ProjectController::class, 'index');
@@ -445,7 +470,7 @@ try {
     AccountAccessGuard::finish(http_response_code() < 400);
 } catch (Throwable $exception) {
     AccountAccessGuard::finish(false);
-    error_log('Błąd obsługi żądania: ' . $exception::class);
+    $errorId = $applicationLogger->recordException($exception, 'application', $_SERVER['REQUEST_URI'] ?? '/');
     http_response_code(500);
-    (new DefaultController())->serverError();
+    (new DefaultController())->serverError($errorId);
 }

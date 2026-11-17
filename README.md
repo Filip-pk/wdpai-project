@@ -48,6 +48,8 @@ AI i rozmowy z postaciami.
   rosnące progi poziomów i aktualny ranking TOP 100 użytkowników.
 - Jasny, ciemny i systemowy motyw oraz układ dostosowany do telefonu i komputera.
 - Wiadomość powitalna po rejestracji, przechwytywana lokalnie przez Mailpit.
+- Panel administratora: diagnostyka usług, ostatnie błędy, zarządzanie
+  rolą moderatora, podgląd braków katalogu i historia operacji.
 
 Asystent AI, rozmowy z postaciami, personalizowane rekomendacje
 i automatyczna synchronizacja listy MyAnimeList są obecnie demonstracyjne
@@ -266,5 +268,6 @@ docker compose exec php php scripts/check-postgres.php
 - [Rozpoznaj anime: 200 tytułów, wskazówki i punktacja](docs/anime-clues.md)
 - [Import listy MyAnimeList z XML/XML.GZ](docs/mal-watchlist-import.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)
+- [Panel administratora, uprawnienia i diagnostyka](docs/admin-panel.md)
 - [Środowisko PostgreSQL i przechowywanie danych](docs/postgresql-environment.md)
 

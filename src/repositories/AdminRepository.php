@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Service\CommunityService;
 use InvalidArgumentException;
 use PDO;
 use RuntimeException;
@@ -68,8 +69,8 @@ final class AdminRepository
         if ($actorId <= 0 || $targetId <= 0 || $actorId === $targetId) {
             return false;
         }
+        $reason = CommunityService::normalizeReason($reason);
         $this->validateReason($reason);
-        $reason = trim($reason);
         // Reject protected accounts before requesting a lock held by their HTTP session.
         // The same properties are checked again after all locks have been acquired.
         $target = $this->database->prepare('SELECT is_admin FROM users WHERE id = :id');
@@ -242,9 +243,8 @@ final class AdminRepository
 
     private function validateReason(string $reason): void
     {
-        if (trim($reason) === '' || preg_match('//u', $reason) !== 1 || preg_match('/[\x00-\x1F\x7F]/', $reason) === 1
-            || preg_match_all('/./us', $reason) > 1000) {
-            throw new InvalidArgumentException('Powód musi zawierać od 1 do 1000 znaków bez znaków sterujących.');
+        if (CommunityService::validateReason($reason) !== []) {
+            throw new InvalidArgumentException('Powód musi zawierać od 1 do 1000 znaków bez niedozwolonych znaków sterujących.');
         }
     }
 

@@ -28,7 +28,9 @@
                     <ul>
                         <li><a href="/projects"><?= $escape($t('navigation.projects')) ?></a></li>
                         <li><a href="/login"><?= $escape($t('footer.login')) ?></a></li>
-                        <li><a href="/admin"><?= $escape($t('footer.persona')) ?></a></li>
+                        <?php if ($isAdmin ?? false): ?>
+                            <li><a href="/admin"><?= $escape($t('navigation.admin')) ?></a></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </nav>

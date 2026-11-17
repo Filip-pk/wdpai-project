@@ -46,6 +46,9 @@ if ($isLoggedIn) {
 if ($isModerator) {
     $secondaryNavigation['/moderation'] = $t('navigation.moderation');
 }
+if ($isAdmin ?? false) {
+    $secondaryNavigation['/admin'] = $t('navigation.admin');
+}
 $isNavigationCurrent = static fn (string $url): bool => $currentPath === $url
     || ($url === '/guess' && str_starts_with((string) $currentPath, '/guess/'))
     || ($url === '/quiz' && str_starts_with((string) $currentPath, '/quiz/'))
@@ -54,7 +57,8 @@ $isNavigationCurrent = static fn (string $url): bool => $currentPath === $url
     || ($url === '/profile' && (str_starts_with((string) $currentPath, '/profile/') || $isUserProfilePage))
     || ($url === '/messages' && str_starts_with((string) $currentPath, '/messages/'))
     || ($url === '/settings' && str_starts_with((string) $currentPath, '/settings/'))
-    || ($url === '/moderation' && str_starts_with((string) $currentPath, '/moderation/'));
+    || ($url === '/moderation' && str_starts_with((string) $currentPath, '/moderation/'))
+    || ($url === '/admin' && str_starts_with((string) $currentPath, '/admin/'));
 $navigationIcon = static function (string $url): string {
     $paths = [
         '/dashboard' => '<circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5Z"/>',
@@ -70,6 +74,7 @@ $navigationIcon = static function (string $url): string {
         '/projects' => '<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V3h8v3M3 12h18M10 12v3h4v-3"/>',
         '/settings' => '<path d="m10 2-1 3-3 1-3 3 2 3-1 4 3 2 3-1 3 2 3-2 1-4 3-2-1-4-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/>',
         '/moderation' => '<path d="m12 2 9 4v6c0 5-9 10-9 10S3 17 3 12V6Z"/><path d="m8 12 3 3 5-6"/>',
+        '/admin' => '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 9v12m3-6 2 2 4-4"/>',
     ];
     $path = $paths[$url] ?? '<path d="M8 3h8v4a4 4 0 0 1-8 0ZM8 5H4v2a4 4 0 0 0 5 4M16 5h4v2a4 4 0 0 1-5 4M12 11v7M8 21h8M9 18h6"/>';
 

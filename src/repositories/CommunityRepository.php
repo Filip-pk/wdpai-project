@@ -19,16 +19,19 @@ final class CommunityRepository
     {
     }
 
-    /** @return array{unreadCount: int, unreadReplyCount: int, isModerator: bool} */
+    /** @return array{unreadCount: int, unreadReplyCount: int, isModerator: bool, isAdmin: bool} */
     public function navigationStateForUser(int $userId): array
     {
-        $statement = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
+        // JSON lookup keeps the existing navigation usable before migration 29.
+        $statement = $this->connection->prepare("SELECT is_moderator, COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id");
         $statement->execute(['id' => $userId]);
+        $roles = $statement->fetch();
 
         return [
             'unreadCount' => $this->unreadCountForUser($userId),
             'unreadReplyCount' => (new ReplyNotificationRepository($this->connection))->unreadCountForUser($userId),
-            'isModerator' => $this->toBool($statement->fetchColumn()),
+            'isModerator' => $this->toBool($roles['is_moderator'] ?? false),
+            'isAdmin' => $this->toBool($roles['is_admin'] ?? false),
         ];
     }
 

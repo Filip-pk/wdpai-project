@@ -142,7 +142,7 @@ try {
     });
 
     $run('Nieprawidłowe powody i szczegóły audytu są odrzucane przed zapisem', static function () use ($repository, $throws, $assert): void {
-        foreach (['', '  ', str_repeat('ą', 1001), "Powód\nnowa linia", "NUL\0"] as $reason) {
+        foreach (['', '  ', str_repeat('ą', 1001), "\u{00A0}\u{2003}", "NUL\0", "Kontrola\u{0085}"] as $reason) {
             $throws(static fn () => $repository->changeModerator(1, 3, true, $reason), InvalidArgumentException::class);
         }
         foreach ([['password' => 'secret'], ['reason' => ['nested']], ['reason' => str_repeat('x', 4001)]] as $details) {
@@ -151,6 +151,12 @@ try {
         $throws(static fn () => $repository->audit(1, 'invalid action'), InvalidArgumentException::class);
         $throws(static fn () => $repository->audit(3, 'diagnostics_checked'), RuntimeException::class);
         $assert($repository->history()['pagination']['total'] === 0);
+    });
+
+    $run('Wielowierszowy powód zachowuje treść i wspólną normalizację formularzy moderacji', static function () use ($repository, $assert): void {
+        $reason = "  Pierwszy wiersz\r\nDrugi\twiersz\rTrzeci wiersz  \r\n";
+        $assert($repository->changeModerator(1, 3, true, $reason));
+        $assert($repository->history()['items'][0]['details']['reason'] === "Pierwszy wiersz\nDrugi\twiersz\nTrzeci wiersz");
     });
 
     $run('Błąd audytu wycofuje zmianę roli i zachowuje nadrzędną transakcję', static function () use ($repository, $connection, $throws, $assert): void {
