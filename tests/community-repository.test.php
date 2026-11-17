@@ -387,6 +387,59 @@ SQL);
         $assert($service->report(101, 'comment', 501, "Invalid\0") === null, 'Service validates reason before creating report');
     };
 
+    $tests['administrator targets reject blocks and ignore historical inbound blocks without removing them'] = static function () use ($repository, $service, $connection, $assert): void {
+        $connection->exec('ALTER TABLE pg_temp.users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT false');
+        $assert($repository->blockForUser(101, 102), 'Ordinary target can initially be blocked');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 102');
+        $assert(!$repository->blockForUser(101, 102), 'A forged direct block cannot target an administrator');
+        foreach ([[101, 102], [102, 101]] as [$actor, $target]) {
+            $assert($repository->blockStateForUser($actor, $target) === ['blockedByMe' => false, 'blockedEitherWay' => false],
+                'Historical inbound block is inactive in both views after promotion');
+        }
+        $assert($repository->blockedPageForUser(101)['total'] === 0
+            && $repository->blockedPageForUser(101)['entries'] === [], 'Administrator is excluded from list and count');
+        $assert((int) $connection->query('SELECT COUNT(*) FROM user_blocks')->fetchColumn() === 1, 'Historical block remains stored');
+        $assert($service->runLimited(101, 'message', 'Message to promoted admin', static fn (): int => 1, 102) === 1,
+            'Historical block does not prevent the service mutation');
+        $assert($repository->blockForUser(102, 101), 'Administrator can still block a member');
+        $assert($repository->blockStateForUser(101, 102) === ['blockedByMe' => false, 'blockedEitherWay' => true],
+            'Administrator outbound block remains effective');
+        $assert($repository->unblockForUser(102, 101), 'Administrator can remove its ordinary outbound block');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = false WHERE id = 102');
+        $assert($repository->blockStateForUser(101, 102)['blockedByMe'], 'Stored inbound block becomes effective again after role revocation');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 102');
+        $assert($repository->unblockForUser(101, 102), 'Owner may remove its inactive historical block');
+        $assert((int) $connection->query('SELECT COUNT(*) FROM user_blocks')->fetchColumn() === 0, 'Explicit cleanup removes only the owner edge');
+    };
+
+    $tests['administrator comments replies and private messages cannot be reported even through historical duplicate IDs'] = static function () use ($repository, $service, $connection, $assert): void {
+        $connection->exec('ALTER TABLE pg_temp.users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT false');
+        $connection->exec("INSERT INTO anime_comments (id, anime_id, user_id, body, parent_id) VALUES (550, 201, 102, 'Reply by future admin', 501)");
+        $targets = [['comment', 501], ['comment', 550], ['message', 401]];
+        $reports = [];
+        foreach ($targets as [$type, $targetId]) {
+            $assert($repository->reportTargetForUser(101, $type, $targetId) !== null, 'Ordinary author target is initially available');
+            $reports[] = $repository->createReportForUser(101, $type, $targetId, 'Historical report');
+        }
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 102');
+        foreach ($targets as [$type, $targetId]) {
+            $assert($repository->reportTargetForUser(101, $type, $targetId) === null, 'Protected target has no report form');
+            $assert(!$repository->reportExistsForUser(101, $type, $targetId), 'Historical ID cannot bypass protection');
+            $assert($repository->createReportForUser(101, $type, $targetId, 'Forged report') === null, 'Write path rejects protected content');
+            $assert($service->report(101, $type, $targetId, 'Forged service report') === null, 'Service rejects without consuming quota');
+        }
+        $assert((int) $connection->query('SELECT COUNT(*) FROM community_reports')->fetchColumn() === 3, 'Historical reports are preserved unchanged');
+        $assert((int) $connection->query('SELECT COUNT(*) FROM community_activity')->fetchColumn() === 0, 'Protected report attempts consume no quota');
+        $assert($repository->createReportForUser(104, 'comment', 501, 'Other reporter') === null, 'Protection also prevents a new reporter');
+        $assert($repository->createReportForUser(101, 'comment', 503, 'Ordinary author') !== null, 'Other members remain reportable');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = false WHERE id = 102');
+        foreach ($targets as $index => [$type, $targetId]) {
+            $assert($repository->reportTargetForUser(101, $type, $targetId) !== null, 'Role revocation restores ordinary reportability');
+            $assert($repository->createReportForUser(101, $type, $targetId, 'Repeated historical report') === $reports[$index],
+                'Existing report remains idempotent after role revocation');
+        }
+    };
+
     foreach ($tests as $name => $test) {
         $connection->exec('SAVEPOINT community_test');
         try {

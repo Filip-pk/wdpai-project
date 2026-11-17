@@ -26,6 +26,7 @@ try {
         $assert($check->fetchColumn() === true, 'Wymagane są wyłącznie tabele tymczasowe.');
     }
     $connection->exec('ALTER TABLE pg_temp.users ALTER COLUMN id DROP DEFAULT');
+    $connection->exec('ALTER TABLE pg_temp.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false');
     $migration = file_get_contents(dirname(__DIR__) . '/database/23-moderation-and-timed-bans.sql');
     $assert(is_string($migration));
     $migration = preg_replace('/\b(?:BEGIN|COMMIT);/', '', $migration);
@@ -85,6 +86,54 @@ try {
         $assert(!$repository->warnUser(101, 202, 'Powód', $key(), 11));
         $assert(!$repository->banUser(101, 202, 'Powód', 3600, $key()));
         $assert($count('moderation_actions') === 0);
+    });
+
+    $run('Promocja autora chroni komentarz i odpowiedź przed starymi formularzami oraz ręcznymi ID', static function () use ($connection, $repository, $assert, $key, $count): void {
+        $connection->exec("INSERT INTO pg_temp.anime_comments (id, anime_id, user_id, body, parent_id)
+            VALUES (14, 1, 202, 'Odpowiedź przyszłego administratora', 11)");
+        $comments = $repository->commentsPageForModerator(101, 1, ['author' => '202']);
+        $assert(count($comments['entries']) === 2 && !$comments['entries'][0]['isAdmin']);
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 202');
+        $assert($repository->reportsPageForModerator(101)['entries'][0]['isAdmin']);
+        $assert($repository->commentsPageForModerator(101, 1, ['author' => '202'])['entries'][0]['isAdmin']);
+        $assert($repository->usersPageForModerator(101, 1, ['author' => '202'])['entries'][0]['isAdmin']);
+        foreach ([11, 14] as $commentId) {
+            $assert(!$repository->removeComment(101, $commentId, 'Stary formularz', $key()));
+            $assert(!$repository->warnUser(101, 202, 'Stary formularz', $key(), $commentId));
+        }
+        $assert(!$repository->warnUser(101, 202, 'Bez komentarza', $key()));
+        $assert(!$repository->banUser(101, 202, 'Bezpośredni adres', 3600, $key()));
+        $assert(!$repository->resolveReportForModerator(101, 21, 'remove', 'Historyczne zgłoszenie', $key()));
+        $assert($count('moderation_actions') === 0 && $count('moderation_notices') === 0 && $count('user_bans') === 0);
+        $assert((int) $connection->query('SELECT count(*) FROM pg_temp.anime_comments WHERE moderated_at IS NOT NULL')->fetchColumn() === 0);
+        $assert($connection->query('SELECT status FROM pg_temp.community_reports WHERE id = 21')->fetchColumn() === 'open');
+    });
+
+    $run('Historyczne zgłoszenie administratora można oddalić bez ukrywania treści i powiadomień', static function () use ($connection, $repository, $assert, $key, $count): void {
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 202');
+        $assert($repository->dismissReport(101, 21, 'Autor jest administratorem', $key()));
+        $assert($count('moderation_actions') === 1 && $count('moderation_notices') === 0 && $count('user_bans') === 0);
+        $assert($connection->query('SELECT action_type FROM pg_temp.moderation_actions')->fetchColumn() === 'report_dismissed');
+        $assert($connection->query('SELECT moderated_at FROM pg_temp.anime_comments WHERE id = 11')->fetchColumn() === null);
+    });
+
+    $run('Odebranie roli administratora przywraca zwykłe zasady moderacji', static function () use ($connection, $repository, $assert, $key, $count): void {
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 202');
+        $assert(!$repository->warnUser(101, 202, 'Chroniony autor', $key(), 11));
+        $connection->exec('UPDATE pg_temp.users SET is_admin = false WHERE id = 202');
+        $assert(!$repository->usersPageForModerator(101, 1, ['author' => '202'])['entries'][0]['isAdmin']);
+        $assert($repository->warnUser(101, 202, 'Po odebraniu uprawnień', $key(), 11));
+        $assert($repository->removeComment(101, 11, 'Po odebraniu uprawnień', $key(), 21));
+        $assert($repository->banUser(101, 202, 'Po odebraniu uprawnień', 3600, $key()));
+        $assert($count('moderation_actions') === 3 && $count('moderation_notices') === 3 && $count('user_bans') === 1);
+    });
+
+    $run('Schemat sprzed migracji administratorów zachowuje dotychczasową moderację', static function () use ($connection, $repository, $assert, $key): void {
+        $connection->exec('ALTER TABLE pg_temp.users DROP COLUMN is_admin');
+        $assert(!$repository->commentsPageForModerator(101)['entries'][0]['isAdmin']);
+        $assert(!$repository->reportsPageForModerator(101)['entries'][0]['isAdmin']);
+        $assert(!$repository->usersPageForModerator(101)['entries'][0]['isAdmin']);
+        $assert($repository->warnUser(101, 202, 'Zgodność istniejącej instalacji', $key(), 11));
     });
 
     $run('Usunięcie zachowuje drzewo dyskusji, dodaje historię i jedno powiadomienie', static function () use ($connection, $repository, $assert, $key, $count): void {

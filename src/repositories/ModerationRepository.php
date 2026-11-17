@@ -53,6 +53,7 @@ final class ModerationRepository
         return $this->page(
             'SELECT r.id, r.target_id AS comment_id, r.snapshot, r.reason, r.status,
                     r.created_at, reporter.name AS reporter_name, c.user_id, u.name AS author_name,
+                    COALESCE((to_jsonb(u)->>\'is_admin\')::boolean, false) AS is_admin,
                     c.anime_id, a.title AS anime_title, c.parent_id, c.body, c.moderated_at, c.deleted_at,
                     c.created_at AS comment_created_at ' . $from,
             $from, $where, $parameters, 'r.created_at ASC, r.id ASC', $page, $perPage,
@@ -61,6 +62,7 @@ final class ModerationRepository
                 'snapshot' => $row['snapshot'], 'reason' => $row['reason'], 'status' => $row['status'],
                 'createdAt' => $row['created_at'], 'reporterName' => $row['reporter_name'],
                 'userId' => (int) $row['user_id'], 'authorName' => $row['author_name'],
+                'isAdmin' => in_array($row['is_admin'], [true, 1, '1', 't'], true),
                 'animeId' => (int) $row['anime_id'], 'animeTitle' => $row['anime_title'],
                 'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
                 'body' => $row['body'], 'moderatedAt' => $row['moderated_at'], 'deletedAt' => $row['deleted_at'],
@@ -85,10 +87,12 @@ final class ModerationRepository
         }
         $from = 'FROM anime_comments c JOIN users u ON u.id = c.user_id JOIN anime a ON a.id = c.anime_id';
         return $this->page(
-            'SELECT c.*, u.name AS author_name, a.title AS anime_title ' . $from,
+            'SELECT c.*, u.name AS author_name, a.title AS anime_title,
+                    COALESCE((to_jsonb(u)->>\'is_admin\')::boolean, false) AS is_admin ' . $from,
             $from, $where, $parameters, 'c.created_at DESC, c.id DESC', $page, $perPage,
             fn (array $row): array => [
                 'id' => (int) $row['id'], 'userId' => (int) $row['user_id'], 'authorName' => $row['author_name'],
+                'isAdmin' => in_array($row['is_admin'], [true, 1, '1', 't'], true),
                 'animeId' => (int) $row['anime_id'], 'animeTitle' => $row['anime_title'],
                 'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
                 'body' => $row['body'], 'createdAt' => $row['created_at'],
@@ -111,11 +115,14 @@ final class ModerationRepository
                        AND b.ends_at > clock_timestamp() ORDER BY b.ends_at DESC, b.id DESC LIMIT 1';
         $from = 'FROM users u LEFT JOIN LATERAL (' . $activeBan . ') b ON true';
         return $this->page(
-            'SELECT u.id, u.name, u.is_moderator, b.id AS ban_id, b.reason AS ban_reason, b.starts_at, b.ends_at ' . $from,
+            'SELECT u.id, u.name, u.is_moderator,
+                    COALESCE((to_jsonb(u)->>\'is_admin\')::boolean, false) AS is_admin,
+                    b.id AS ban_id, b.reason AS ban_reason, b.starts_at, b.ends_at ' . $from,
             $from, $where, $parameters, 'u.id DESC', $page, $perPage,
             static fn (array $row): array => [
                 'id' => (int) $row['id'], 'name' => $row['name'],
                 'isModerator' => in_array($row['is_moderator'], [true, 1, '1', 't'], true),
+                'isAdmin' => in_array($row['is_admin'], [true, 1, '1', 't'], true),
                 'activeBan' => $row['ban_id'] === null ? null : [
                     'id' => (int) $row['ban_id'], 'reason' => $row['ban_reason'],
                     'startsAt' => $row['starts_at'], 'endsAt' => $row['ends_at'],
@@ -231,7 +238,7 @@ final class ModerationRepository
             }
             $this->record($actor, $user, 'ban_revoked', $reason, $key, banId: $banId, endsAt: $endsAt);
             return true;
-        }));
+        }, protectAdmin: false));
     }
 
     public function resolveReportForModerator(int $actor, int $reportId, string $action, string $reason, string $key): bool
@@ -267,7 +274,7 @@ final class ModerationRepository
             }
             $this->record($actor, $user, 'report_dismissed', $reason, $key, $comment, $reportId, notify: false);
             return true;
-        });
+        }, protectAdmin: false);
     }
 
     public function noticesPageForUser(int $userId, int $page = 1, int $perPage = 20): array
@@ -317,13 +324,13 @@ final class ModerationRepository
         });
     }
 
-    private function decision(int $actor, int $userId, string $reason, string $key, Closure $callback): bool
+    private function decision(int $actor, int $userId, string $reason, string $key, Closure $callback, bool $protectAdmin = true): bool
     {
         $reason = CommunityService::normalizeReason($reason);
         if ($actor <= 0 || $userId <= 0 || CommunityService::validateReason($reason) !== [] || preg_match('/\A[a-f0-9]{32,64}\z/', $key) !== 1) {
             return false;
         }
-        return (new CommunityRepository($this->connection))->withUsersLocked([$actor, $userId], function () use ($actor, $userId, $reason, $key, $callback): bool {
+        return (new CommunityRepository($this->connection))->withUsersLocked([$actor, $userId], function () use ($actor, $userId, $reason, $key, $callback, $protectAdmin): bool {
             if (!$this->canModerate($actor)) {
                 return false;
             }
@@ -335,7 +342,11 @@ final class ModerationRepository
             $lookup = $this->connection->prepare("SELECT id, name, is_moderator, COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id");
             $lookup->execute(['id' => $userId]);
             $user = $lookup->fetch();
-            return $user !== false && $callback($user, $reason);
+            // Recheck under the same user locks used by role changes. A stale form
+            // must not sanction an account that has since become an administrator.
+            return $user !== false
+                && (!$protectAdmin || !in_array($user['is_admin'], [true, 1, '1', 't'], true))
+                && $callback($user, $reason);
         });
     }
 

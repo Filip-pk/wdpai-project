@@ -57,7 +57,7 @@ final class UserRepository
         return $user;
     }
 
-    /** @return array{id: int, name: string, interests: string, created_at: string, avatar_url: ?string}|null */
+    /** @return array{id: int, name: string, interests: string, created_at: string, avatar_url: ?string, isAdmin: bool}|null */
     public function findPublicById(int $id): ?array
     {
         if ($id < 1) {
@@ -65,7 +65,8 @@ final class UserRepository
         }
 
         $statement = $this->database->prepare(
-            'SELECT id, name, interests, created_at, avatar_version FROM users WHERE id = :id'
+            "SELECT id, name, interests, created_at, avatar_version,
+                COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id"
         );
         $statement->execute(['id' => $id]);
         $user = $statement->fetch(PDO::FETCH_ASSOC);
@@ -76,6 +77,7 @@ final class UserRepository
             'interests' => (string) $user['interests'],
             'created_at' => (string) $user['created_at'],
             'avatar_url' => $this->avatarUrl($user),
+            'isAdmin' => in_array($user['is_admin'], [true, 1, '1', 't'], true),
         ];
     }
 

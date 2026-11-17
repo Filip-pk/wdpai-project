@@ -20,7 +20,8 @@ final class CommentRepository
                comments.moderated_at IS NOT NULL AS is_removed,
                comments.parent_id, comments.deleted_at IS NOT NULL AS is_deleted,
                (SELECT count(*) FROM anime_comments replies WHERE replies.parent_id = comments.id) AS reply_count,
-               comments.created_at, comments.updated_at, users.name AS author_name, users.avatar_version
+               comments.created_at, comments.updated_at, users.name AS author_name, users.avatar_version,
+               COALESCE((to_jsonb(users)->>\'is_admin\')::boolean, false) AS author_is_admin
         FROM anime_comments AS comments
         INNER JOIN users ON users.id = comments.user_id';
 
@@ -234,7 +235,7 @@ final class CommentRepository
         }
     }
 
-    /** @return array{id: int, animeId: int, userId: int, authorName: string, avatarUrl: ?string, body: string, createdAt: string, updatedAt: ?string, isRemoved: bool, parentId: ?int, isDeleted: bool, replyCount: int} */
+    /** @return array{id: int, animeId: int, userId: int, authorName: string, avatarUrl: ?string, body: string, createdAt: string, updatedAt: ?string, isRemoved: bool, parentId: ?int, isDeleted: bool, replyCount: int, authorIsAdmin: bool} */
     private function mapComment(array $row): array
     {
         $version = $row['avatar_version'];
@@ -253,6 +254,7 @@ final class CommentRepository
             'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
             'isDeleted' => in_array($row['is_deleted'], [true, 1, '1', 't'], true),
             'replyCount' => (int) $row['reply_count'],
+            'authorIsAdmin' => in_array($row['author_is_admin'], [true, 1, '1', 't'], true),
         ];
     }
 }

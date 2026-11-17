@@ -172,14 +172,14 @@ try {
         $connection->exec("UPDATE pg_temp.users SET avatar_version = repeat('a', 32) WHERE id = 202");
         $id = $messages->startWithMessageForUser(101, 202, str_repeat('ż', 200));
         $conversation = $messages->findForUser(101, $id);
-        $assert(array_keys($conversation) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'createdAt']);
+        $assert(array_keys($conversation) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'recipientIsAdmin', 'createdAt']);
         $assert($conversation['recipientAvatarUrl'] === '/avatars/202?v=' . str_repeat('a', 32));
         $entry = $messages->findPageForUser(101)['entries'][0];
-        $assert(array_keys($entry) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'lastMessagePreview', 'lastMessageSenderId', 'lastMessageAt', 'unreadCount']);
+        $assert(array_keys($entry) === ['id', 'recipientId', 'recipientName', 'recipientAvatarUrl', 'recipientIsAdmin', 'lastMessagePreview', 'lastMessageSenderId', 'lastMessageAt', 'unreadCount']);
         $assert($entry['lastMessagePreview'] === str_repeat('ż', 160));
         $assert($entry['lastMessageSenderId'] === 101 && $entry['lastMessageAt'] !== null);
         $assert($entry['unreadCount'] === 0);
-        $assert(array_keys($messages->findMessagesPageForUser(101, $id)['entries'][0]) === ['id', 'senderId', 'body', 'createdAt', 'isRemoved']);
+        $assert(array_keys($messages->findMessagesPageForUser(101, $id)['entries'][0]) === ['id', 'senderId', 'senderIsAdmin', 'body', 'createdAt', 'isRemoved']);
     });
 
     $run('Liczniki obejmują wyłącznie otrzymane wiadomości po kursorze danej osoby', static function () use ($messages, $connection, $assert): void {
@@ -215,6 +215,42 @@ try {
         $assert($connection->inTransaction());
         $connection->exec('DELETE FROM user_blocks WHERE blocker_id = 202 AND blocked_id = 101');
         $assert($messages->sendForUser(101, $id, 'Odblokowana wiadomość') !== null);
+    });
+
+    $run('Awans na admina dezaktywuje tylko blokady skierowane do niego i zachowuje historię', static function () use ($messages, $connection, $assert): void {
+        $connection->exec('ALTER TABLE pg_temp.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false');
+        $connection->exec('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (101, 202)');
+        $assert($messages->startWithMessageForUser(101, 202, 'Zablokowane przed awansem') === null);
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 202');
+        $conversation = $messages->startWithMessageForUser(101, 202, 'Do administratora po awansie');
+        $assert($conversation !== null, 'Historical inbound block must not prevent creating a conversation');
+        $assert($messages->sendForUser(101, $conversation, 'Kolejna do administratora') !== null);
+        $assert($messages->sendForUser(202, $conversation, 'Od administratora') !== null);
+        $assert($messages->findForUser(101, $conversation)['recipientIsAdmin']);
+        $assert($messages->findBetweenUsers(101, 202)['recipientIsAdmin']);
+        $assert($messages->findPageForUser(101)['entries'][0]['recipientIsAdmin']);
+        $assert(!$messages->findForUser(202, $conversation)['recipientIsAdmin']);
+        $history = $messages->findMessagesPageForUser(101, $conversation)['entries'];
+        $assert(array_column($history, 'senderIsAdmin') === [false, false, true], 'Message flags follow the current sender roles');
+        $assert((int) $connection->query('SELECT COUNT(*) FROM user_blocks')->fetchColumn() === 1, 'Historical edge was not deleted');
+        $connection->exec('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (202, 101)');
+        foreach ([101, 202] as $sender) {
+            $assert($messages->sendForUser($sender, $conversation, 'Nadal blokada admina') === null,
+                'Administrator outbound block must still stop both sending directions');
+        }
+        $connection->exec('DELETE FROM user_blocks WHERE blocker_id = 202 AND blocked_id = 101');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = false WHERE id = 202');
+        $assert($messages->sendForUser(101, $conversation, 'Ochrona wygasła') === null);
+        $assert(!$messages->findForUser(101, $conversation)['recipientIsAdmin'], 'Revocation updates conversation metadata');
+        $assert(array_column($messages->findMessagesPageForUser(101, $conversation)['entries'], 'senderIsAdmin') === [false, false, false]);
+    });
+
+    $run('Administrator nadal respektuje politykę prywatności odbiorcy', static function () use ($messages, $connection, $assert): void {
+        $connection->exec('ALTER TABLE pg_temp.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 101');
+        $connection->exec("UPDATE pg_temp.users SET message_policy = 'nobody' WHERE id = 202");
+        $assert($messages->startWithMessageForUser(101, 202, 'Prywatność pozostaje') === null);
+        $assert(!$messages->canReceiveFromUser(101, 202));
     });
 
     $run('Moderacja usuwa treść z projekcji historii i podglądu bez zmiany paginacji', static function () use ($messages, $connection, $assert): void {
