@@ -6,6 +6,7 @@ $conversationId = $conversation['id'] ?? null;
 $recipientId = $isComposing ? $recipient['id'] : ($conversation['recipientId'] ?? null);
 $recipientName = $isComposing ? $recipient['name'] : ($conversation['recipientName'] ?? '');
 $recipientAvatarUrl = $isComposing ? $recipient['avatar_url'] : ($conversation['recipientAvatarUrl'] ?? null);
+$recipientIsAdmin = $isComposing ? ($recipient['isAdmin'] ?? false) : ($conversation['recipientIsAdmin'] ?? false);
 $lastVisibleMessageId = $messagePage['entries'] === [] ? null : max(array_column($messagePage['entries'], 'id'));
 $messageDate = static fn (string $value): DateTimeImmutable =>
     (new DateTimeImmutable($value))->setTimezone(new DateTimeZone('Europe/Warsaw'));
@@ -125,11 +126,13 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                         <?php if (!$isComposing): ?>
                             <a class="messages-refresh" href="/messages/<?= $escape($conversationId) ?>#message-history"><?= $escape($t('view.interface.refresh_conversation')) ?> <span aria-hidden="true">↻</span></a>
                         <?php endif; ?>
-                        <form action="/users/<?= $escape($recipientId) ?>/<?= $isBlockedByMe ? 'unblock' : 'block' ?>" method="post">
-                            <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
-                            <?php if ($conversationId !== null): ?><input type="hidden" name="conversationId" value="<?= $escape($conversationId) ?>"><?php endif; ?>
-                            <button class="messages-secondary-button" type="submit"><?= $escape($isBlockedByMe ? $t('view.interface.unblock_user') : $t('view.interface.block_user')) ?></button>
-                        </form>
+                        <?php if (!$recipientIsAdmin): ?>
+                            <form action="/users/<?= $escape($recipientId) ?>/<?= $isBlockedByMe ? 'unblock' : 'block' ?>" method="post">
+                                <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                                <?php if ($conversationId !== null): ?><input type="hidden" name="conversationId" value="<?= $escape($conversationId) ?>"><?php endif; ?>
+                                <button class="messages-secondary-button" type="submit"><?= $escape($isBlockedByMe ? $t('view.interface.unblock_user') : $t('view.interface.block_user')) ?></button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </header>
 
@@ -161,7 +164,7 @@ $messageDate = static fn (string $value): DateTimeImmutable =>
                                         <p class="message-removed"><?= $escape($t('view.interface.message_hidden_by_moderation')) ?></p>
                                     <?php else: ?>
                                         <p class="message-body"><?= $escape($message['body']) ?></p>
-                                        <?php if (!$isOwnMessage): ?>
+                                        <?php if (!$isOwnMessage && !($message['senderIsAdmin'] ?? false)): ?>
                                             <a class="message-report" href="/reports/message/<?= $escape($message['id']) ?>?page=<?= $escape($messagePage['page']) ?>" aria-label="<?= $escape($t('view.interface.report_message')) ?>"><?= $escape($t('view.interface.report')) ?></a>
                                         <?php endif; ?>
                                     <?php endif; ?>

@@ -170,6 +170,7 @@ final class MessageController extends AppController
                 'recipientId' => $recipient['id'],
                 'recipientName' => $recipient['name'],
                 'recipientAvatarUrl' => $recipient['avatar_url'],
+                'recipientIsAdmin' => $recipient['isAdmin'] ?? false,
                 'createdAt' => '',
             ];
         }

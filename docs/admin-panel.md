@@ -52,7 +52,22 @@ podając powód. Operacja oraz jej historia są zapisywane w jednej transakcji.
 Nie może w ten sposób zmieniać swojej roli ani roli innego administratora.
 Przycisk „Moderacja” pojawia się wyłącznie przy osobno nadanej roli moderatora.
 Dotychczasowe zasady prywatności wiadomości pozostają w mocy.
-Moderator nie może zbanować administratora.
+Administratora nie można banować, ostrzegać ani blokować jako użytkownika.
+Nie można zgłaszać jego komentarzy, odpowiedzi ani prywatnych wiadomości;
+moderator nie może również usuwać jego treści. Ochrona dotyczy aktualnej
+roli zapisanej w bazie i obowiązuje także przy ręcznym podaniu adresu
+operacji lub wysłaniu starego formularza otwartego przed nadaniem roli.
+Przyciski tych operacji są ukryte w profilu, komentarzach, rozmowach
+i panelu moderacji. Zasada jest utrwalona również w [AGENTS.md](../AGENTS.md).
+
+Historyczne zgłoszenia i blokady nie są usuwane. Dawne zgłoszenie można
+oddalić, zachowując historię, ale nie można na jego podstawie ukarać
+administratora. Istniejąca blokada skierowana do administratora jest
+pomijana w liście blokad i przy wysyłaniu wiadomości; po odebraniu roli
+znów obowiązuje. Blokady nałożone przez administratora na zwykłe konta
+działają nadal. Administrator zachowuje możliwość edycji i usuwania
+własnych komentarzy, a zwykłe reakcje i odpowiedzi na jego wpisy pozostają
+dostępne. Rola admina nadal nie daje wglądu w cudze prywatne rozmowy.
 
 ## Diagnostyka
 
@@ -130,6 +145,7 @@ docker compose exec -T php php tests/application-logger.test.php
 docker compose exec -T php php tests/application-error-handler.test.php
 docker compose exec -T php php tests/translations.test.php
 node --test tests/admin-http.test.cjs
+node --test tests/admin-protection-http.test.cjs
 node --test tests/admin-responsive.test.cjs
 ```
 

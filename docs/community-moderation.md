@@ -72,6 +72,16 @@ i nie dotyczy rozmów z pozostałymi osobami.
 
 ## Zgłoszenia i panel moderatora
 
+Konta z aktualną rolą administratora są chronione: nie można ich
+blokować, banować ani ostrzegać, zgłaszać ich komentarzy, odpowiedzi
+i wiadomości lub usuwać ich treści decyzją moderatora. Kontrola działa
+na serwerze, również dla ręcznie wysłanych żądań i formularzy otwartych
+przed nadaniem roli. Historyczne zgłoszenia pozostają w bazie i można
+je oddalić bez karania administratora. Dawne blokady skierowane do
+administratora są pomijane podczas tej roli; po jej odebraniu ponownie
+działają. Administrator może nadal blokować zwykłe konta oraz edytować
+i usuwać własne wpisy. Szczegóły opisuje [panel administratora](admin-panel.md).
+
 „Zgłoś komentarz” jest dostępne przy cudzym komentarzu lub odpowiedzi. W rozmowie można
 zgłosić wyłącznie otrzymaną wiadomość. Formularz wymaga powodu od 1 do
 1000 znaków; puste, niepoprawne UTF-8 i niedozwolone znaki sterujące są

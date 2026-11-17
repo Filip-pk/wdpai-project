@@ -71,6 +71,9 @@ $decisionForm = static function (string $action, string $label, string $formId, 
                                 <span class="moderation-kind"><?= $escape($t('moderation.' . $entry['status'])) ?></span>
                                 <h2 id="title-<?= $escape($cardId) ?>"><?= $escape($t('moderation.comment')) ?> #<?= $escape($commentId) ?> · <?= $escape($entry['animeTitle']) ?></h2>
                                 <p class="community-meta"><?= $escape($t('moderation.author')) ?>: <a href="/users/<?= $escape($entry['userId']) ?>"><?= $escape($entry['authorName']) ?></a></p>
+                                <?php if ($entry['isAdmin']): ?>
+                                    <span class="moderation-kind"><?= $escape($t('admin.role.admin')) ?></span>
+                                <?php endif; ?>
                                 <time class="community-meta" datetime="<?= $escape($entry['createdAt']) ?>"><?= $escape(ModerationNoticeFormatter::date($entry['createdAt'])) ?></time>
                             </header>
                             <blockquote class="community-content"><?= $escape($tab === 'reports' ? $entry['snapshot'] : $entry['body']) ?></blockquote>
@@ -80,13 +83,17 @@ $decisionForm = static function (string $action, string $label, string $formId, 
                             <?php endif; ?>
                             <div class="moderation-links">
                                 <a href="/anime/<?= $escape($entry['animeId']) ?>/comments/<?= $escape($threadId) ?>#comment-<?= $escape($commentId) ?>"><?= $escape($t('moderation.comment')) ?> #<?= $escape($commentId) ?></a>
-                                <a href="/moderation?tab=users&amp;author=<?= $escape($entry['userId']) ?>#user-<?= $escape($entry['userId']) ?>"><?= $escape($t('moderation.ban')) ?></a>
+                                <?php if (!$entry['isAdmin']): ?>
+                                    <a href="/moderation?tab=users&amp;author=<?= $escape($entry['userId']) ?>#user-<?= $escape($entry['userId']) ?>"><?= $escape($t('moderation.ban')) ?></a>
+                                <?php endif; ?>
                             </div>
                             <div class="moderation-actions">
-                                <?php if ($commentStatus === 'active'): ?>
+                                <?php if (!$entry['isAdmin'] && $commentStatus === 'active'): ?>
                                     <?php $decisionForm('/moderation/comments/' . $commentId . '/remove', $t('moderation.remove'), $cardId . '-remove', $tab === 'reports' ? ['reportId' => $entry['id']] : []); ?>
                                 <?php endif; ?>
-                                <?php $decisionForm('/moderation/comments/' . $commentId . '/warn', $t('moderation.warn'), $cardId . '-warn', ['userId' => $entry['userId']]); ?>
+                                <?php if (!$entry['isAdmin']): ?>
+                                    <?php $decisionForm('/moderation/comments/' . $commentId . '/warn', $t('moderation.warn'), $cardId . '-warn', ['userId' => $entry['userId']]); ?>
+                                <?php endif; ?>
                                 <?php if ($tab === 'reports' && $entry['status'] === 'open'): ?>
                                     <?php $decisionForm('/moderation/reports/' . $entry['id'] . '/dismiss', $t('moderation.dismiss'), $cardId . '-dismiss'); ?>
                                 <?php endif; ?>
@@ -95,7 +102,9 @@ $decisionForm = static function (string $action, string $label, string $formId, 
                     <?php elseif ($tab === 'users'): ?>
                         <article id="user-<?= $escape($entry['id']) ?>" class="community-panel moderation-card" data-user-id="<?= $escape($entry['id']) ?>" aria-labelledby="user-title-<?= $escape($entry['id']) ?>">
                             <h2 id="user-title-<?= $escape($entry['id']) ?>"><a href="/users/<?= $escape($entry['id']) ?>"><?= $escape($entry['name']) ?></a> #<?= $escape($entry['id']) ?></h2>
-                            <?php if ($entry['isModerator']): ?>
+                            <?php if ($entry['isAdmin']): ?>
+                                <p class="moderation-kind"><?= $escape($t('admin.role.admin')) ?></p>
+                            <?php elseif ($entry['isModerator']): ?>
                                 <p class="moderation-kind"><?= $escape($t('moderation.moderator_account')) ?></p>
                             <?php endif; ?>
                             <?php if ($entry['activeBan'] !== null): ?>
@@ -107,7 +116,7 @@ $decisionForm = static function (string $action, string $label, string $formId, 
                                 <?php endif; ?>
                             <?php else: ?>
                                 <p class="community-meta"><?= $escape($t('moderation.no_active_ban')) ?></p>
-                                <?php if (!$entry['isModerator'] && $entry['id'] !== $accountId): ?>
+                                <?php if (!$entry['isAdmin'] && !$entry['isModerator'] && $entry['id'] !== $accountId): ?>
                                     <?php $decisionForm('/moderation/users/' . $entry['id'] . '/ban', $t('moderation.ban'), 'user-' . $entry['id'] . '-ban', [], true); ?>
                                 <?php endif; ?>
                             <?php endif; ?>

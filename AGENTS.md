@@ -43,6 +43,13 @@ Logowanie, autoryzacja, zapis do bazy i AI nie są jeszcze podłączone.
 - Stosuj małe commity z prefiksami feat:, fix:, docs:, build: lub chore:.
 
 ## Bezpieczeństwo
+- Administratora nie można banować ani blokować jako użytkownika,
+  zgłaszać jego komentarzy, odpowiedzi lub wiadomości ani karać przez
+  ostrzeżenia i moderacyjne usuwanie jego treści. Weryfikuj aktualną rolę
+  na serwerze również pod blokadą transakcji; samo ukrycie przycisków nie wystarcza.
+  Zachowuj historyczne zgłoszenia i blokady, pomijając blokady skierowane
+  do konta podczas aktywnej roli administratora. Właściciel nadal może edytować
+  i usuwać własne treści; zwykłe reakcje i odpowiedzi pozostają dostępne.
 - Nie odczytuj, nie ujawniaj i nie commituj sekretów z .env.
 - Nie edytuj ręcznie vendor/ ani .git/.
 - Nie zmieniaj konfiguracji Dockera i zależności poza zakresem zadania.
