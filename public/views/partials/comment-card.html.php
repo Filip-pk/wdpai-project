@@ -47,7 +47,7 @@ $reportUrl = '/reports/comment/' . $comment['id'] . '?page=' . ($isReplyComment 
         <?php if (!$isReplyComment && !$comment['isRemoved'] && !$isDeletedComment && !$isThreadView): ?>
             <a class="comment-reply-link" href="<?= $escape($threadUrl) ?>#reply-form"><?= $escape($t('view.interface.reply')) ?></a>
         <?php endif; ?>
-        <?php if ($isLoggedIn && !$isOwnComment && !$comment['isRemoved'] && !$isDeletedComment): ?>
+        <?php if ($isLoggedIn && !$isOwnComment && !$comment['isRemoved'] && !$isDeletedComment && !($comment['authorIsAdmin'] ?? false)): ?>
             <a class="community-report-link" href="<?= $escape($reportUrl) ?>"><?= $escape($t($isReplyComment ? 'view.social.report_reply' : 'view.social.report_comment')) ?></a>
         <?php endif; ?>
         <?php if ($isOwnComment && !$isDeletedComment): ?>

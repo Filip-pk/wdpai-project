@@ -27,7 +27,8 @@ $isGuessPage = !$isErrorPage && ($currentPath === '/guess' || str_starts_with((s
 $isWelcome = !$isErrorPage && $currentPath === '/';
 $isAuthPage = !$isErrorPage && in_array($currentPath, ['/login', '/register'], true);
 $isWorkspace = !$isWelcome && !$isAuthPage && !$isErrorPage;
-$isAiPage = !$isErrorPage && ($currentPath === '/chat' || $currentPath === '/admin'
+$isAdminPage = !$isErrorPage && ($currentPath === '/admin' || str_starts_with((string) $currentPath, '/admin/'));
+$isAiPage = !$isErrorPage && ($currentPath === '/chat'
     || str_starts_with((string) $currentPath, '/chat/'));
 $isProjectsPage = !$isErrorPage && ($currentPath === '/projects'
     || str_starts_with((string) $currentPath, '/projects/'));
@@ -56,7 +57,7 @@ $isCollectionsPage = str_starts_with((string) $currentPath, '/profile/collection
 $isUserProfilePage = str_starts_with((string) $currentPath, '/users/');
 $isShowcasePage = $currentPath === '/profile/showcase';
 $isSettingsPage = $currentPath === '/settings' || str_starts_with((string) $currentPath, '/settings/');
-$isRedesignPage = $isRedesignPage || $isSettingsPage || $isShowcasePage;
+$isRedesignPage = $isRedesignPage || $isSettingsPage || $isShowcasePage || $isAdminPage;
 ?>
 
 <!doctype html>
@@ -107,6 +108,9 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage || $isShowcasePage;
 
     <link rel="stylesheet" href="<?= $assetUrl('/css/style.css') ?>">
     <link rel="stylesheet" href="<?= $assetUrl('/css/navigation.css') ?>">
+    <?php if ($isAdminPage): ?>
+        <link rel="stylesheet" href="<?= $assetUrl('/css/admin.css') ?>">
+    <?php endif; ?>
     <script src="<?= $assetUrl('/js/navigation.js') ?>" defer></script>
 
     <?php if ($isWelcome): ?>

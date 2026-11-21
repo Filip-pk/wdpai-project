@@ -19,16 +19,19 @@ final class CommunityRepository
     {
     }
 
-    /** @return array{unreadCount: int, unreadReplyCount: int, isModerator: bool} */
+    /** @return array{unreadCount: int, unreadReplyCount: int, isModerator: bool, isAdmin: bool} */
     public function navigationStateForUser(int $userId): array
     {
-        $statement = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
+        // JSON lookup keeps the existing navigation usable before migration 29.
+        $statement = $this->connection->prepare("SELECT is_moderator, COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id");
         $statement->execute(['id' => $userId]);
+        $roles = $statement->fetch();
 
         return [
             'unreadCount' => $this->unreadCountForUser($userId),
             'unreadReplyCount' => (new ReplyNotificationRepository($this->connection))->unreadCountForUser($userId),
-            'isModerator' => $this->toBool($statement->fetchColumn()),
+            'isModerator' => $this->toBool($roles['is_moderator'] ?? false),
+            'isAdmin' => $this->toBool($roles['is_admin'] ?? false),
         ];
     }
 
@@ -86,9 +89,11 @@ final class CommunityRepository
     public function blockStateForUser(int $userId, int $otherId): array
     {
         $statement = $this->connection->prepare(
-            'SELECT blocker_id FROM user_blocks
-             WHERE (blocker_id = :actor AND blocked_id = :other)
-                OR (blocker_id = :reverse_other AND blocked_id = :reverse_actor)'
+            "SELECT b.blocker_id FROM user_blocks b
+             JOIN users blocked_user ON blocked_user.id = b.blocked_id
+             WHERE ((b.blocker_id = :actor AND b.blocked_id = :other)
+                OR (b.blocker_id = :reverse_other AND b.blocked_id = :reverse_actor))
+               AND NOT COALESCE((to_jsonb(blocked_user)->>'is_admin')::boolean, false)"
         );
         $statement->execute(['actor' => $userId, 'other' => $otherId, 'reverse_other' => $otherId, 'reverse_actor' => $userId]);
         $blockers = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
@@ -108,13 +113,17 @@ final class CommunityRepository
 
     public function blockedPageForUser(int $userId, int $page = 1, int $perPage = 20): array
     {
-        $count = $this->connection->prepare('SELECT COUNT(*) FROM user_blocks WHERE blocker_id = :id');
+        $count = $this->connection->prepare(
+            "SELECT COUNT(*) FROM user_blocks b JOIN users u ON u.id = b.blocked_id
+             WHERE b.blocker_id = :id AND NOT COALESCE((to_jsonb(u)->>'is_admin')::boolean, false)"
+        );
         $count->execute(['id' => $userId]);
         $paging = $this->pagination((int) $count->fetchColumn(), $page, $perPage);
         $statement = $this->connection->prepare(
-            'SELECT u.id, u.name, u.avatar_version, b.created_at FROM user_blocks b
+            "SELECT u.id, u.name, u.avatar_version, b.created_at FROM user_blocks b
              JOIN users u ON u.id = b.blocked_id WHERE b.blocker_id = :id
-             ORDER BY b.created_at DESC, u.id DESC LIMIT :limit OFFSET :offset'
+               AND NOT COALESCE((to_jsonb(u)->>'is_admin')::boolean, false)
+             ORDER BY b.created_at DESC, u.id DESC LIMIT :limit OFFSET :offset"
         );
         $statement->bindValue('id', $userId, PDO::PARAM_INT);
         $statement->bindValue('limit', $paging['perPage'], PDO::PARAM_INT);
@@ -337,6 +346,16 @@ final class CommunityRepository
                 return false;
             }
 
+            if ($blocked) {
+                $target = $this->connection->prepare(
+                    "SELECT COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) FROM users u WHERE u.id = :id"
+                );
+                $target->execute(['id' => $otherId]);
+                if ($this->toBool($target->fetchColumn())) {
+                    return false;
+                }
+            }
+
             $sql = $blocked
                 ? 'INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (:actor, :other) ON CONFLICT DO NOTHING'
                 : 'DELETE FROM user_blocks WHERE blocker_id = :actor AND blocked_id = :other';
@@ -356,14 +375,16 @@ final class CommunityRepository
         if ($type === 'comment') {
             $sql = 'SELECT t.id, t.user_id AS author_id, u.name AS author_name, t.body, t.anime_id, NULL AS conversation_id, t.parent_id
                     FROM anime_comments t JOIN users u ON u.id = t.user_id
-                    WHERE t.id = :target AND t.user_id <> :actor AND t.moderated_at IS NULL AND t.deleted_at IS NULL';
+                    WHERE t.id = :target AND t.user_id <> :actor AND t.moderated_at IS NULL AND t.deleted_at IS NULL
+                      AND NOT COALESCE((to_jsonb(u)->>\'is_admin\')::boolean, false)';
             $parameters = ['target' => $targetId, 'actor' => $userId];
         } elseif ($type === 'message') {
             $sql = 'SELECT t.id, t.sender_id AS author_id, u.name AS author_name, t.body, NULL AS anime_id, t.conversation_id, NULL AS parent_id
                     FROM private_messages t JOIN users u ON u.id = t.sender_id
                     JOIN private_conversations c ON c.id = t.conversation_id
                     WHERE t.id = :target AND t.sender_id <> :actor AND t.moderated_at IS NULL
-                      AND (c.first_user_id = :first_participant OR c.second_user_id = :second_participant)';
+                      AND (c.first_user_id = :first_participant OR c.second_user_id = :second_participant)
+                      AND NOT COALESCE((to_jsonb(u)->>\'is_admin\')::boolean, false)';
             $parameters = ['target' => $targetId, 'actor' => $userId, 'first_participant' => $userId, 'second_participant' => $userId];
         } else {
             return null;
@@ -388,7 +409,11 @@ final class CommunityRepository
 
     private function existingReportId(int $userId, string $type, int $targetId): ?int
     {
-        $statement = $this->connection->prepare('SELECT id FROM community_reports WHERE reporter_id = :actor AND target_type = :type AND target_id = :target');
+        $statement = $this->connection->prepare(
+            "SELECT r.id FROM community_reports r LEFT JOIN users u ON u.id = r.reported_user_id
+             WHERE r.reporter_id = :actor AND r.target_type = :type AND r.target_id = :target
+               AND NOT COALESCE((to_jsonb(u)->>'is_admin')::boolean, false)"
+        );
         $statement->execute(['actor' => $userId, 'type' => $type, 'target' => $targetId]);
         $id = $statement->fetchColumn();
 

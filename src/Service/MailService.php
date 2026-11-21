@@ -50,6 +50,12 @@ final class MailService
         );
     }
 
+    public function sendDiagnosticEmail(string $to, string $locale = 'pl'): void
+    {
+        $translator = new Translator($locale);
+        $this->sendMessage($to, $translator->translate('admin.mail.subject'), $translator->translate('admin.mail.body'));
+    }
+
     private function sendMessage(string $to, string $subject, string $body): void
     {
         $this->validateConfiguration();
@@ -91,7 +97,7 @@ final class MailService
             try {
                 $this->command($socket, "QUIT\r\n", [221]);
             } catch (RuntimeException $exception) {
-                error_log('SMTP przyjął wiadomość; błąd zakończenia połączenia: ' . $exception->getMessage());
+                (new ApplicationLogger(dirname(__DIR__, 2) . '/storage/logs'))->recordException($exception, 'mail');
             }
         } finally {
             fclose($socket);

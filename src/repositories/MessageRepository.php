@@ -13,7 +13,8 @@ final class MessageRepository
 {
     private const SELECT_CONVERSATIONS = '
         SELECT conversations.id, conversations.created_at,
-               recipient.id AS recipient_id, recipient.name AS recipient_name, recipient.avatar_version
+               recipient.id AS recipient_id, recipient.name AS recipient_name, recipient.avatar_version,
+               COALESCE((to_jsonb(recipient)->>\'is_admin\')::boolean, false) AS recipient_is_admin
         FROM private_conversations AS conversations
         INNER JOIN users AS recipient
             ON recipient.id = CASE WHEN conversations.first_user_id = :viewer_id
@@ -39,6 +40,7 @@ final class MessageRepository
         $statement = $this->database->prepare(
             'SELECT conversations.id, recipient.id AS recipient_id, recipient.name AS recipient_name,
                     recipient.avatar_version,
+                    COALESCE((to_jsonb(recipient)->>\'is_admin\')::boolean, false) AS recipient_is_admin,
                     CASE WHEN latest.moderated_at IS NOT NULL THEN \'Wiadomość ukryta przez moderację.\'
                         ELSE LEFT(latest.body, 160) END AS last_message_preview,
                     latest.sender_id AS last_message_sender_id, latest.created_at AS last_message_at,
@@ -74,6 +76,7 @@ final class MessageRepository
                 'recipientId' => (int) $row['recipient_id'],
                 'recipientName' => (string) $row['recipient_name'],
                 'recipientAvatarUrl' => $this->avatarUrl($row),
+                'recipientIsAdmin' => $this->toBool($row['recipient_is_admin']),
                 'lastMessagePreview' => $row['last_message_preview'] === null ? null : (string) $row['last_message_preview'],
                 'lastMessageSenderId' => $row['last_message_sender_id'] === null ? null : (int) $row['last_message_sender_id'],
                 'lastMessageAt' => $row['last_message_at'] === null ? null : (string) $row['last_message_at'],
@@ -85,7 +88,7 @@ final class MessageRepository
         ];
     }
 
-    /** @return array{id: int, recipientId: int, recipientName: string, recipientAvatarUrl: ?string, createdAt: string}|null */
+    /** @return array{id: int, recipientId: int, recipientName: string, recipientAvatarUrl: ?string, recipientIsAdmin: bool, createdAt: string}|null */
     public function findForUser(int $userId, int $conversationId): ?array
     {
         $statement = $this->database->prepare(
@@ -150,9 +153,10 @@ final class MessageRepository
                  CROSS JOIN users AS second_user
                  WHERE first_user.id = :first_user_id AND second_user.id = :second_user_id
                    AND NOT EXISTS (
-                       SELECT 1 FROM user_blocks
-                       WHERE (blocker_id = first_user.id AND blocked_id = second_user.id)
-                          OR (blocker_id = second_user.id AND blocked_id = first_user.id)
+                       SELECT 1 FROM user_blocks b JOIN users blocked_user ON blocked_user.id = b.blocked_id
+                       WHERE ((b.blocker_id = first_user.id AND b.blocked_id = second_user.id)
+                          OR (b.blocker_id = second_user.id AND b.blocked_id = first_user.id))
+                         AND NOT COALESCE((to_jsonb(blocked_user)->>\'is_admin\')::boolean, false)
                    )
                  ON CONFLICT (first_user_id, second_user_id)
                  DO UPDATE SET first_user_id = EXCLUDED.first_user_id RETURNING id'
@@ -247,9 +251,10 @@ final class MessageRepository
                AND (conversations.first_user_id = :first_participant OR conversations.second_user_id = :second_participant)
                AND recipient.message_policy <> \'nobody\'
                AND NOT EXISTS (
-                   SELECT 1 FROM user_blocks
-                   WHERE (blocker_id = conversations.first_user_id AND blocked_id = conversations.second_user_id)
-                      OR (blocker_id = conversations.second_user_id AND blocked_id = conversations.first_user_id)
+                   SELECT 1 FROM user_blocks b JOIN users blocked_user ON blocked_user.id = b.blocked_id
+                   WHERE ((b.blocker_id = conversations.first_user_id AND b.blocked_id = conversations.second_user_id)
+                      OR (b.blocker_id = conversations.second_user_id AND b.blocked_id = conversations.first_user_id))
+                     AND NOT COALESCE((to_jsonb(blocked_user)->>\'is_admin\')::boolean, false)
                )
              RETURNING id'
         );
@@ -263,7 +268,7 @@ final class MessageRepository
         return $id === false ? null : (int) $id;
     }
 
-    /** @return array{entries: list<array{id: int, senderId: int, body: string, createdAt: string, isRemoved: bool}>, page: int, total: int, totalPages: int}|null */
+    /** @return array{entries: list<array{id: int, senderId: int, senderIsAdmin: bool, body: string, createdAt: string, isRemoved: bool}>, page: int, total: int, totalPages: int}|null */
     public function findMessagesPageForUser(int $userId, int $conversationId, ?int $page = null, int $perPage = 30): ?array
     {
         if ($this->findForUser($userId, $conversationId) === null) {
@@ -283,9 +288,11 @@ final class MessageRepository
 
         $statement = $this->database->prepare(
             'SELECT messages.id, messages.sender_id, messages.created_at, messages.moderated_at,
+                    COALESCE((to_jsonb(sender)->>\'is_admin\')::boolean, false) AS sender_is_admin,
                     CASE WHEN messages.moderated_at IS NULL THEN messages.body ELSE \'\' END AS body
              FROM private_messages AS messages
              INNER JOIN private_conversations AS conversations ON conversations.id = messages.conversation_id
+             INNER JOIN users AS sender ON sender.id = messages.sender_id
              WHERE conversations.id = :conversation_id
                AND (conversations.first_user_id = :first_participant OR conversations.second_user_id = :second_participant)
              ORDER BY messages.id ASC LIMIT :limit OFFSET :offset'
@@ -298,8 +305,9 @@ final class MessageRepository
         $statement->execute();
 
         return [
-            'entries' => array_map(static fn (array $row): array => [
+            'entries' => array_map(fn (array $row): array => [
                 'id' => (int) $row['id'], 'senderId' => (int) $row['sender_id'],
+                'senderIsAdmin' => $this->toBool($row['sender_is_admin']),
                 'body' => (string) $row['body'], 'createdAt' => (string) $row['created_at'],
                 'isRemoved' => $row['moderated_at'] !== null,
             ], $statement->fetchAll(PDO::FETCH_ASSOC)),
@@ -329,6 +337,7 @@ final class MessageRepository
         return [
             'id' => (int) $row['id'], 'recipientId' => (int) $row['recipient_id'],
             'recipientName' => (string) $row['recipient_name'], 'recipientAvatarUrl' => $this->avatarUrl($row),
+            'recipientIsAdmin' => $this->toBool($row['recipient_is_admin']),
             'createdAt' => (string) $row['created_at'],
         ];
     }
@@ -339,5 +348,10 @@ final class MessageRepository
 
         return is_string($version) && preg_match('/\A[a-f0-9]{32}\z/', $version) === 1
             ? '/avatars/' . (int) $row['recipient_id'] . '?v=' . $version : null;
+    }
+
+    private function toBool(mixed $value): bool
+    {
+        return in_array($value, [true, 1, '1', 't'], true);
     }
 }

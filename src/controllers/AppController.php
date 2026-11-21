@@ -158,6 +158,7 @@ abstract class AppController
         $unreadMessageCount = 0;
         $unreadReplyCount = 0;
         $isModerator = false;
+        $isAdmin = false;
         $moderationNotices = [];
         $restrictedAccount = ($variables['restrictedAccount'] ?? false) === true;
         if ($isLoggedIn && $this->moderationRepository !== null) {
@@ -173,6 +174,7 @@ abstract class AppController
             $unreadMessageCount = $communityState['unreadCount'];
             $unreadReplyCount = $communityState['unreadReplyCount'];
             $isModerator = $communityState['isModerator'];
+            $isAdmin = $communityState['isAdmin'] ?? false;
         }
 
         extract($variables, EXTR_SKIP);

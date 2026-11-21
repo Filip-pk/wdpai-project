@@ -84,13 +84,27 @@ try {
         $repository->updateAvatar($id, 'test-image', str_repeat('b', 32));
         $user = $repository->findPublicById($id);
 
-        $assert($user !== null && array_keys($user) === ['id', 'name', 'interests', 'created_at', 'avatar_url']);
+        $assert($user !== null && array_keys($user) === ['id', 'name', 'interests', 'created_at', 'avatar_url', 'isAdmin']);
+        $assert($user['isAdmin'] === false);
         $assert($user['id'] === $id && $user['name'] === 'Łucja <svg>');
         $assert($user['interests'] === 'Mecha & fantasy' && $user['created_at'] !== '');
         $assert($user['avatar_url'] === '/avatars/' . $id . '?v=' . str_repeat('b', 32));
         $assert($repository->findPublicById(0) === null);
         $assert($repository->findPublicById(-1) === null);
         $assert($repository->findPublicById(PHP_INT_MAX) === null);
+    });
+
+    $run('Profil odczytuje aktualną rolę administratora bez ujawniania danych prywatnych', static function () use ($repository, $connection, $assert, $hash): void {
+        $id = $repository->create('Administrator', 'admin-profile@example.test', $hash);
+        $change = $connection->prepare('UPDATE pg_temp.users SET is_admin = :enabled WHERE id = :id');
+        foreach ([true, false] as $enabled) {
+            $change->bindValue('enabled', $enabled, PDO::PARAM_BOOL);
+            $change->bindValue('id', $id, PDO::PARAM_INT);
+            $change->execute();
+            $public = $repository->findPublicById($id);
+            $assert($public['isAdmin'] === $enabled);
+            $assert(!array_key_exists('email', $public) && !array_key_exists('password_hash', $public));
+        }
     });
 
     $run('Wyszukiwanie e-maila pomija wielkość liter', static function () use ($repository, $assert, $hash): void {

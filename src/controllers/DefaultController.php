@@ -24,7 +24,7 @@ final class DefaultController extends AppController
         ]);
     }
 
-    public function serverError(): void
+    public function serverError(?string $errorId = null): void
     {
         $retryUrl = null;
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
@@ -40,6 +40,7 @@ final class DefaultController extends AppController
         $this->render('server-error', [
             'pageTitle' => Translator::current()->translate('message.page.server_error'),
             'retryUrl' => $retryUrl,
+            'errorId' => $errorId,
         ]);
     }
 }

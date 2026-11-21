@@ -132,7 +132,8 @@ final class AuthController extends AppController
                         $this->mailer->sendWelcomeEmail($email, $name, $language);
                         $mailStatus = 'sent';
                     } catch (RuntimeException $exception) {
-                        error_log('Nie udało się wysłać wiadomości powitalnej: ' . $exception->getMessage());
+                        (new \App\Service\ApplicationLogger(dirname(__DIR__, 2) . '/storage/logs'))
+                            ->recordException($exception, 'mail', '/register');
                         $mailStatus = 'failed';
                     }
 

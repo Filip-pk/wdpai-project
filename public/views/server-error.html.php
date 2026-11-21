@@ -17,6 +17,9 @@ require __DIR__ . '/partials/header.html.php';
             <p><?= $escape($t('view.interface.there_was_a_problem_loading_the_data_try_again_shortly')) ?></p>
         </header>
         <p class="error-description"><?= $escape($t('view.interface.you_can_return_home_or_go_to_projects')) ?></p>
+        <?php if (($errorId ?? null) !== null): ?>
+            <p class="error-description" data-error-id><?= $escape($t('admin.error_id', ['id' => $errorId])) ?></p>
+        <?php endif; ?>
         <nav class="error-actions" aria-label="<?= $escape($t('view.interface.error_navigation')) ?>">
             <?php if (($retryUrl ?? null) !== null): ?>
                 <a href="<?= $escape($retryUrl) ?>" class="error-button error-button-primary" data-error-retry><?= $escape($t('view.interface.try_again')) ?> <span aria-hidden="true">↻</span></a>

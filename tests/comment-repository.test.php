@@ -106,11 +106,24 @@ try {
         $body = "Łódź & <script>alert(1)</script>\nO'Reilly; SELECT 999; --";
         $id = $comments->createForUser(101, 1, $body);
         $comment = $comments->findPageForAnime(1)['entries'][0];
-        $assert(array_keys($comment) === ['id', 'animeId', 'userId', 'authorName', 'avatarUrl', 'body', 'createdAt', 'updatedAt', 'isRemoved', 'parentId', 'isDeleted', 'replyCount']);
+        $assert(array_keys($comment) === ['id', 'animeId', 'userId', 'authorName', 'avatarUrl', 'body', 'createdAt', 'updatedAt', 'isRemoved', 'parentId', 'isDeleted', 'replyCount', 'authorIsAdmin']);
+        $assert($comment['authorIsAdmin'] === false);
         $assert($comment['id'] === $id && $comment['body'] === $body && $comment['authorName'] === 'Łucja <svg>');
         $assert($comment['avatarUrl'] === '/avatars/101?v=' . str_repeat('a', 32));
         $assert($comment['createdAt'] !== '' && $comment['updatedAt'] === null);
         $assert($comments->findByIdForUser(101, 1, $id) === $comment);
+    });
+
+    $run('Komentarze i odpowiedzi odzwierciedlają aktualną rolę autora bez ograniczania własnej edycji', static function () use ($comments, $connection, $assert): void {
+        $root = $comments->createForUser(101, 1, 'Komentarz administratora');
+        $reply = $comments->createReplyForUser(101, 1, $root, 'Odpowiedź administratora');
+        $connection->exec('UPDATE pg_temp.users SET is_admin = true WHERE id = 101');
+        $assert($comments->findPageForAnime(1)['entries'][0]['authorIsAdmin'] === true);
+        $assert($comments->findRepliesPageForAnime(1, $root)['entries'][0]['authorIsAdmin'] === true);
+        $assert($comments->updateForUser(101, 1, $root, 'Własna edycja nadal dostępna'));
+        $assert($comments->removeForUser(101, 1, $reply));
+        $connection->exec('UPDATE pg_temp.users SET is_admin = false WHERE id = 101');
+        $assert($comments->findByIdForAnime(1, $root)['authorIsAdmin'] === false);
     });
 
     $run('Edycja i usunięcie sprawdzają jednocześnie autora, anime i ID wpisu', static function () use ($comments, $assert): void {

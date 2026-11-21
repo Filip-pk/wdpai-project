@@ -42,7 +42,7 @@
                         <?php else: ?>
                             <p><?= $escape($t('view.catalog.messaging_unavailable')) ?></p>
                         <?php endif; ?>
-                        <?php if ($isLoggedIn): ?>
+                        <?php if ($isLoggedIn && !($profileUser['isAdmin'] ?? false)): ?>
                             <form class="community-inline-form" action="/users/<?= $escape($profileUser['id']) ?>/<?= $blockState['blockedByMe'] ? 'unblock' : 'block' ?>" method="post">
                                 <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
                                 <button type="submit" data-block-user-id="<?= $escape($profileUser['id']) ?>"><?= $blockState['blockedByMe'] ? $escape($t('view.catalog.unblock_user')) : $escape($t('view.catalog.block_user')) ?></button>

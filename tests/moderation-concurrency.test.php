@@ -30,7 +30,7 @@ if (($argv[1] ?? '') === 'worker') {
         $operation = $argv[3] ?? '';
         $actor = filter_var($argv[4] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX]]);
         $target = filter_var($argv[5] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX]]);
-        if ($actor === false || $target === false || !in_array($operation, ['ban', 'write', 'write_rr'], true)) {
+        if ($actor === false || $target === false || !in_array($operation, ['ban', 'warn', 'write', 'write_rr'], true)) {
             throw new RuntimeException('Invalid concurrency worker arguments.');
         }
         $connection = $open($schema);
@@ -41,6 +41,8 @@ if (($argv[1] ?? '') === 'worker') {
         $isolation = $connection->query('SHOW transaction_isolation')->fetchColumn();
         if ($operation === 'ban') {
             $result = $ban === null && (new ModerationRepository($connection))->banUser($actor, $target, 'Concurrent ban fixture', 3600, bin2hex(random_bytes(32)));
+        } elseif ($operation === 'warn') {
+            $result = $ban === null && (new ModerationRepository($connection))->warnUser($actor, $target, 'Concurrent warning fixture', bin2hex(random_bytes(32)));
         } else {
             $result = false;
             if ($ban === null) {
@@ -119,6 +121,7 @@ try {
         $connection->exec('CREATE TABLE "' . $schema . '".' . $table . ' (LIKE public.' . $table . ' INCLUDING ALL)');
     }
     $connection->exec('ALTER TABLE users ALTER COLUMN id DROP DEFAULT');
+    $connection->exec('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false');
     $migration = file_get_contents(dirname(__DIR__) . '/database/23-moderation-and-timed-bans.sql');
     $connection->exec(preg_replace('/\b(?:BEGIN|COMMIT);/', '', $migration));
     // Exercise real BIGINT fixture rows, including PHP/PG's largest positive ID.
@@ -227,6 +230,36 @@ try {
     $assert(AccountAccessGuard::begin($connection, PHP_INT_MAX, true) !== null, 'The largest positive PostgreSQL BIGINT ID must support the shared import guard and see its ban.');
     AccountAccessGuard::finish(false);
     echo '[OK] Równoległe bany moderatorów nie zakleszczają się, a blokady obsługują pełny zakres BIGINT.' . PHP_EOL;
+    $passed++;
+
+    // Hold the same user row that a real admin promotion updates. The queued
+    // moderation decision must reread the committed role after the lock wait.
+    $connection->beginTransaction();
+    $promote = $connection->prepare('UPDATE users SET is_admin = true WHERE id = :id');
+    $promote->execute(['id' => $target]);
+    $worker = $launch('warn', $otherModerator, $target);
+    $wait = $connection->prepare('SELECT cardinality(pg_blocking_pids(:pid)) > 0');
+    $deadline = microtime(true) + 3;
+    $waiting = false;
+    do {
+        $wait->execute(['pid' => $worker['pid']]);
+        if ($wait->fetchColumn() === true) {
+            $waiting = true;
+            break;
+        }
+        usleep(20000);
+    } while (microtime(true) < $deadline);
+    $assert($waiting, 'Warning must wait for the account role change row lock.');
+    $connection->commit();
+    $assert($result($worker)['result'] === false, 'The queued warning must reject the newly promoted administrator.');
+    $warnings = $connection->prepare("SELECT count(*) FROM moderation_actions WHERE user_id = :id AND action_type = 'warning'");
+    $warnings->execute(['id' => $target]);
+    $assert((int) $warnings->fetchColumn() === 0, 'Rejected concurrent warning must not create audit or user notices.');
+    $demoteAdmin = $connection->prepare('UPDATE users SET is_admin = false WHERE id = :id');
+    $demoteAdmin->execute(['id' => $target]);
+    $assert($repository->warnUser($otherModerator, $target, 'Role no longer protected', bin2hex(random_bytes(32))),
+        'A later decision may moderate the account after its admin role is revoked.');
+    echo '[OK] Oczekująca decyzja sprawdza rolę po promocji administratora i nie nakłada ostrzeżenia.' . PHP_EOL;
     $passed++;
 } catch (Throwable $exception) {
     $failed++;
