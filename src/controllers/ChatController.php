@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Data\DemoData;
 use App\Repository\RecommendationChatRepository;
 use App\Repository\UserRepository;
 use App\Service\AccountAccessGuard;
@@ -153,26 +152,5 @@ final class ChatController extends AppController
         session_id($id);
         return session_start(['use_cookies' => false, 'cache_limiter' => '', 'read_and_close' => $readOnly])
             && session_id() === $id;
-    }
-
-    public function show(int $id): void
-    {
-        $personas = DemoData::personas();
-
-        if ($id < 1 || !isset($personas[$id])) {
-            http_response_code(404);
-
-            $this->render('not-found', [
-                'pageTitle' => Translator::current()->translate('message.page.persona_missing'),
-            ]);
-
-            return;
-        }
-
-        $this->render('chat-persona', [
-            'pageTitle' => Translator::current()->translate('message.page.chat_prefix') . $personas[$id]['name'] . ' — AniVibe',
-            'persona' => $personas[$id],
-            'isNaruto' => $id === 1,
-        ]);
     }
 }

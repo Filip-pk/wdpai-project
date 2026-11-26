@@ -1,8 +1,7 @@
 # AniVibe
 
 AniVibe to aplikacja dla fanów anime: pozwala odkrywać tytuły, prowadzić
-własną watchlistę i śledzić postępy oglądania. Projekt rozwijamy o rekomendacje
-AI i rozmowy z postaciami.
+własną watchlistę, śledzić postępy oglądania i korzystać z rekomendacji AI.
 
 ## Funkcjonalności
 
@@ -53,8 +52,8 @@ AI i rozmowy z postaciami.
 - Panel administratora: diagnostyka usług, ostatnie błędy, zarządzanie
   rolą moderatora, podgląd braków katalogu i historia operacji.
 
-Rozmowy z postaciami są dostępne jako podgląd. Watchlistę MyAnimeList można
-zaimportować ręcznie z pliku. Katalog korzysta z importowanych ocen.
+Watchlistę MyAnimeList można zaimportować ręcznie z pliku. Katalog korzysta
+z importowanych ocen.
 
 ## Technologie
 

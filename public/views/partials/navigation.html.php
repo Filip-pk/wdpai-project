@@ -52,7 +52,6 @@ if ($isAdmin ?? false) {
 $isNavigationCurrent = static fn (string $url): bool => $currentPath === $url
     || ($url === '/guess' && str_starts_with((string) $currentPath, '/guess/'))
     || ($url === '/quiz' && str_starts_with((string) $currentPath, '/quiz/'))
-    || ($url === '/chat' && str_starts_with((string) $currentPath, '/chat/'))
     || ($url === '/projects' && str_starts_with((string) $currentPath, '/projects/'))
     || ($url === '/profile' && (str_starts_with((string) $currentPath, '/profile/') || $isUserProfilePage))
     || ($url === '/messages' && str_starts_with((string) $currentPath, '/messages/'))

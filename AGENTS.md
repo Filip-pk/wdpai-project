@@ -2,13 +2,12 @@
 
 ## Cel projektu
 AniVibe — aplikacja dla fanów anime: katalog, watchlista, oceny,
-rekomendacje AI i rozmowy z postaciami.
+rekomendacje AI.
 
 Technologie: PHP 8.3, Composer, HTML, CSS, JavaScript, PostgreSQL,
 Docker Compose, Nginx i Ollama.
 
-Obecnie aplikacja korzysta z danych demonstracyjnych.
-Logowanie, autoryzacja, zapis do bazy i AI nie są jeszcze podłączone.
+Aplikacja korzysta z PostgreSQL. Ollama obsługuje rekomendacje katalogowe.
 
 ## Struktura
 - public/index.php — punkt wejścia i rejestracja tras.

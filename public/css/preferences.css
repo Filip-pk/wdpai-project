@@ -30,9 +30,9 @@ html[data-large-controls="1"] :is(button, input:not([type="hidden"]), select, te
 }
 html[data-large-controls="1"] :is(button, .button) { min-width: 2.75rem; }
 html[data-message-text-size="large"] .page-content :is(.message-body, .chat-messages .message p),
-html[data-message-text-size="large"] :is(#message-body, #assistant-message, #persona-message) { font-size: 1.125rem; }
+html[data-message-text-size="large"] :is(#message-body, #assistant-message) { font-size: 1.125rem; }
 html[data-message-text-size="largest"] .page-content :is(.message-body, .chat-messages .message p),
-html[data-message-text-size="largest"] :is(#message-body, #assistant-message, #persona-message) { font-size: 1.375rem; }
+html[data-message-text-size="largest"] :is(#message-body, #assistant-message) { font-size: 1.375rem; }
 html[data-comment-text-size="large"] .page-content .comment-body,
 html[data-comment-text-size="large"] .comment-form textarea { font-size: 1.125rem; }
 html[data-comment-text-size="largest"] .page-content .comment-body,

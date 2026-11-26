@@ -89,19 +89,7 @@
     text-decoration: none;
 }
 
-.dashboard-page .dashboard-demo-notice {
-    flex-basis: 100%;
-    max-width: none;
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-small);
-    background-color: var(--color-surface);
-    font-size: 0.75rem;
-    line-height: 1.6;
-}
-
 .dashboard-page .mood-panel,
-.dashboard-personas,
 .dashboard-recommendations {
     display: grid;
     gap: var(--space-5);
@@ -243,71 +231,6 @@
     text-decoration: none;
 }
 
-.dashboard-personas .persona-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
-}
-
-.dashboard-personas .persona-grid > li {
-    min-width: 0;
-}
-
-.dashboard-personas .persona-card {
-    display: grid;
-    align-content: start;
-    gap: var(--space-2);
-    height: 100%;
-    padding: var(--space-4);
-    border-radius: var(--radius-medium);
-    background-color: var(--color-surface);
-    text-align: center;
-}
-
-.dashboard-personas .persona-card h3 {
-    font-size: 0.875rem;
-    line-height: 1.4;
-}
-
-.dashboard-personas .persona-card h3 a {
-    display: grid;
-    justify-items: center;
-    gap: var(--space-3);
-    min-height: 2.75rem;
-    border-radius: var(--radius-small);
-    color: var(--color-text);
-    text-decoration: none;
-}
-
-.dashboard-personas .persona-card h3 a:hover {
-    color: var(--color-brand);
-}
-
-.dashboard-personas .persona-card > p {
-    font-size: 0.6875rem;
-    line-height: 1.5;
-}
-
-.dashboard-persona-mark {
-    display: grid;
-    place-items: center;
-    width: 3.25rem;
-    height: 3.25rem;
-    border: 2px solid var(--color-brand);
-    border-radius: 50%;
-    color: var(--color-brand);
-    background-color: var(--color-surface-raised);
-    box-shadow: 0 0 1rem var(--color-glow-cyan);
-    font-family: ui-serif, Georgia, serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.persona-grid > li:nth-child(2n) .dashboard-persona-mark {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    box-shadow: 0 0 1rem var(--color-glow-violet);
-}
-
 .dashboard-recommendations-heading > div {
     display: grid;
     gap: var(--space-2);
@@ -422,11 +345,6 @@
 
     .dashboard-page .mood-panel {
         padding: var(--space-6);
-    }
-
-    .dashboard-personas .persona-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: var(--space-4);
     }
 
     .mood-fields button {

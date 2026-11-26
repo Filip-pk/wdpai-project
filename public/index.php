@@ -364,7 +364,6 @@ $routing->post('/anime/{id}/collections/create', AnimeController::class, 'create
 
 $routing->get('/chat', ChatController::class, 'index');
 $routing->post('/chat', ChatController::class, 'submit');
-$routing->get('/chat/{id}', ChatController::class, 'show');
 
 $routing->get('/messages', MessageController::class, 'index');
 $routing->get('/messages/blocked', CommunityController::class, 'blocked');

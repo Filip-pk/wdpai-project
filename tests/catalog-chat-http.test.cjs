@@ -9,11 +9,12 @@ const cards = html => [...html.matchAll(/class="anime-card" data-anime-id="(\d+)
 
 test('Catalogue chat requires an account and CSRF and rejects cancelled and invalid requests', async () => {
     const guest = browser();
-    assert.equal((await guest.request('/chat')).status, 200);
+    const catalogue = await guest.request('/chat');
+    assert.equal(catalogue.status, 200);
+    assert.match(catalogue.html, /Czat katalogowy/);
     assert.equal((await guest.request('/chat', { intent: 'send' })).headers.get('location'), '/login');
-    const persona = await guest.request('/chat/1');
-    assert.equal(persona.status, 200);
-    assert.match(persona.html, /id="persona-demo-notice"/);
+    assert.equal((await guest.request('/chat/1')).status, 404);
+    assert.equal((await guest.request('/admin/personas')).status, 404);
 
     const fixture = createQuizFixture();
     try {
@@ -28,7 +29,10 @@ test('Catalogue chat requires an account and CSRF and rejects cancelled and inva
         const cancelled = await client.request('/chat', { _csrf: token, intent: 'send', requestId: id, message: 'Szukam horroru.' });
         assert.equal(cancelled.status, 409);
         assert.match(cancelled.html, /Wyszukiwanie anulowano/);
-        assert.equal((await client.request('/dashboard')).status, 200);
+        const dashboard = await client.request('/dashboard');
+        assert.equal(dashboard.status, 200);
+        assert.match(dashboard.html, /action="\/chat"/);
+        assert.doesNotMatch(dashboard.html, /href="\/chat\/\d+/);
     } finally {
         assert.equal(cleanupQuizFixture(fixture).removed, 2);
     }

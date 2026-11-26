@@ -77,28 +77,6 @@ final class DemoData
         ];
     }
 
-    public static function personas(): array
-    {
-        return [
-            1 => [
-                'name' => 'Naruto Uzumaki',
-                'anime' => 'Naruto',
-            ],
-            2 => [
-                'name' => 'L Lawliet',
-                'anime' => 'Death Note',
-            ],
-            3 => [
-                'name' => 'Mikasa Ackerman',
-                'anime' => 'Attack on Titan',
-            ],
-            4 => [
-                'name' => 'Goku',
-                'anime' => 'Dragon Ball',
-            ],
-        ];
-    }
-
     public static function watchlist(): array
     {
         return [

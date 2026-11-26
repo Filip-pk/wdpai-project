@@ -37,10 +37,6 @@
                 <div><h3><?= $escape($t('view.interface.smart_recommendations')) ?></h3><p><?= $escape($t('view.interface.describe_your_mood_and_discover_anime_for_you_with_the_local_ollama_model')) ?></p></div>
             </li>
             <li class="feature-card">
-                <span class="feature-icon" aria-hidden="true">💬</span>
-                <div><h3><?= $escape($t('view.interface.character_chats')) ?></h3><p><?= $escape($t('view.interface.chat_with_ai_playing_characters_from_your_favourite_anime_from_naruto_to_l_lawliet')) ?></p></div>
-            </li>
-            <li class="feature-card">
                 <span class="feature-icon" aria-hidden="true">♡</span>
                 <div><h3><?= $escape($t('view.interface.your_collection')) ?></h3><p><?= $escape($t('view.interface.save_titles_to_your_watchlist_track_your_progress_and_rate_the_series_you_watch')) ?></p></div>
             </li>
