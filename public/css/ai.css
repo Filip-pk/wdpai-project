@@ -1,4 +1,4 @@
-/* Asystent, rozmowy z postaciami i demonstracyjny kreator. */
+/* Czat katalogowy, rozmowy z postaciami i demonstracyjny kreator. */
 .page-ai .ai-page,
 .page-ai .ai-layout,
 .page-ai .ai-panel,
@@ -202,22 +202,113 @@
     font-weight: 600;
 }
 
-.page-ai .ai-recommendation .anime-card {
+.page-ai .ai-assistant .chat-messages {
+    max-height: 23rem;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.page-ai .ai-assistant .message p {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.page-ai .ai-assistant .chat-form {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.page-ai .ai-chat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.page-ai .ai-assistant .ai-chat-actions button {
+    width: auto;
+}
+
+.page-ai .ai-assistant .ai-secondary-action {
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    background: var(--color-surface-raised);
+    font-weight: 700;
+}
+
+.page-ai .ai-chat-hint,
+.page-ai .ai-chat-reason {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.page-ai .ai-chat-hint:empty {
+    display: none;
+}
+
+.page-ai .ai-assistant [role="alert"] {
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    background: var(--color-surface-raised);
+}
+
+.page-ai .ai-criteria-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+}
+
+.page-ai .ai-criteria-list li {
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background: var(--color-surface-raised);
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
+}
+
+.page-ai .ai-chat-result-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+.page-ai .ai-chat-result {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-surface-raised);
+}
+
+.page-ai .ai-chat-result .anime-card {
+    flex: 1;
     height: auto;
+    border: 0;
     box-shadow: none;
 }
 
-.page-ai .ai-recommendation .anime-cover {
-    max-height: 15rem;
+.page-ai .ai-chat-result .anime-cover {
+    max-height: 14rem;
 }
 
-.page-ai .ai-recommendation .anime-card-body {
-    gap: var(--space-3);
-    padding: var(--space-4);
+.page-ai .ai-chat-result .ai-chat-reason {
+    padding: var(--space-3);
+    border-top: 1px solid var(--color-border);
 }
 
-.page-ai .ai-recommendation .anime-card h3 {
-    font-size: 1rem;
+@media (min-width: 58rem) {
+    .page-ai .ai-chat-workspace {
+        grid-template-columns: minmax(0, 1.8fr) minmax(14rem, 1fr);
+        align-items: start;
+    }
 }
 
 .page-ai .ai-persona-avatar {

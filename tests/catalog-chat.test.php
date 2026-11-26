@@ -98,6 +98,12 @@ try {
     $page = $service->respond('Pokaż inne', true, ['criteria' => $criteria, 'seen' => [$shown], 'searched' => true], static fn () => false);
     $assert(count($page['cards']) === 1 && !isset($page['cards'][$shown]) && $page['criteria'] === $criteria,
         'Paging must keep the current filters and skip all shown titles without interpreting the message.');
+    $emptyCriteria = ['maxYear' => 1900];
+    $empty = $service->respond('Pokaż inne', true, ['criteria' => $emptyCriteria, 'searched' => true], static fn () => false);
+    $assert($empty['cards'] === [] && $empty['criteria'] === $emptyCriteria
+        && $empty['turns'][0]['key'] === 'no_matches_filter'
+        && $empty['turns'][0]['parameters']['filter'] === 'view.catalog.premiere',
+        'An empty search should suggest changing an active filter while keeping its value.');
     echo "[OK] Ścisłe filtry SQL, aliasy, opis i kolejne wyniki\n";
 
     $assert($source->fillMissingAiringStatuses([
