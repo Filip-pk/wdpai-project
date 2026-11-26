@@ -23,19 +23,25 @@ W Windows CMD, w katalogu projektu, uruchom:
 docker compose exec php php scripts/seed-projects.php
 ```
 
-Skrypt dodaje przez repozytorium trzy przykłady:
+Skrypt dodaje przez repozytorium dwa przykłady.
 
 | Projekt | Status |
 | --- | --- |
 | AniVibe — rekomendacje anime | `planned` |
-| AniVibe — rozmowy z postaciami | `active` |
 | AniVibe — katalog anime | `completed` |
 
-W pustej tabeli wynik to `Dodano projektów: 3. Pominięto istniejących: 0.`.
+W pustej tabeli wynik to `Dodano projektów: 2. Pominięto istniejących: 0.`.
 Ponowne uruchomienie pomija znalezione tytuły i wypisuje
-`Dodano projektów: 0. Pominięto istniejących: 3.`. Skrypt zachowuje istniejące
+`Dodano projektów: 0. Pominięto istniejących: 2.`. Skrypt zachowuje istniejące
 rekordy; dodawanie brakujących przykładów odbywa się w jednej transakcji.
 W razie błędu zwraca kod `1` i ogólny komunikat, bez treści wyjątku sterownika.
+
+Na istniejącej bazie zastosuj migrację `31` do uporządkowania przykładowych
+projektów.
+
+```cmd
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\31-prune-demo-projects.sql
+```
 
 Żądania `GET` odczytują dane. Ponowne otwarcie strony lub odświeżenie nie
 uruchamia skryptu i nie dodaje kolejnych rekordów.
@@ -50,7 +56,7 @@ Trasy `/projects` i `/projects/{id}` wymagają zalogowania zgodnie z
 ## Weryfikacja
 
 Dla domyślnego portu aplikacji otwórz `http://localhost:8080/projects`.
-Sprawdź trzy statusy, przejdź do szczegółów wybranego projektu i odśwież stronę.
+Sprawdź statusy przykładów, przejdź do szczegółów wybranego projektu i odśwież stronę.
 Tytuły oraz identyfikatory powinny pozostać takie same. Otwórz adres projektu
 z nieistniejącym ID i sprawdź odpowiedź `404`.
 

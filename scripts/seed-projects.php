@@ -33,12 +33,6 @@ try {
         ),
         new Project(
             null,
-            'AniVibe — rozmowy z postaciami',
-            'Projekt ćwiczeniowy: opracowanie rozmów z wirtualnymi postaciami.',
-            'active',
-        ),
-        new Project(
-            null,
             'AniVibe — katalog anime',
             'Projekt ćwiczeniowy: uporządkowanie katalogu anime.',
             'completed',
