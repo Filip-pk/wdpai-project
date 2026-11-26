@@ -39,7 +39,7 @@
                         <noscript><p class="ai-chat-hint"><?= $escape($t('chat.hint')) ?></p></noscript>
                         <div class="ai-chat-examples" data-chat-examples hidden>
                             <h3><?= $escape($t('view.interface.quick_questions')) ?></h3>
-                            <?php foreach (['chat.example_similar', 'chat.example_finished'] as $exampleKey): ?>
+                            <?php foreach (['chat.example_similar', 'chat.example_finished', 'chat.example_magic'] as $exampleKey): ?>
                                 <?php $example = $t($exampleKey); ?>
                                 <button type="button" class="ai-chat-example" data-chat-example="<?= $escape($example) ?>">
                                     <?= $escape($example) ?> <span aria-hidden="true">↗</span>
@@ -63,6 +63,9 @@
                                     $parameters = $turn['parameters'];
                                     if ($turn['key'] === 'no_matches_filter') {
                                         $parameters['filter'] = $t($parameters['filter']);
+                                    }
+                                    if ($turn['key'] === 'no_matches_motif') {
+                                        $parameters['motif'] = \App\Model\RecommendationChatMotifs::label($parameters['motif'], $t);
                                     }
                                     ?>
                                     <p><?= $escape($t('chat.reply.' . $turn['key'], $parameters)) ?></p>

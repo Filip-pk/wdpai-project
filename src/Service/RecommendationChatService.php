@@ -31,20 +31,35 @@ final class RecommendationChatService
         for an unrelated message or a condition requiring a feature outside these fields, such as a franchise-wide total.
         Return ONLY criteria added, changed or removed in this message. Order the keys by the schema:
         minEpisodes, maxEpisodes, minYear, maxYear, minScore, maxScore, format, status, length,
-        requireTags, excludeTags, forgetTags, references, themes.
+        requireTags, excludeTags, forgetTags, exactTags, references, motifs, excludeMotifs, forgetMotifs, themes.
         Omitted keys preserve earlier criteria. Null clears a scalar. An empty references or themes list clears it.
         Limits are inclusive: "ponad 20 odcinków" means minEpisodes 21, "mniej niż 13" means maxEpisodes 12.
         An exact count sets both bounds. Score is 0–10 with two decimal places. "po 2020" means minYear 2021.
         requireTags and excludeTags ADD tags; an excluded tag automatically stops being required and vice versa.
-        forgetTags removes tags from both lists. Match translated genre names to exact catalogue tags.
-        If an explicit genre or theme is required or forbidden and no catalogue tag matches, retain its name in the tag list.
-        Put plot, atmosphere, games or strategy as subject matter, and character traits in themes (short English phrases).
-        Even when phrased as "z inteligentnym bohaterem", a plot detail belongs in themes and the action is "search".
+        forgetTags removes tags from both lists. Match translated names only to equivalent catalogue tags.
+        If the user names a tag literally (e.g. "z tagiem Magic"), include its name in exactTags and in requireTags
+        or excludeTags, even if it is missing. Otherwise use motifs for concrete features without an equivalent tag.
+        An existing genre exclusion such as "bez horroru" goes in excludeTags with its catalogue name "Horror".
+        When asked to use descriptions in place of a named tag, remove the tag with forgetTags and keep its polarity.
+        Do not replace a specific motif with a broader genre. Magic alone is a motif, even when Fantasy is available.
+        motifs and excludeMotifs ADD concrete description matches or exclusions, using short English search phrases.
+        Each motif is a separate requirement. Use forgetMotifs to remove an existing one.
+        Put subjective atmosphere, character traits and stated preferences in themes (short English phrases).
         Set references only for titles to use as examples of similarity, never infer their genres as strict filters.
         "krótkie" sets length "short"; "zakończone" sets status "finished". Films use format "MOVIE".
         Examples of complete answers:
         "Chcę harem, ponad 20 odcinków, w stylu podobnym do No Game No Life"
         -> {"action":"search","changes":{"minEpisodes":21,"requireTags":["Harem"],"references":["No Game No Life"]}}
+        "Znajdź anime z magią"
+        -> {"action":"search","changes":{"motifs":["magic"]}}
+        "Anime o szkole magii, ale bez horroru"
+        -> {"action":"search","changes":{"excludeTags":["Horror"],"motifs":["magic school"]}}
+        "Jednak bez magii"
+        -> {"action":"search","changes":{"excludeMotifs":["magic"]}}
+        "Tylko anime z tagiem Magic"
+        -> {"action":"search","changes":{"requireTags":["Magic"],"exactTags":["Magic"]}}
+        "Szukaj magii w opisach zamiast wymagać tagu Magic"
+        -> {"action":"search","changes":{"forgetTags":["Magic"],"motifs":["magic"]}}
         "Jednak bez haremu, bardziej zależy mi na grach i strategii"
         -> {"action":"search","changes":{"excludeTags":["Harem"],"themes":["games","strategy"]}}
         "Krótka, zakończona seria TV z inteligentnym głównym bohaterem"
@@ -144,6 +159,9 @@ final class RecommendationChatService
         }
         if ($plan['action'] === 'more' && $seen !== []) {
             return $this->reply($state, $message, 'no_more');
+        }
+        if (isset($criteria['motifs'][0])) {
+            return $this->reply($state, $message, 'no_matches_motif', ['motif' => $criteria['motifs'][0]]);
         }
         if (isset($criteria['minEpisodes'])) {
             return $this->reply($state, $message, 'no_matches_min', ['min' => $criteria['minEpisodes']]);

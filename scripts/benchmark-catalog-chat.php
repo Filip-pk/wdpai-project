@@ -25,6 +25,12 @@ try {
         ['Jednak bez haremu, bardziej zależy mi na grach i strategii.', ['minEpisodes' => 21,
             'requireTags' => ['Harem'], 'references' => ['No Game No Life']]],
         ['Krótka, zakończona seria TV z inteligentnym głównym bohaterem.', []],
+        ['Znajdź anime z magią.', []],
+        ['Szukam anime z magią i co najmniej 21 odcinkami.', ['requireTags' => ['Magia']]],
+        ['Anime o magicznej szkole, ale bez horroru.', []],
+        ['Jednak bez magii.', ['minEpisodes' => 21, 'motifs' => ['magic']]],
+        ['Tylko anime z tagiem Magic.', []],
+        ['Szukam anime o podwodnym mieście.', []],
     ];
     foreach ($cases as [$prompt, $previous]) {
         $result = $service->interpret($prompt, $previous);

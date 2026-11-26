@@ -83,6 +83,25 @@ test('Live Ollama and imported catalogue keep filters across turns and skip disp
             assert.match(story, /Format TV/);
             assert.match(story, /Fragment opisu katalogowego|Dostępny opis nie pozwala potwierdzić/);
             console.log('Character trait excerpts: ' + (story.match(/<q lang=/g)?.length ?? 0));
+
+            assert.equal((await client.request('/chat', { _csrf: token, intent: 'reset' })).status, 303);
+            const magic = await send('send', 'Znajdz anime z magia i ponad 20 odcinkow.');
+            const magicCards = cards(magic);
+            assert.ok(magicCards.length > 0 && magicCards.every(card => card.episodes >= 21));
+            assert.match(magic, /Motywy w opisach · magia/);
+            assert.equal((magic.match(/Wzmianka w opisie/g) ?? []).length, magicCards.length);
+            assert.doesNotMatch(magic, /Katalog nie rozpoznaje tagu/);
+            const withoutMagic = await send('send', 'Jednak bez magii.');
+            assert.match(withoutMagic, /Bez wzmianek w opisach · magia/);
+            assert.match(withoutMagic, /Co najmniej 21 odcinków/);
+            assert.doesNotMatch(withoutMagic, /Motywy w opisach · magia/);
+
+            assert.equal((await client.request('/chat', { _csrf: token, intent: 'reset' })).status, 303);
+            const school = await send('send', 'Szukam anime o szkole magii, ale bez horroru.');
+            assert.ok(cards(school).length > 0);
+            assert.match(school, /Motywy w opisach · szkoła magii/);
+            assert.match(school, /Bez tagu „Horror”/);
+            assert.doesNotMatch(school, /<li>Horror<\/li>/);
         } finally {
             assert.equal(cleanupQuizFixture(fixture).removed, 2);
         }
