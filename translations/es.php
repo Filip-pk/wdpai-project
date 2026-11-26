@@ -1670,4 +1670,8 @@ return [
     'chat.error.cancelled' => 'Búsqueda cancelada.',
     'chat.reply.no_matches_filter' => 'Sin coincidencias. Prueba a cambiar o quitar el filtro «{filter}».',
     'chat.reply.no_matches_exclusion' => 'Sin coincidencias. Prueba a permitir títulos con la etiqueta «{tag}».',
+    'chat.example_similar' => 'Busco un anime como No Game No Life con al menos 21 episodios.',
+    'chat.example_finished' => 'Recomiéndame una serie corta de fantasía que ya haya terminado.',
+    'chat.results_waiting' => 'Las fichas de anime aparecerán aquí después de la búsqueda.',
+    'chat.results_empty' => 'No hay títulos en los resultados actuales.',
 ];

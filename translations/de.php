@@ -1670,4 +1670,8 @@ return [
     'chat.error.cancelled' => 'Suche abgebrochen.',
     'chat.reply.no_matches_filter' => 'Keine Treffer. Ändere oder entferne den Filter „{filter}“.',
     'chat.reply.no_matches_exclusion' => 'Keine Treffer. Versuche, Titel mit dem Tag „{tag}“ zuzulassen.',
+    'chat.example_similar' => 'Ich suche ein Anime wie No Game No Life mit mindestens 21 Folgen.',
+    'chat.example_finished' => 'Empfiehl eine kurze, abgeschlossene Fantasyserie.',
+    'chat.results_waiting' => 'Nach der Suche erscheinen hier die Anime-Karten.',
+    'chat.results_empty' => 'Die aktuelle Suche hat keine Treffer.',
 ];

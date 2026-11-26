@@ -1671,4 +1671,8 @@ return [
     'chat.error.cancelled' => 'Поиск отменён.',
     'chat.reply.no_matches_filter' => 'Совпадений нет. Попробуйте изменить или убрать фильтр «{filter}».',
     'chat.reply.no_matches_exclusion' => 'Совпадений нет. Попробуйте разрешить тайтлы с тегом «{tag}».',
+    'chat.example_similar' => 'Ищу аниме в духе No Game No Life, в котором не менее 21 серии.',
+    'chat.example_finished' => 'Посоветуй короткое фэнтези с завершённым показом.',
+    'chat.results_waiting' => 'После поиска здесь появятся карточки аниме.',
+    'chat.results_empty' => 'В текущих результатах нет тайтлов.',
 ];

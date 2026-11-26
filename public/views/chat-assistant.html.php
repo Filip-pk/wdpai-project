@@ -4,17 +4,15 @@
     data-waiting="<?= $escape($t('chat.waiting')) ?>"
     data-stopping="<?= $escape($t('chat.stopping')) ?>"
     data-network-error="<?= $escape($t('chat.network_error')) ?>">
-    <header class="chat-heading social-hero">
-        <div>
-            <h1 class="social-title"><?= $escape($t('chat.title')) ?></h1>
-            <p class="social-description"><?= $escape($t('chat.intro')) ?></p>
-        </div>
+    <header class="ai-chat-hero">
+        <h1 class="social-title"><?= $escape($t('chat.title')) ?></h1>
+        <p class="social-description"><?= $escape($t('chat.intro')) ?></p>
     </header>
 
     <?php if (!$isLoggedIn): ?>
-        <section class="ai-panel">
+        <section class="ai-panel ai-chat-guest">
             <h2><?= $escape($t('chat.login')) ?></h2>
-            <a class="ai-back" href="/login"><?= $escape($t('view.catalog.login')) ?> <span aria-hidden="true">→</span></a>
+            <a class="ai-chat-button ai-chat-primary" href="/login"><?= $escape($t('view.catalog.login')) ?></a>
         </section>
     <?php else: ?>
         <?php
@@ -23,24 +21,35 @@
         $cards = $chatState['cards'] ?? [];
         ?>
 
-        <div class="ai-layout ai-chat-workspace">
+        <div class="ai-chat-workspace">
             <section class="ai-panel ai-chat-panel" aria-labelledby="assistant-conversation-title">
-                <header class="ai-chat-title">
+                <header class="ai-chat-section-head">
                     <h2 id="assistant-conversation-title"><?= $escape($t('view.interface.your_conversation')) ?></h2>
                     <?php if ($turns !== []): ?>
                         <form action="/chat" method="post" data-chat-form>
                             <input type="hidden" name="_csrf" value="<?= $escape($csrfToken) ?>">
                             <input type="hidden" name="intent" value="reset">
-                            <button type="submit" class="ai-secondary-action"><?= $escape($t('chat.reset')) ?></button>
+                            <button type="submit" class="ai-chat-button"><?= $escape($t('chat.reset')) ?></button>
                         </form>
                     <?php endif; ?>
                 </header>
 
                 <?php if ($turns === []): ?>
-                    <p class="ai-chat-hint"><?= $escape($t('chat.hint')) ?></p>
+                    <div class="ai-chat-start">
+                        <noscript><p class="ai-chat-hint"><?= $escape($t('chat.hint')) ?></p></noscript>
+                        <div class="ai-chat-examples" data-chat-examples hidden>
+                            <h3><?= $escape($t('view.interface.quick_questions')) ?></h3>
+                            <?php foreach (['chat.example_similar', 'chat.example_finished'] as $exampleKey): ?>
+                                <?php $example = $t($exampleKey); ?>
+                                <button type="button" class="ai-chat-example" data-chat-example="<?= $escape($example) ?>">
+                                    <?= $escape($example) ?> <span aria-hidden="true">↗</span>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 <?php else: ?>
-                    <ol class="chat-messages" data-chat-messages>
-                        <?php foreach ($turns as $turn): ?>
+                    <ol class="chat-messages" data-chat-messages tabindex="0" aria-labelledby="assistant-conversation-title">
+                        <?php foreach ($turns as $index => $turn): ?>
                             <li>
                                 <article class="message message-user">
                                     <h3><?= $escape($t('view.interface.you_ce679e')) ?></h3>
@@ -57,13 +66,13 @@
                                     }
                                     ?>
                                     <p><?= $escape($t('chat.reply.' . $turn['key'], $parameters)) ?></p>
+                                    <?php if ($cards !== [] && $index === array_key_last($turns)): ?>
+                                        <a class="ai-chat-results-link" href="#assistant-results-title"><?= $escape($t('chat.view_results')) ?> <span aria-hidden="true">↓</span></a>
+                                    <?php endif; ?>
                                 </article>
                             </li>
                         <?php endforeach; ?>
                     </ol>
-                    <?php if ($cards !== []): ?>
-                        <a class="ai-back" href="#assistant-results-title"><?= $escape($t('chat.view_results')) ?> <span aria-hidden="true">↓</span></a>
-                    <?php endif; ?>
                 <?php endif; ?>
 
                 <form action="/chat" method="post" class="chat-form" data-chat-form>
@@ -71,58 +80,25 @@
                     <input type="hidden" name="intent" value="send">
                     <input type="hidden" name="requestId" value="<?= $escape($chatRequestId) ?>">
                     <label for="assistant-message"><?= $escape($t('view.interface.describe_the_anime_you_re_looking_for')) ?></label>
-                    <textarea id="assistant-message" name="message" rows="3" maxlength="1200" required><?= $escape($chatDraft) ?></textarea>
+                    <textarea id="assistant-message" name="message" rows="2" maxlength="1200" required><?= $escape($chatDraft) ?></textarea>
                     <div class="ai-chat-actions">
-                        <button type="submit"><?= $escape($t('view.interface.send')) ?></button>
-                        <button type="button" class="ai-secondary-action" data-chat-cancel hidden><?= $escape($t('chat.cancel')) ?></button>
+                        <p class="ai-chat-feedback" role="status" data-chat-progress></p>
+                        <div class="ai-chat-buttons">
+                            <button type="button" class="ai-chat-button" data-chat-cancel hidden><?= $escape($t('chat.cancel')) ?></button>
+                            <button type="submit" class="ai-chat-button ai-chat-primary"><?= $escape($t('view.interface.send')) ?> <span aria-hidden="true">↗</span></button>
+                        </div>
                     </div>
                 </form>
-                <p class="ai-chat-hint" role="status" data-chat-progress></p>
                 <?php if ($chatError !== null): ?>
                     <p class="ai-chat-hint" role="alert" tabindex="-1" data-chat-error><?= $escape($t('chat.error.' . $chatError)) ?></p>
                 <?php endif; ?>
             </section>
 
-            <?php require __DIR__ . '/partials/chat-criteria.html.php'; ?>
+            <div class="ai-chat-sidebar">
+                <?php require __DIR__ . '/partials/chat-criteria.html.php'; ?>
+                <?php require __DIR__ . '/partials/chat-results.html.php'; ?>
+            </div>
         </div>
-
-        <?php if ($cards !== []): ?>
-            <section class="ai-panel ai-chat-results" aria-labelledby="assistant-results-title">
-                <header class="ai-chat-title">
-                    <h2 id="assistant-results-title" tabindex="-1"><?= $escape($t('chat.results')) ?></h2>
-                    <?php if ($chatState['hasMore'] ?? false): ?>
-                        <form action="/chat" method="post" data-chat-form>
-                            <input type="hidden" name="_csrf" value="<?= $escape($csrfToken) ?>">
-                            <input type="hidden" name="intent" value="more">
-                            <input type="hidden" name="requestId" value="<?= $escape($chatRequestId) ?>">
-                            <button type="submit" class="ai-secondary-action"><?= $escape($t('chat.more')) ?></button>
-                        </form>
-                    <?php endif; ?>
-                </header>
-                <ul class="anime-grid ai-chat-result-grid">
-                    <?php foreach ($cards as $animeId => $card): ?>
-                        <li class="ai-chat-result">
-                            <?php $anime = $card['anime']; ?>
-                            <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
-                            <?php if ($card['quote'] !== null): ?>
-                                <p class="ai-chat-reason">
-                                    <?= $escape($t('chat.source_quote')) ?>
-                                    <q lang="<?= $escape($anime['descriptionLanguage']) ?>"><?= $escape($card['quote']) ?></q>
-                                </p>
-                            <?php elseif (!empty($criteria['themes'])): ?>
-                                <p class="ai-chat-reason"><?= $escape($t('chat.uncertain')) ?></p>
-                            <?php elseif ($card['sharedTags'] !== []): ?>
-                                <p class="ai-chat-reason"><?= $escape($t('chat.shared_tags', [
-                                    'value' => implode(', ', array_map($translateText, $card['sharedTags'])),
-                                ])) ?></p>
-                            <?php else: ?>
-                                <p class="ai-chat-reason"><?= $escape($t($card['similarDescription'] ? 'chat.shared_words' : 'chat.catalog_match')) ?></p>
-                            <?php endif; ?>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </section>
-        <?php endif; ?>
     <?php endif; ?>
 </div>
 

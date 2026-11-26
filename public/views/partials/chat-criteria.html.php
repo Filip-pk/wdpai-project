@@ -28,7 +28,7 @@ if (!empty($criteria['themes'])) {
     $labelsShown[] = $t('chat.themes', ['value' => implode(', ', $criteria['themes'])]);
 }
 ?>
-<aside class="ai-panel ai-criteria-panel" aria-labelledby="assistant-criteria-title">
+<section class="ai-panel ai-criteria-panel" aria-labelledby="assistant-criteria-title">
     <h2 id="assistant-criteria-title"><?= $escape($t('chat.criteria')) ?></h2>
     <?php if ($labelsShown === []): ?>
         <p class="ai-chat-hint"><?= $escape($t('chat.no_criteria')) ?></p>
@@ -40,4 +40,4 @@ if (!empty($criteria['themes'])) {
         </ul>
         <p class="ai-chat-hint"><?= $escape($t('chat.edit_hint')) ?></p>
     <?php endif; ?>
-</aside>
+</section>

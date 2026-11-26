@@ -1670,4 +1670,8 @@ return [
     'chat.error.cancelled' => 'Search cancelled.',
     'chat.reply.no_matches_filter' => 'No matches. Try changing or removing the “{filter}” filter.',
     'chat.reply.no_matches_exclusion' => 'No matches. Try allowing titles with the “{tag}” tag.',
+    'chat.example_similar' => 'I want anime like No Game No Life with at least 21 episodes.',
+    'chat.example_finished' => 'Recommend a short fantasy series that has finished airing.',
+    'chat.results_waiting' => 'Anime cards will appear here after a search.',
+    'chat.results_empty' => 'There are no titles in the current results.',
 ];

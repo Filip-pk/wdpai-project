@@ -1,12 +1,14 @@
 'use strict';
 
-document.querySelectorAll('img[data-anime-cover]').forEach((image) => {
-    const showPlaceholder = () => {
+document.addEventListener('error', event => {
+    const image = event.target;
+    if (image instanceof HTMLImageElement && image.hasAttribute('data-anime-cover')) {
         image.hidden = true;
-    };
+    }
+}, true);
 
-    image.addEventListener('error', showPlaceholder, { once: true });
+document.querySelectorAll('img[data-anime-cover]').forEach(image => {
     if (image.complete && image.naturalWidth === 0) {
-        showPlaceholder();
+        image.hidden = true;
     }
 });

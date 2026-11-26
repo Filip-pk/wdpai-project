@@ -1671,4 +1671,8 @@ return [
     'chat.error.cancelled' => 'Wyszukiwanie anulowano.',
     'chat.reply.no_matches_filter' => 'Brak dopasowań. Spróbuj zmienić lub usunąć filtr „{filter}”.',
     'chat.reply.no_matches_exclusion' => 'Brak dopasowań. Spróbuj usunąć wykluczenie tagu „{tag}”.',
+    'chat.example_similar' => 'Szukam anime podobnego do No Game No Life z co najmniej 21 odcinkami.',
+    'chat.example_finished' => 'Poleć krótką, zakończoną serię fantasy.',
+    'chat.results_waiting' => 'Karty anime pojawią się tutaj po wyszukaniu.',
+    'chat.results_empty' => 'Brak tytułów w bieżących wynikach.',
 ];
