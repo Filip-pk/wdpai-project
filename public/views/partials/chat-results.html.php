@@ -75,13 +75,14 @@
                                 <q lang="<?= $escape($anime['descriptionLanguage']) ?>"><?= $escape($card['quote']) ?></q>
                             </p>
                         <?php elseif (!empty($criteria['themes'])): ?>
-                            <p class="ai-chat-reason"><?= $escape($t('chat.uncertain')) ?></p>
+                            <p class="ai-chat-reason"><?= $escape($t(!empty($card['matchingTheme']) ? 'chat.theme_mention' : 'chat.uncertain')) ?></p>
                         <?php elseif ($card['sharedTags'] !== []): ?>
                             <p class="ai-chat-reason"><?= $escape($t('chat.shared_tags', [
                                 'value' => implode(', ', array_map($translateText, $card['sharedTags'])),
                             ])) ?></p>
                         <?php elseif ($motifExcerpt === null): ?>
-                            <p class="ai-chat-reason"><?= $escape($t($card['similarDescription'] ? 'chat.shared_words' : 'chat.catalog_match')) ?></p>
+                            <?php $reason = $card['similarDescription'] ? 'chat.shared_words' : 'chat.catalog_match'; ?>
+                            <p class="ai-chat-reason"><?= $escape($t(isset($criteria['ranking']) ? 'chat.ranking_top' : $reason)) ?></p>
                         <?php endif; ?>
                         <details class="ai-chat-card-description">
                             <summary><?= $escape($t('view.catalog.short_description')) ?></summary>

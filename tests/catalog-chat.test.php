@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Database;
 use App\Model\RecommendationChatCriteria;
+use App\Model\RecommendationChatMotifs;
 use App\Repository\AnimeRepository;
 use App\Repository\RecommendationChatRepository;
 use App\Service\OllamaClient;
@@ -35,6 +36,22 @@ $conflict = RecommendationChatCriteria::apply($initial['criteria'], $plan(
     '{"action":"search","changes":{"maxEpisodes":20}}'
 ), $tags);
 $assert($conflict === ['action' => 'clarify', 'criteria' => $initial['criteria']], 'A conflicting range must keep prior requirements.');
+foreach ([[], ['minEpisodes' => 21]] as $previous) {
+    $emptyPlan = RecommendationChatCriteria::apply($previous, $plan('{"action":"search","changes":{}}'), $tags);
+    $assert($emptyPlan === ['action' => 'clarify', 'criteria' => $previous],
+        'A search with no recognized changes must ask for details instead of running an unfiltered or stale query.');
+}
+$assert(RecommendationChatMotifs::fromSimpleRequest('Anime o rybach!') === 'fish'
+    && RecommendationChatMotifs::fromSimpleRequest('anime o telepatycznych kaktusach') === 'telepatycznych kaktusach'
+    && RecommendationChatMotifs::fromSimpleRequest('anime o rybach i bez horroru') === null
+    && RecommendationChatMotifs::fromSimpleRequest('anime o czymkolwiek') === null,
+    'Recover plain topics and keep compound or vague requests in the interpreter.');
+$assert(RecommendationChatCriteria::simpleSearchChanges('Znajdz anime z magia i ponad 20 odcinkow.')
+    === ['minEpisodes' => 21, 'motifs' => ['magic']]
+    && RecommendationChatCriteria::simpleSearchChanges('anime about fish, at least 21 episodes')
+        === ['minEpisodes' => 21, 'motifs' => ['fish']]
+    && RecommendationChatCriteria::simpleSearchChanges('anime o rybach, ponad 20 odcinków i bez horroru') === [],
+    'A short topic with an explicit episode minimum preserves the bound. Compound constraints still use the interpreter.');
 $legacy = ['minEpisodes' => 21, 'requireTags' => ['Magia'], 'excludeTags' => ['Horror']];
 $magic = RecommendationChatCriteria::apply($legacy, $plan(
     '{"action":"search","changes":{"requireTags":["Magic"],"motifs":["magia"]}}'
@@ -121,6 +138,12 @@ try {
         $motifEntry(125, 'Missing synopsis', ['description' => '']),
         $motifEntry(126, 'Two motifs', ['description' => 'She studies sorcery. A time travel device sends her to the past.']),
     ]);
+    $source->importBatch([
+        $entry(130, 'Aquarium series', ['year' => 2011, 'description' => 'Two friends spend summer catching fish for an aquarium.']),
+        $entry(131, 'Polish fish series', ['year' => 2011, 'description' => 'Uczniowie poznają ryby w jeziorze.', 'descriptionLanguage' => 'pl']),
+        $entry(132, 'Unrelated high score', ['year' => 2011, 'description' => 'They repair an old camera.', 'score' => 9.9]),
+        $entry(133, 'Unknown score', ['year' => 2011, 'score' => null]),
+    ]);
 
     $repository = new RecommendationChatRepository($database);
     $criteria = $initial['criteria'] + ['excludeTags' => ['Horror'], 'minYear' => 2022,
@@ -158,6 +181,25 @@ try {
 
     $shown = array_key_first($result['items']);
     $service = new RecommendationChatService($repository, new OllamaClient('http://127.0.0.1:1'));
+    $legacyUnfiltered = ['criteria' => [], 'cards' => $result['items'], 'seen' => [$shown], 'hasMore' => true, 'searched' => true,
+        'turns' => [['message' => 'anime o rybach', 'key' => 'matches', 'parameters' => ['count' => 2]]]];
+    $restored = RecommendationChatService::restoreState($legacyUnfiltered);
+    $assert($restored['cards'] === [] && !$restored['hasMore'] && $restored['turns'][0]['key'] === 'clarify',
+        'Legacy empty-criteria sessions must not display previous unrelated cards or promise more results.');
+    $oldPage = $service->respond('Pokaż inne', true, $legacyUnfiltered, static fn () => false);
+    $assert($oldPage['cards'] === [] && $oldPage['turns'][1]['key'] === 'start'
+        && $repository->search([], [], 5)['items'] === [], 'Empty criteria cannot browse the catalogue by accident.');
+    $fishFilters = ['maxYear' => 2011, 'minEpisodes' => 21, 'minYear' => 2011];
+    $fish = $service->respond('anime o rybach', false, ['criteria' => $fishFilters], static fn () => false);
+    $assert($fish['criteria'] === $fishFilters + ['motifs' => ['fish']] && $malIds($fish['cards']) === [130, 131],
+        'Fish searches use catalogue descriptions and preserve prior numeric filters, even without a model call.');
+    $themePage = $service->respond('Pokaż inne', true,
+        ['criteria' => $fishFilters + ['themes' => ['aquarium']], 'searched' => true], static fn () => false);
+    $assert($malIds($themePage['cards']) === [130] && reset($themePage['cards'])['matchingTheme'],
+        'A topical preference must not fall back to unrelated high scores when only other criteria are numeric.');
+    $ranked = $service->respond('Pokaż najlepiej oceniane anime', false, ['criteria' => $fishFilters], static fn () => false);
+    $assert(($ranked['criteria']['ranking'] ?? null) === 'top_score' && count($ranked['cards']) === 3
+        && reset($ranked['cards'])['anime']['malId'] === 132, 'A deliberate rating request still returns a scored ranking.');
     $page = $service->respond('Pokaż inne', true, ['criteria' => $criteria, 'seen' => [$shown], 'searched' => true], static fn () => false);
     $assert(count($page['cards']) === 1 && !isset($page['cards'][$shown]) && $page['criteria'] === $criteria,
         'Paging must keep the current filters and skip all shown titles without interpreting the message.');

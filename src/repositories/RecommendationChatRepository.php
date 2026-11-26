@@ -38,6 +38,9 @@ final class RecommendationChatRepository
      */
     public function search(array $criteria, array $seen, int $limit): array
     {
+        if ($criteria === []) {
+            return ['items' => [], 'references' => []];
+        }
         $ownsTransaction = !$this->database->inTransaction();
         if ($ownsTransaction) {
             $this->database->beginTransaction();
@@ -87,6 +90,7 @@ final class RecommendationChatRepository
                 'sharedTags' => array_map(AnimeRepository::genreLabel(...),
                     json_decode($row['shared_tags'], true, 8, JSON_THROW_ON_ERROR)),
                 'similarDescription' => (float) $row['description_rank'] > 0.0,
+                'matchingTheme' => (float) $row['theme_rank'] > 0.0,
                 'motifExcerpt' => $row['motif_excerpt'],
             ];
         }
@@ -156,6 +160,11 @@ final class RecommendationChatRepository
         if ($references !== []) {
             $where[] = '(s.id IS NOT NULL OR d.description_rank > 0 OR d.theme_rank > 0)';
         }
+        $ratingOrder = '';
+        if (($criteria['ranking'] ?? null) === 'top_score') {
+            $where[] = 'a.score IS NOT NULL';
+            $ratingOrder = 'a.score DESC NULLS LAST, ';
+        }
         $conditions = implode(' AND ', $where);
         $lengthOrder = match ($criteria['length'] ?? null) {
             'short' => 'NULLIF(a.episodes, 0) ASC NULLS LAST, ',
@@ -208,7 +217,7 @@ final class RecommendationChatRepository
                 FROM reference_tags r JOIN anime_genres ag USING (genre_id) JOIN genres g ON g.id = ag.genre_id
                 GROUP BY ag.anime_id
             )
-            SELECT a.id, COALESCE(d.description_rank, 0) AS description_rank,
+            SELECT a.id, COALESCE(d.description_rank, 0) AS description_rank, COALESCE(d.theme_rank, 0) AS theme_rank,
                 COALESCE(s.tags, '[]'::JSONB) AS shared_tags,
                 CASE WHEN m.excerpt_query IS NOT NULL THEN ts_headline(
                     CASE WHEN a.description_language = 'en' THEN 'english'::REGCONFIG ELSE 'simple'::REGCONFIG END,
@@ -218,7 +227,7 @@ final class RecommendationChatRepository
             FROM anime a LEFT JOIN description_matches d ON d.id = a.id
                 LEFT JOIN shared s ON s.id = a.id LEFT JOIN motif_matches m ON m.id = a.id
             WHERE $conditions
-            ORDER BY COALESCE(d.theme_rank, 0) DESC,
+            ORDER BY {$ratingOrder}COALESCE(d.theme_rank, 0) DESC,
                 (COALESCE(m.motif_rank, 0) + COALESCE(d.description_rank, 0) + COALESCE(s.tag_count, 0) * 0.14) DESC,
                 {$lengthOrder}a.score DESC NULLS LAST, LOWER(a.title), a.id
             LIMIT :limit

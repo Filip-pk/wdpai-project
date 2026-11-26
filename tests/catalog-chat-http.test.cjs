@@ -81,7 +81,7 @@ test('Live Ollama and imported catalogue keep filters across turns and skip disp
             const story = await send('send', 'Krótka, zakończona seria TV z inteligentnym głównym bohaterem.');
             assert.match(story, /Tylko zakończone/);
             assert.match(story, /Format TV/);
-            assert.match(story, /Fragment opisu katalogowego|Dostępny opis nie pozwala potwierdzić/);
+            assert.match(story, /Fragment opisu katalogowego|W opisie znaleziono wzmiankę|Brak dopasowań w opisach/);
             console.log('Character trait excerpts: ' + (story.match(/<q lang=/g)?.length ?? 0));
 
             assert.equal((await client.request('/chat', { _csrf: token, intent: 'reset' })).status, 303);
@@ -102,6 +102,33 @@ test('Live Ollama and imported catalogue keep filters across turns and skip disp
             assert.match(school, /Motywy w opisach · szkoła magii/);
             assert.match(school, /Bez tagu „Horror”/);
             assert.doesNotMatch(school, /<li>Horror<\/li>/);
+
+            assert.equal((await client.request('/chat', { _csrf: token, intent: 'reset' })).status, 303);
+            const fish = await send('send', 'anime o rybach');
+            const fishCards = cards(fish);
+            assert.ok(fishCards.length > 0);
+            assert.match(fish, /Motywy w opisach · ryby/);
+            assert.equal((fish.match(/Wzmianka w opisie/g) ?? []).length, fishCards.length);
+            assert.doesNotMatch(fish, /Spełnia rozpoznane filtry katalogu/);
+            const moreFish = await send('more');
+            assert.ok(cards(moreFish).length > 0 && cards(moreFish).every(card => fishCards.every(seen => seen.id !== card.id)));
+            assert.match(moreFish, /Wzmianka w opisie/);
+
+            const longerFish = await send('send', 'anime o rybach, ponad 20 odcinków');
+            assert.ok(cards(longerFish).length > 0 && cards(longerFish).every(card => card.episodes >= 21));
+            assert.match(longerFish, /Motywy w opisach · ryby/);
+            assert.match(longerFish, /Wzmianka w opisie/);
+
+            const unusual = await send('send', 'anime o telepatycznych kaktusach');
+            assert.equal(cards(unusual).length, 0);
+            assert.match(unusual, /Brak dopasowań w opisach/);
+            assert.doesNotMatch(unusual, /value="more"/);
+
+            assert.equal((await client.request('/chat', { _csrf: token, intent: 'reset' })).status, 303);
+            const unknownTag = await send('send', 'anime z tagiem BzdurnyTag123');
+            assert.equal(cards(unknownTag).length, 0);
+            assert.match(unknownTag, /Katalog nie rozpoznaje tagu „BzdurnyTag123”/);
+            assert.doesNotMatch(unknownTag, /value="more"/);
         } finally {
             assert.equal(cleanupQuizFixture(fixture).removed, 2);
         }

@@ -1681,4 +1681,9 @@ return [
     'chat.motif.magic_school' => 'école de magie',
     'chat.reply.no_matches_motif' => 'Aucun résumé ne répond à ces critères. Essayez de reformuler le motif « {motif} ».',
     'chat.example_magic' => 'Je cherche un anime sur une école de magie sans horreur.',
+    'chat.motif.fish' => 'poissons',
+    'chat.motif.fishing' => 'pêche',
+    'chat.no_recognized_criteria' => 'Aucun critère reconnu.',
+    'chat.ranking_top' => 'Classement selon la note du catalogue',
+    'chat.theme_mention' => 'Le résumé contient une mention liée à vos préférences.',
 ];

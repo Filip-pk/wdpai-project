@@ -1681,4 +1681,9 @@ return [
     'chat.motif.magic_school' => 'Magieschule',
     'chat.reply.no_matches_motif' => 'Keine Beschreibung erfüllt diese Anforderungen. Formuliere das Motiv „{motif}“ anders.',
     'chat.example_magic' => 'Ich suche Anime über eine Magieschule ohne Horror.',
+    'chat.motif.fish' => 'Fische',
+    'chat.motif.fishing' => 'Angeln',
+    'chat.no_recognized_criteria' => 'Keine Anforderungen erkannt.',
+    'chat.ranking_top' => 'Sortiert nach Katalogbewertung',
+    'chat.theme_mention' => 'Die Beschreibung enthält einen Hinweis zu deinen Vorlieben.',
 ];
