@@ -28,8 +28,7 @@ $isWelcome = !$isErrorPage && $currentPath === '/';
 $isAuthPage = !$isErrorPage && in_array($currentPath, ['/login', '/register'], true);
 $isWorkspace = !$isWelcome && !$isAuthPage && !$isErrorPage;
 $isAdminPage = !$isErrorPage && ($currentPath === '/admin' || str_starts_with((string) $currentPath, '/admin/'));
-$isAiPage = !$isErrorPage && ($currentPath === '/chat'
-    || str_starts_with((string) $currentPath, '/chat/'));
+$isAiPage = !$isErrorPage && $currentPath === '/chat';
 $isProjectsPage = !$isErrorPage && ($currentPath === '/projects'
     || str_starts_with((string) $currentPath, '/projects/'));
 $isImportPage = !$isErrorPage && str_starts_with((string) $currentPath, '/profile/import');

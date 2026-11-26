@@ -25,7 +25,6 @@
         <?php else: ?>
             <p class="dashboard-login-info"><a href="/login"><?= $escape($t('view.catalog.login')) ?></a><?= $escape($t('view.catalog.login_profile_watchlist')) ?></p>
         <?php endif; ?>
-        <p class="dashboard-demo-notice"><?= $escape($t('view.catalog.dashboard_demo')) ?></p>
     </header>
 
     <?php require __DIR__ . '/partials/daily-quiz.html.php'; ?>
@@ -75,33 +74,6 @@
         </form>
 
         <a class="dashboard-demo-link" href="/chat"><?= $escape($t('chat.open')) ?> <span aria-hidden="true">→</span></a>
-    </section>
-
-    <section class="dashboard-personas" aria-labelledby="personas-title">
-        <header class="dashboard-section-heading">
-            <div class="dashboard-section-title">
-                <span class="dashboard-section-icon" aria-hidden="true">♧</span>
-                <h2 id="personas-title"><?= $escape($t('view.catalog.talk_character')) ?></h2>
-            </div>
-            <p><?= $escape($t('view.catalog.demo_conversations')) ?></p>
-        </header>
-
-        <ul class="persona-grid">
-            <?php foreach ($personas as $personaId => $persona): ?>
-                <li>
-                    <article class="persona-card">
-                        <h3>
-                            <a href="/chat/<?= $escape($personaId) ?>">
-                                <span class="dashboard-persona-mark" aria-hidden="true"><?= $escape([1 => '🍥', 2 => 'L', 3 => '⚔', 4 => 'ϟ'][$personaId] ?? '✦') ?></span>
-                                <span><?= $escape($persona['name']) ?></span>
-                            </a>
-                        </h3>
-
-                        <p><?= $escape($persona['anime']) ?></p>
-                    </article>
-                </li>
-            <?php endforeach; ?>
-        </ul>
     </section>
 
     <section class="dashboard-recommendations" aria-labelledby="recommendations-title" data-recommendation-mode="<?= $escape($recommendationMode) ?>" data-recommendation-source-count="<?= $escape($recommendationSourceCount) ?>">

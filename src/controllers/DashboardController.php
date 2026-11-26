@@ -6,7 +6,6 @@ namespace App\Controller;
 
 use App\Service\Translator;
 
-use App\Data\DemoData;
 use App\Repository\AnimeRepository;
 use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
@@ -92,7 +91,6 @@ final class DashboardController extends AppController
         $this->render('dashboard', [
             'pageTitle' => Translator::current()->translate('message.page.dashboard'),
             'user' => $user,
-            'personas' => DemoData::personas(),
             'recommendations' => $animes,
             'recommendationReasons' => $recommendationReasons,
             'preferredGenres' => $preferredGenres,

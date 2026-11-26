@@ -2,8 +2,7 @@
 
 Panel `/admin` obejmuje przegląd aplikacji, ręczną diagnostykę usług,
 ostatnie błędy, użytkowników i uprawnienia moderatorów, braki danych
-w katalogu oraz historię operacji administracyjnych. Zarządzanie postaciami
-AI nie jest częścią tego wdrożenia.
+w katalogu oraz historię operacji administracyjnych.
 
 ## Przygotowanie
 
