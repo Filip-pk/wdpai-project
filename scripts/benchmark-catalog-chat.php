@@ -31,6 +31,9 @@ try {
         ['Jednak bez magii.', ['minEpisodes' => 21, 'motifs' => ['magic']]],
         ['Tylko anime z tagiem Magic.', []],
         ['Szukam anime o podwodnym mieście.', []],
+        ['anime o rybach', []],
+        ['anime o telepatycznych kaktusach', []],
+        ['Pokaż najlepiej oceniane anime', []],
     ];
     foreach ($cases as [$prompt, $previous]) {
         $result = $service->interpret($prompt, $previous);

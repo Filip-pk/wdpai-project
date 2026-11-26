@@ -61,6 +61,27 @@ final class RecommendationChatCriteria
         ];
     }
 
+    public static function simpleSearchChanges(string $message): array
+    {
+        $message = trim($message, ".!? \t\r\n");
+        $changes = [];
+        if (preg_match('/\A(.+?)(?:\h*,\h*|\h+(?:(?:i|and)\h+)?)(ponad|co najmniej|more than|over|at least)'
+            . '\h+([0-9]{1,10})\h+(?:odcinki|odcink[óo]w|episodes?)\z/iu', $message, $matches) === 1) {
+            $minimum = (int) $matches[3];
+            if (in_array(mb_strtolower($matches[2]), ['ponad', 'more than', 'over'], true)) {
+                $minimum++;
+            }
+            [, $lower, $upper] = self::RANGES['minEpisodes'];
+            if ($minimum < $lower || $minimum > $upper) {
+                return [];
+            }
+            $message = $matches[1];
+            $changes['minEpisodes'] = $minimum;
+        }
+        $topic = RecommendationChatMotifs::fromSimpleRequest($message);
+        return $topic === null ? [] : $changes + ['motifs' => [$topic]];
+    }
+
     /** @return array{action: string, criteria: array} */
     public static function apply(array $previous, stdClass $plan, array $catalogTags): array
     {
@@ -75,6 +96,9 @@ final class RecommendationChatCriteria
             }
             return ['action' => $plan->action, 'criteria' => $previous];
         }
+        if ($changes === []) {
+            return ['action' => 'clarify', 'criteria' => $previous];
+        }
 
         $terms = self::mergeTerms($previous, $changes, $catalogTags);
         $criteria = array_replace($previous, array_diff_key($changes, $terms + ['forgetTags' => [], 'forgetMotifs' => []]), $terms);
@@ -88,7 +112,7 @@ final class RecommendationChatCriteria
         $criteria = array_filter($criteria, static fn (mixed $value): bool => $value !== null && $value !== []);
         ksort($criteria);
 
-        return ['action' => 'search', 'criteria' => $criteria];
+        return ['action' => $criteria === [] ? 'clarify' : 'search', 'criteria' => $criteria];
     }
 
     private static function validateChanges(array $changes): array

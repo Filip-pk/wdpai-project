@@ -1682,4 +1682,9 @@ return [
     'chat.motif.magic_school' => 'школа магии',
     'chat.reply.no_matches_motif' => 'С этими условиями совпадений в описаниях нет. Попробуйте иначе сформулировать мотив «{motif}».',
     'chat.example_magic' => 'Ищу аниме о школе магии без ужасов.',
+    'chat.motif.fish' => 'рыбы',
+    'chat.motif.fishing' => 'рыбалка',
+    'chat.no_recognized_criteria' => 'Условия не распознаны.',
+    'chat.ranking_top' => 'Сортировка по оценке каталога',
+    'chat.theme_mention' => 'В описании есть упоминание, связанное с вашими предпочтениями.',
 ];

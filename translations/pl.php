@@ -1682,4 +1682,9 @@ return [
     'chat.motif.magic_school' => 'szkoła magii',
     'chat.reply.no_matches_motif' => 'Brak dopasowań w opisach przy tych warunkach. Spróbuj inaczej nazwać motyw „{motif}”.',
     'chat.example_magic' => 'Szukam anime o szkole magii, ale bez horroru.',
+    'chat.motif.fish' => 'ryby',
+    'chat.motif.fishing' => 'wędkarstwo',
+    'chat.no_recognized_criteria' => 'Brak rozpoznanych wymagań.',
+    'chat.ranking_top' => 'Ranking według oceny katalogowej',
+    'chat.theme_mention' => 'W opisie znaleziono wzmiankę związaną z preferencjami.',
 ];

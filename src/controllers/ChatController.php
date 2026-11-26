@@ -125,7 +125,7 @@ final class ChatController extends AppController
         http_response_code($status);
         $this->render('chat-assistant', [
             'pageTitle' => Translator::current()->translate('chat.title') . ' — AniVibe',
-            'chatState' => $_SESSION[self::STATE] ?? [],
+            'chatState' => RecommendationChatService::restoreState($_SESSION[self::STATE] ?? []),
             'chatError' => $error,
             'chatDraft' => $draft,
             'chatRequestId' => bin2hex(random_bytes(16)),

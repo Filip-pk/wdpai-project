@@ -1681,4 +1681,9 @@ return [
     'chat.motif.magic_school' => 'magic school',
     'chat.reply.no_matches_motif' => 'No synopsis matches these requirements. Try a different phrase for “{motif}”.',
     'chat.example_magic' => 'Find anime about a magic school, without horror.',
+    'chat.motif.fish' => 'fish',
+    'chat.motif.fishing' => 'fishing',
+    'chat.no_recognized_criteria' => 'No requirements identified.',
+    'chat.ranking_top' => 'Ranked by catalogue score',
+    'chat.theme_mention' => 'The synopsis contains a mention related to your preferences.',
 ];
