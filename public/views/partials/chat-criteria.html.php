@@ -27,6 +27,13 @@ foreach ($references ?: ($criteria['references'] ?? []) as $reference) {
 if (!empty($criteria['themes'])) {
     $labelsShown[] = $t('chat.themes', ['value' => implode(', ', $criteria['themes'])]);
 }
+foreach (['motifs' => 'chat.motifs', 'excludeMotifs' => 'chat.exclude_motifs'] as $key => $label) {
+    if (!empty($criteria[$key])) {
+        $motifLabels = array_map(static fn (string $motif): string => \App\Model\RecommendationChatMotifs::label($motif, $t),
+            $criteria[$key]);
+        $labelsShown[] = $t($label, ['value' => implode(', ', $motifLabels)]);
+    }
+}
 ?>
 <section class="ai-panel ai-criteria-panel" aria-labelledby="assistant-criteria-title">
     <h2 id="assistant-criteria-title"><?= $escape($t('chat.criteria')) ?></h2>

@@ -18,7 +18,10 @@
         <ul class="ai-chat-result-grid">
             <?php foreach ($cards as $animeId => $card): ?>
                 <li class="ai-chat-result">
-                    <?php $anime = $card['anime']; ?>
+                    <?php
+                    $anime = $card['anime'];
+                    $motifExcerpt = $card['motifExcerpt'] ?? null;
+                    ?>
                     <article class="anime-card" data-anime-id="<?= $escape($animeId) ?>" data-title="<?= $escape($anime['title']) ?>" data-score="<?= $escape($anime['score'] ?? '') ?>" data-episodes="<?= $escape($anime['episodes'] ?? '') ?>" data-year="<?= $escape($anime['year'] ?? '') ?>">
                         <div class="ai-chat-result-main">
                             <div class="anime-cover ai-chat-cover" aria-hidden="true">
@@ -60,6 +63,12 @@
                                 </ul>
                             </div>
                         </div>
+                        <?php if ($motifExcerpt !== null): ?>
+                            <p class="ai-chat-reason">
+                                <span><?= $escape($t('chat.motif_excerpt')) ?></span>
+                                <q lang="<?= $escape($anime['descriptionLanguage']) ?>"><?= $escape($motifExcerpt) ?></q>
+                            </p>
+                        <?php endif; ?>
                         <?php if ($card['quote'] !== null): ?>
                             <p class="ai-chat-reason">
                                 <span><?= $escape($t('chat.source_quote')) ?></span>
@@ -71,7 +80,7 @@
                             <p class="ai-chat-reason"><?= $escape($t('chat.shared_tags', [
                                 'value' => implode(', ', array_map($translateText, $card['sharedTags'])),
                             ])) ?></p>
-                        <?php else: ?>
+                        <?php elseif ($motifExcerpt === null): ?>
                             <p class="ai-chat-reason"><?= $escape($t($card['similarDescription'] ? 'chat.shared_words' : 'chat.catalog_match')) ?></p>
                         <?php endif; ?>
                         <details class="ai-chat-card-description">

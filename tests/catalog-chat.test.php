@@ -35,6 +35,35 @@ $conflict = RecommendationChatCriteria::apply($initial['criteria'], $plan(
     '{"action":"search","changes":{"maxEpisodes":20}}'
 ), $tags);
 $assert($conflict === ['action' => 'clarify', 'criteria' => $initial['criteria']], 'A conflicting range must keep prior requirements.');
+$legacy = ['minEpisodes' => 21, 'requireTags' => ['Magia'], 'excludeTags' => ['Horror']];
+$magic = RecommendationChatCriteria::apply($legacy, $plan(
+    '{"action":"search","changes":{"requireTags":["Magic"],"motifs":["magia"]}}'
+), $tags)['criteria'];
+$assert($magic === ['excludeTags' => ['Horror'], 'minEpisodes' => 21, 'motifs' => ['magic']],
+    'Unsupported implicit tags and older sessions should become one searchable motif without weakening other filters.');
+$literal = RecommendationChatCriteria::apply([], $plan(
+    '{"action":"search","changes":{"requireTags":["Magic"],"exactTags":["Magic"]}}'
+), $tags)['criteria'];
+$literal = RecommendationChatCriteria::apply($literal, $plan(
+    '{"action":"search","changes":{"minEpisodes":21}}'
+), $tags)['criteria'];
+$assert($literal === ['exactTags' => ['Magic'], 'minEpisodes' => 21, 'requireTags' => ['Magic']],
+    'An explicitly named tag remains strict across turns.');
+$mixedTerms = RecommendationChatCriteria::apply([], $plan(
+    '{"action":"search","changes":{"motifs":["magic school"],"excludeMotifs":["horror"]}}'
+), [...$tags, 'Magic School'])['criteria'];
+$assert($mixedTerms === ['excludeTags' => ['Horror'], 'motifs' => ['magic school']],
+    'An exact genre can be recovered from misclassified motifs while curated phrases stay in the synopsis search.');
+$negative = RecommendationChatCriteria::apply($magic, $plan(
+    '{"action":"search","changes":{"excludeMotifs":["magii"]}}'
+), $tags)['criteria'];
+$assert($negative === ['excludeMotifs' => ['magic'], 'excludeTags' => ['Horror'], 'minEpisodes' => 21],
+    'Changing the polarity removes the former criterion, including its localized spelling.');
+$revised = RecommendationChatCriteria::apply($negative, $plan(
+    '{"action":"search","changes":{"motifs":["school of magic","underwater city"],"forgetMotifs":["magic"]}}'
+), $tags)['criteria'];
+$assert($revised === ['excludeTags' => ['Horror'], 'minEpisodes' => 21, 'motifs' => ['magic school', 'underwater city']],
+    'The next turn can remove and add motifs without dropping other requirements.');
 foreach ([
     '{"action":"search","changes":{"minEpisodes":"21"}}',
     '{"action":"search","changes":{"requireTags":"Harem"}}',
@@ -79,6 +108,19 @@ try {
         $entry(110, 'Wrong year', ['year' => 2021]),
         $entry(111, 'Wrong score', ['score' => 7.0]),
     ]);
+    $motifEntry = static fn (int $id, string $title, array $changes): array => $entry(
+        $id, $title, $changes + ['year' => 2010, 'genres' => [['sourceId' => 1, 'name' => 'Fantasy']]],
+    );
+    $source->importBatch([
+        $motifEntry(120, 'Academy', ['description' => 'Four friends enroll in an academy for mages. They study sorcery.']),
+        $motifEntry(121, 'Polish description', ['description' => 'Dziewczyna odkrywa, że potrafi władać magią.',
+            'descriptionLanguage' => 'pl', 'episodes' => 21]),
+        $motifEntry(122, 'Only a fantasy tag', ['description' => 'They explore flying islands.', 'score' => 10.0]),
+        $motifEntry(123, 'Separate words', ['description' => 'Mia solves puzzles at school. Years later she discovers magic on an island.']),
+        $motifEntry(124, 'Below the episode minimum', ['description' => 'Her friends study sorcery.', 'episodes' => 20]),
+        $motifEntry(125, 'Missing synopsis', ['description' => '']),
+        $motifEntry(126, 'Two motifs', ['description' => 'She studies sorcery. A time travel device sends her to the past.']),
+    ]);
 
     $repository = new RecommendationChatRepository($database);
     $criteria = $initial['criteria'] + ['excludeTags' => ['Horror'], 'minYear' => 2022,
@@ -93,6 +135,27 @@ try {
     $assert($repository->search(['references' => ['No Game']], [], 6)['issue'] === 'reference',
         'An unknown reference cannot select an arbitrary title.');
 
+    $motifFilters = ['minYear' => 2010, 'maxYear' => 2010, 'minEpisodes' => 21, 'requireTags' => ['Fantasy']];
+    $malIds = static function (array $items): array {
+        $ids = array_column(array_column($items, 'anime'), 'malId');
+        sort($ids);
+        return $ids;
+    };
+    $magicMatches = $repository->search($motifFilters + ['motifs' => ['magic']], [], 10)['items'];
+    $assert($malIds($magicMatches) === [120, 121, 123, 126],
+        'Magic should match both description languages and related words, excluding missing evidence and short entries.');
+    foreach ($magicMatches as $item) {
+        $assert(is_string($item['motifExcerpt']) && trim($item['motifExcerpt']) !== '' && !str_contains($item['motifExcerpt'], '<b>'),
+            'Motif results include a plain excerpt of indexed description text.');
+    }
+    $schoolMatches = $repository->search($motifFilters + ['motifs' => ['magic school']], [], 10)['items'];
+    $assert($malIds($schoolMatches) === [120], 'A specific motif should match a phrase and its equivalents, not distant individual words.');
+    $bothMatches = $repository->search($motifFilters + ['motifs' => ['magic', 'time travel']], [], 10)['items'];
+    $assert($malIds($bothMatches) === [126], 'Each required motif must be mentioned in the same synopsis.');
+    $excludeMatches = $repository->search($motifFilters + ['excludeMotifs' => ['magic']], [], 10)['items'];
+    $assert($malIds($excludeMatches) === [122, 125], 'Exclusions omit records with matching description evidence.');
+    $assert($repository->search($literal, [], 6)['issue'] === 'unknown_tag', 'Literal tag requests require an actual catalogue tag.');
+
     $shown = array_key_first($result['items']);
     $service = new RecommendationChatService($repository, new OllamaClient('http://127.0.0.1:1'));
     $page = $service->respond('Pokaż inne', true, ['criteria' => $criteria, 'seen' => [$shown], 'searched' => true], static fn () => false);
@@ -104,6 +167,10 @@ try {
         && $empty['turns'][0]['key'] === 'no_matches_filter'
         && $empty['turns'][0]['parameters']['filter'] === 'view.catalog.premiere',
         'An empty search should suggest changing an active filter while keeping its value.');
+    $notMentioned = $service->respond('Pokaż inne', true,
+        ['criteria' => $motifFilters + ['motifs' => ['underwater city']], 'searched' => true], static fn () => false);
+    $assert($notMentioned['cards'] === [] && $notMentioned['turns'][0]['key'] === 'no_matches_motif',
+        'Missing motif evidence must result in a specific suggestion, without unrelated titles.');
     echo "[OK] Ścisłe filtry SQL, aliasy, opis i kolejne wyniki\n";
 
     $assert($source->fillMissingAiringStatuses([

@@ -6,6 +6,10 @@ a potem „Jednak bez haremu, bardziej zależy mi na grach i strategii”.
 Rozpoznane wymagania widać obok rozmowy. „Pokaż inne” zachowuje te wymagania
 i pomija już pokazane wpisy. „Nowa rozmowa” czyści stan w bieżącej sesji.
 
+Możesz też wyszukiwać po motywie, np. „Znajdź anime z magią, minimum
+21 odcinków” lub „Anime o szkole magii, ale bez horroru”. Na karcie
+wyniku widać fragment opisu, na podstawie którego znaleziono motyw.
+
 ## Uruchomienie w Windows CMD
 
 Uruchom podstawowe usługi zgodnie z [README](../README.md). Dla istniejącej
@@ -49,6 +53,12 @@ doprecyzowanie z rankingiem fabuły 3,8 s, a „Pokaż inne” 0,5 s.
 - Podobieństwo korzysta ze wspólnych tagów i indeksu tekstowego opisów.
   PostgreSQL aktualizuje indeks wraz ze zmianą opisu. Indeks embeddingów
   pozostaje etapem docelowym.
+- Czat wyszukuje konkretne motywy w tym samym indeksie. Dla magii i szkoły
+  magii uwzględnia polskie i angielskie warianty fraz. Każdy wymagany motyw
+  musi pojawić się w opisie. Prośba „bez magii” pomija wpisy ze wzmianką
+  w dostępnym opisie, więc skuteczność zależy od kompletności danych.
+- Prośba o konkretny tag według nazwy wymaga takiego tagu w katalogu.
+  Jeśli tagu nie ma, możesz poprosić o szukanie motywu w opisach.
 - Przy prośbie o wątek fabularny, nastrój lub cechę postaci drugi przebieg może
   podnieść w rankingu pozycje z fragmentami opisów wskazanymi przez Ollamę.
   PHP sprawdza identyfikatory i cytaty na danych kandydatów. Gdy brakuje

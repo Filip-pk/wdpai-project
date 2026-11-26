@@ -26,7 +26,11 @@ final class RecommendationChatCriteria
         'requireTags' => [12, 100],
         'excludeTags' => [12, 100],
         'forgetTags' => [12, 100],
+        'exactTags' => [12, 100],
         'references' => [3, 255],
+        'motifs' => [6, 100],
+        'excludeMotifs' => [6, 100],
+        'forgetMotifs' => [12, 100],
         'themes' => [5, 80],
     ];
 
@@ -72,8 +76,8 @@ final class RecommendationChatCriteria
             return ['action' => $plan->action, 'criteria' => $previous];
         }
 
-        $criteria = array_replace($previous, array_diff_key($changes, array_flip(['requireTags', 'excludeTags', 'forgetTags'])));
-        [$criteria['requireTags'], $criteria['excludeTags']] = self::applyTags($previous, $changes, $catalogTags);
+        $terms = self::mergeTerms($previous, $changes, $catalogTags);
+        $criteria = array_replace($previous, array_diff_key($changes, $terms + ['forgetTags' => [], 'forgetMotifs' => []]), $terms);
         foreach (['Episodes', 'Year', 'Score'] as $range) {
             $min = $criteria['min' . $range] ?? null;
             $max = $criteria['max' . $range] ?? null;
@@ -124,35 +128,113 @@ final class RecommendationChatCriteria
         return $changes;
     }
 
-    private static function applyTags(array $previous, array $changes, array $catalogTags): array
+    private static function mergeTerms(array $previous, array $changes, array $catalogTags): array
     {
-        $byName = static function (array $names): array {
-            $map = [];
-            foreach ($names as $name) {
-                $map[mb_strtolower($name)] = $name;
-            }
-            return $map;
-        };
-        $canonical = $byName($catalogTags);
-        $include = $byName($previous['requireTags'] ?? []);
-        $exclude = $byName($previous['excludeTags'] ?? []);
-        foreach ($byName($changes['forgetTags'] ?? []) as $key => $name) {
-            unset($include[$key], $exclude[$key]);
-        }
-        foreach ($byName($changes['requireTags'] ?? []) as $key => $name) {
-            $include[$key] = $canonical[$key] ?? $name;
-            unset($exclude[$key]);
-        }
-        foreach ($byName($changes['excludeTags'] ?? []) as $key => $name) {
-            $exclude[$key] = $canonical[$key] ?? $name;
-            unset($include[$key]);
-        }
-        if (count($include) > self::LISTS['requireTags'][0] || count($exclude) > self::LISTS['excludeTags'][0]) {
-            throw new InvalidArgumentException('Too many active chat tags.');
-        }
-        ksort($include);
-        ksort($exclude);
+        $knownTags = self::tagMap($catalogTags);
+        [$requiredFromMotifs, $newMotifs] = self::matchMotifsWithTags($changes['motifs'] ?? [], $knownTags);
+        [$excludedFromMotifs, $newExcludedMotifs] = self::matchMotifsWithTags($changes['excludeMotifs'] ?? [], $knownTags);
+        $newRequired = self::tagMap($changes['requireTags'] ?? []) + $requiredFromMotifs;
+        $newExcluded = self::tagMap($changes['excludeTags'] ?? []) + $excludedFromMotifs;
+        $forgetTags = $changes['forgetTags'] ?? [];
+        $exactTags = self::tagMap($changes['exactTags'] ?? [])
+            + array_diff_key(self::tagMap($previous['exactTags'] ?? []), self::tagMap($forgetTags));
+        [$requiredTags, $excludedTags] = self::editLists(
+            self::tagMap($previous['requireTags'] ?? []),
+            self::tagMap($previous['excludeTags'] ?? []),
+            $newRequired,
+            $newExcluded,
+            self::tagMap($forgetTags),
+        );
+        [$requiredTags, $fromRequired] = self::partitionTags($requiredTags, $knownTags, $exactTags);
+        [$excludedTags, $fromExcluded] = self::partitionTags($excludedTags, $knownTags, $exactTags);
 
-        return [array_values($include), array_values($exclude)];
+        // Older sessions can contain a motif saved as a guessed tag. Resolve it on the next search.
+        [$motifs, $excludeMotifs] = self::editLists(
+            self::motifMap($previous['motifs'] ?? []),
+            self::motifMap($previous['excludeMotifs'] ?? []),
+            $fromRequired,
+            $fromExcluded,
+            [],
+        );
+        $tagsAdded = array_intersect_key($requiredTags + $excludedTags, $newRequired + $newExcluded);
+        [$motifs, $excludeMotifs] = self::editLists(
+            $motifs,
+            $excludeMotifs,
+            $newMotifs,
+            $newExcludedMotifs,
+            self::motifMap([...$forgetTags, ...$tagsAdded, ...($changes['forgetMotifs'] ?? [])]),
+        );
+        $terms = [
+            'requireTags' => $requiredTags, 'excludeTags' => $excludedTags,
+            'exactTags' => array_intersect_key($requiredTags + $excludedTags, $exactTags),
+            'motifs' => $motifs, 'excludeMotifs' => $excludeMotifs,
+        ];
+        foreach ($terms as $key => &$values) {
+            if (count($values) > self::LISTS[$key][0]) {
+                throw new InvalidArgumentException('Too many active chat terms.');
+            }
+            ksort($values);
+            $values = array_values($values);
+        }
+        unset($values);
+
+        return $terms;
+    }
+
+    private static function tagMap(array $tags): array
+    {
+        return array_combine(array_map(mb_strtolower(...), $tags), $tags);
+    }
+
+    private static function motifMap(array $motifs): array
+    {
+        $names = array_map(RecommendationChatMotifs::canonical(...), $motifs);
+        return array_combine($names, $names);
+    }
+
+    private static function matchMotifsWithTags(array $motifs, array $knownTags): array
+    {
+        $descriptive = self::motifMap($motifs);
+        $strict = [];
+        foreach ($descriptive as $name) {
+            if (isset($knownTags[$name]) && !RecommendationChatMotifs::hasPhraseVariants($name)) {
+                $strict[$name] = $knownTags[$name];
+                unset($descriptive[$name]);
+            }
+        }
+        return [$strict, $descriptive];
+    }
+
+    private static function partitionTags(array $tags, array $knownTags, array $exactTags): array
+    {
+        $strict = [];
+        $descriptive = [];
+        foreach ($tags as $key => $tag) {
+            if (isset($knownTags[$key]) || isset($exactTags[$key])) {
+                $strict[$key] = $knownTags[$key] ?? $tag;
+            } else {
+                $name = RecommendationChatMotifs::canonical($tag);
+                $descriptive[$name] = $name;
+            }
+        }
+
+        return [$strict, $descriptive];
+    }
+
+    private static function editLists(array $included, array $excluded, array $add, array $exclude, array $forget): array
+    {
+        foreach ($forget as $key => $name) {
+            unset($included[$key], $excluded[$key]);
+        }
+        foreach ($add as $key => $name) {
+            $included[$key] = $name;
+            unset($excluded[$key]);
+        }
+        foreach ($exclude as $key => $name) {
+            $excluded[$key] = $name;
+            unset($included[$key]);
+        }
+
+        return [$included, $excluded];
     }
 }

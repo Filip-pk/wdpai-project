@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\RecommendationChatMotifs;
 use PDO;
 use Throwable;
 
@@ -86,6 +87,7 @@ final class RecommendationChatRepository
                 'sharedTags' => array_map(AnimeRepository::genreLabel(...),
                     json_decode($row['shared_tags'], true, 8, JSON_THROW_ON_ERROR)),
                 'similarDescription' => (float) $row['description_rank'] > 0.0,
+                'motifExcerpt' => $row['motif_excerpt'],
             ];
         }
         return ['items' => $items, 'references' => array_values($references)];
@@ -114,13 +116,25 @@ final class RecommendationChatRepository
 
     private function candidateRows(array $criteria, array $references, array $seen, int $limit): array
     {
+        $wantedMotifs = $criteria['motifs'] ?? [];
+        $excludedMotifs = $criteria['excludeMotifs'] ?? [];
+        $motifs = [];
+        foreach ([0 => $wantedMotifs, 1 => $excludedMotifs] as $excluded => $names) {
+            foreach ($names as $name) {
+                $motifs[] = ['excluded' => $excluded === 1, 'phrases' => RecommendationChatMotifs::searchPhrases($name)];
+            }
+        }
         $where = [
             'a.id NOT IN (SELECT value::BIGINT FROM jsonb_array_elements_text(CAST(:omit AS JSONB)))',
+            'COALESCE(m.positive_hits, 0) = :motifCount',
+            'NOT COALESCE(m.excluded, FALSE)',
         ];
         $parameters = [
             'omit' => json_encode(array_values(array_unique([...$references, ...$seen])), JSON_THROW_ON_ERROR),
             'references' => json_encode($references, JSON_THROW_ON_ERROR),
             'themes' => json_encode($criteria['themes'] ?? [], JSON_THROW_ON_ERROR),
+            'motifs' => json_encode($motifs, JSON_THROW_ON_ERROR),
+            'motifCount' => count($wantedMotifs),
         ];
         foreach (self::RANGES as $key => $comparison) {
             if (isset($criteria[$key])) {
@@ -168,6 +182,25 @@ final class RecommendationChatRepository
                     COALESCE(ts_rank(a.chat_synopsis, q.theme_query, 32), 0) AS theme_rank
                 FROM queries q JOIN anime a
                     ON a.chat_synopsis @@ q.description_query OR a.chat_synopsis @@ q.theme_query
+            ), motif_queries AS MATERIALIZED (
+                SELECT (motif.value->>'excluded')::BOOLEAN AS excluded,
+                    (string_agg(en::TEXT, ' | ') FILTER (WHERE numnode(en) > 0))::TSQUERY AS english_query,
+                    (string_agg(other::TEXT, ' | ') FILTER (WHERE numnode(other) > 0))::TSQUERY AS simple_query
+                FROM jsonb_array_elements(CAST(:motifs AS JSONB)) WITH ORDINALITY AS motif(value, position)
+                CROSS JOIN LATERAL jsonb_array_elements_text(motif.value->'phrases') AS terms(phrase)
+                CROSS JOIN LATERAL (SELECT phraseto_tsquery('english', phrase) AS en,
+                    phraseto_tsquery('simple', phrase) AS other) AS expressions
+                GROUP BY motif.position, motif.value->>'excluded'
+            ), motif_matches AS (
+                SELECT a.id, COUNT(*) FILTER (WHERE NOT q.excluded) AS positive_hits, bool_or(q.excluded) AS excluded,
+                    SUM(ts_rank(a.chat_synopsis, matched.query, 32)) FILTER (WHERE NOT q.excluded) AS motif_rank,
+                    (string_agg(matched.query::TEXT, ' | ') FILTER (WHERE NOT q.excluded))::TSQUERY AS excerpt_query
+                FROM motif_queries q JOIN anime a
+                    ON (a.description_language = 'en' AND a.chat_synopsis @@ q.english_query)
+                    OR (a.description_language <> 'en' AND a.chat_synopsis @@ q.simple_query)
+                CROSS JOIN LATERAL (SELECT CASE WHEN a.description_language = 'en'
+                    THEN q.english_query ELSE q.simple_query END AS query) AS matched
+                GROUP BY a.id
             ), reference_tags AS (
                 SELECT DISTINCT ag.genre_id FROM anime_genres ag JOIN reference_ids r ON r.id = ag.anime_id
             ), shared AS (
@@ -176,11 +209,17 @@ final class RecommendationChatRepository
                 GROUP BY ag.anime_id
             )
             SELECT a.id, COALESCE(d.description_rank, 0) AS description_rank,
-                COALESCE(s.tags, '[]'::JSONB) AS shared_tags
-            FROM anime a LEFT JOIN description_matches d ON d.id = a.id LEFT JOIN shared s ON s.id = a.id
+                COALESCE(s.tags, '[]'::JSONB) AS shared_tags,
+                CASE WHEN m.excerpt_query IS NOT NULL THEN ts_headline(
+                    CASE WHEN a.description_language = 'en' THEN 'english'::REGCONFIG ELSE 'simple'::REGCONFIG END,
+                    LEFT(a.description, 3500), m.excerpt_query,
+                    'StartSel="",StopSel="",MaxFragments=1,MaxWords=20,MinWords=9'
+                ) END AS motif_excerpt
+            FROM anime a LEFT JOIN description_matches d ON d.id = a.id
+                LEFT JOIN shared s ON s.id = a.id LEFT JOIN motif_matches m ON m.id = a.id
             WHERE $conditions
             ORDER BY COALESCE(d.theme_rank, 0) DESC,
-                (COALESCE(d.description_rank, 0) + COALESCE(s.tag_count, 0) * 0.14) DESC,
+                (COALESCE(m.motif_rank, 0) + COALESCE(d.description_rank, 0) + COALESCE(s.tag_count, 0) * 0.14) DESC,
                 {$lengthOrder}a.score DESC NULLS LAST, LOWER(a.title), a.id
             LIMIT :limit
             SQL);
