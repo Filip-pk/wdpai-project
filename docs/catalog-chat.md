@@ -9,6 +9,10 @@ i pomija już pokazane wpisy. „Nowa rozmowa” czyści stan w bieżącej sesji
 Możesz też wyszukiwać po motywie, np. „Znajdź anime z magią, minimum
 21 odcinków” lub „Anime o szkole magii, ale bez horroru”. Na karcie
 wyniku widać fragment opisu, na podstawie którego znaleziono motyw.
+Krótkie zapytanie „anime o rybach” rozpoznaje też pokrewne określenia,
+np. wędkarstwo i akwarium. Jeśli czat nie rozpozna żadnego kryterium,
+poprosi o doprecyzowanie. Ranking można wybrać wprost, np. wpisując
+„Pokaż najlepiej oceniane anime”.
 
 ## Uruchomienie w Windows CMD
 
