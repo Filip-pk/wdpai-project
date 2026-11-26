@@ -112,6 +112,9 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage || $isShowcasePage || $isAd
         <link rel="stylesheet" href="<?= $assetUrl('/css/admin.css') ?>">
     <?php endif; ?>
     <script src="<?= $assetUrl('/js/navigation.js') ?>" defer></script>
+    <?php if (!$isErrorPage && $currentPath === '/chat'): ?>
+        <script src="<?= $assetUrl('/js/recommendation-chat.js') ?>" defer></script>
+    <?php endif; ?>
 
     <?php if ($isWelcome): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/welcome.css') ?>">

@@ -1,64 +1,105 @@
 <?php require __DIR__ . '/partials/header.html.php'; ?>
 
-<div class="ai-page ai-assistant">
-    <header class="chat-heading social-hero">
-        <div>
-            <p class="social-kicker"><?= $escape($t('view.interface.discover_with_ai')) ?></p>
-            <h1 class="social-title"><?= $escape($t('view.interface.ai_assistant_ollama')) ?></h1>
-            <p class="social-description"><?= $escape($t('view.interface.help_finding_anime_to_match_your_mood')) ?></p>
-        </div>
-        <span class="social-pill"><?= $escape($t('view.interface.conversation_preview')) ?></span>
+<div class="ai-page ai-assistant" data-catalog-chat
+    data-waiting="<?= $escape($t('chat.waiting')) ?>"
+    data-stopping="<?= $escape($t('chat.stopping')) ?>"
+    data-network-error="<?= $escape($t('chat.network_error')) ?>">
+    <header class="ai-chat-hero">
+        <h1 class="social-title"><?= $escape($t('chat.title')) ?></h1>
+        <p class="social-description"><?= $escape($t('chat.intro')) ?></p>
     </header>
 
-    <p id="assistant-demo-notice" class="ai-demo-notice"><span aria-hidden="true">◇</span> <?= $escape($t('view.interface.demo_version_the_conversation_and_suggestions_below_are_examples_sending_messages_is_not_a')) ?></p>
-
-    <div class="ai-layout">
-        <section class="ai-panel ai-chat-panel" aria-labelledby="assistant-conversation-title">
-            <header class="ai-chat-title">
-                <h2 id="assistant-conversation-title"><?= $escape($t('view.interface.sample_conversation')) ?></h2>
-                <span class="social-pill" aria-label="<?= $escape($t('view.interface.sample_quota_usage')) ?>"><?= $escape($t('view.interface.sample_quota_usage_d830d3')) ?> <?= $escape($user['aiUsed']) ?> / <?= $escape($user['aiLimit']) ?> <?= $escape($t('view.interface.requests')) ?></span>
-            </header>
-            <ol class="chat-messages">
-                <li>
-                    <article class="message message-user">
-                        <h3><?= $escape($t('view.interface.you_ce679e')) ?></h3>
-                        <p lang="pl">Szukam anime w klimacie cyberpunka z ciekawą muzyką. Co polecasz?</p>
-                        <time datetime="14:22">14:22</time>
-                    </article>
-                </li>
-                <li>
-                    <article class="message message-assistant">
-                        <h3><?= $escape($t('view.interface.ai_assistant')) ?></h3>
-                        <p lang="pl">Sprawdź Cyberpunk: Edgerunners — historię Davida i Lucy w futurystycznym Night City.</p>
-                        <time datetime="14:23">14:23</time>
-                    </article>
-                </li>
-            </ol>
-            <form action="/chat" method="post" class="chat-form">
-                <fieldset disabled aria-describedby="assistant-demo-notice">
-                    <legend><?= $escape($t('view.interface.message_to_the_assistant')) ?></legend>
-                    <label for="assistant-message"><?= $escape($t('view.interface.describe_the_anime_you_re_looking_for')) ?></label>
-                    <textarea id="assistant-message" name="message" rows="3" maxlength="2000" required></textarea>
-                    <button type="submit"><?= $escape($t('view.interface.send')) ?> <span aria-hidden="true">↗</span></button>
-                </fieldset>
-            </form>
+    <?php if (!$isLoggedIn): ?>
+        <section class="ai-panel ai-chat-guest">
+            <h2><?= $escape($t('chat.login')) ?></h2>
+            <a class="ai-chat-button ai-chat-primary" href="/login"><?= $escape($t('view.catalog.login')) ?></a>
         </section>
+    <?php else: ?>
+        <?php
+        $criteria = $chatState['criteria'] ?? [];
+        $turns = $chatState['turns'] ?? [];
+        $cards = $chatState['cards'] ?? [];
+        ?>
 
-        <aside class="ai-rail" aria-label="<?= $escape($t('view.interface.ideas_for_your_next_anime')) ?>">
-            <section class="ai-panel ai-recommendation" aria-labelledby="suggested-anime-title">
-                <h2 id="suggested-anime-title"><?= $escape($t('view.interface.suggested_title')) ?></h2>
-                <?php require __DIR__ . '/partials/anime-card.html.php'; ?>
+        <div class="ai-chat-workspace">
+            <section class="ai-panel ai-chat-panel" aria-labelledby="assistant-conversation-title">
+                <header class="ai-chat-section-head">
+                    <h2 id="assistant-conversation-title"><?= $escape($t('view.interface.your_conversation')) ?></h2>
+                    <?php if ($turns !== []): ?>
+                        <form action="/chat" method="post" data-chat-form>
+                            <input type="hidden" name="_csrf" value="<?= $escape($csrfToken) ?>">
+                            <input type="hidden" name="intent" value="reset">
+                            <button type="submit" class="ai-chat-button"><?= $escape($t('chat.reset')) ?></button>
+                        </form>
+                    <?php endif; ?>
+                </header>
+
+                <?php if ($turns === []): ?>
+                    <div class="ai-chat-start">
+                        <noscript><p class="ai-chat-hint"><?= $escape($t('chat.hint')) ?></p></noscript>
+                        <div class="ai-chat-examples" data-chat-examples hidden>
+                            <h3><?= $escape($t('view.interface.quick_questions')) ?></h3>
+                            <?php foreach (['chat.example_similar', 'chat.example_finished'] as $exampleKey): ?>
+                                <?php $example = $t($exampleKey); ?>
+                                <button type="button" class="ai-chat-example" data-chat-example="<?= $escape($example) ?>">
+                                    <?= $escape($example) ?> <span aria-hidden="true">↗</span>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <ol class="chat-messages" data-chat-messages tabindex="0" aria-labelledby="assistant-conversation-title">
+                        <?php foreach ($turns as $index => $turn): ?>
+                            <li>
+                                <article class="message message-user">
+                                    <h3><?= $escape($t('view.interface.you_ce679e')) ?></h3>
+                                    <p><?= $escape($turn['message']) ?></p>
+                                </article>
+                            </li>
+                            <li>
+                                <article class="message message-assistant" tabindex="-1" data-chat-reply>
+                                    <h3><?= $escape($t('view.interface.ai_assistant')) ?></h3>
+                                    <?php
+                                    $parameters = $turn['parameters'];
+                                    if ($turn['key'] === 'no_matches_filter') {
+                                        $parameters['filter'] = $t($parameters['filter']);
+                                    }
+                                    ?>
+                                    <p><?= $escape($t('chat.reply.' . $turn['key'], $parameters)) ?></p>
+                                    <?php if ($cards !== [] && $index === array_key_last($turns)): ?>
+                                        <a class="ai-chat-results-link" href="#assistant-results-title"><?= $escape($t('chat.view_results')) ?> <span aria-hidden="true">↓</span></a>
+                                    <?php endif; ?>
+                                </article>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                <?php endif; ?>
+
+                <form action="/chat" method="post" class="chat-form" data-chat-form>
+                    <input type="hidden" name="_csrf" value="<?= $escape($csrfToken) ?>">
+                    <input type="hidden" name="intent" value="send">
+                    <input type="hidden" name="requestId" value="<?= $escape($chatRequestId) ?>">
+                    <label for="assistant-message"><?= $escape($t('view.interface.describe_the_anime_you_re_looking_for')) ?></label>
+                    <textarea id="assistant-message" name="message" rows="2" maxlength="1200" required><?= $escape($chatDraft) ?></textarea>
+                    <div class="ai-chat-actions">
+                        <p class="ai-chat-feedback" role="status" data-chat-progress></p>
+                        <div class="ai-chat-buttons">
+                            <button type="button" class="ai-chat-button" data-chat-cancel hidden><?= $escape($t('chat.cancel')) ?></button>
+                            <button type="submit" class="ai-chat-button ai-chat-primary"><?= $escape($t('view.interface.send')) ?> <span aria-hidden="true">↗</span></button>
+                        </div>
+                    </div>
+                </form>
+                <?php if ($chatError !== null): ?>
+                    <p class="ai-chat-hint" role="alert" tabindex="-1" data-chat-error><?= $escape($t('chat.error.' . $chatError)) ?></p>
+                <?php endif; ?>
             </section>
-            <section class="ai-panel" aria-labelledby="quick-questions-title">
-                <h2 id="quick-questions-title"><?= $escape($t('view.interface.quick_questions')) ?></h2>
-                <div class="ai-quick-actions">
-                    <button type="button" disabled><?= $escape($t('view.interface.recommend_something_similar')) ?></button>
-                    <button type="button" disabled><?= $escape($t('view.interface.something_with_magic')) ?></button>
-                    <button type="button" disabled><?= $escape($t('view.interface.best_soundtracks')) ?></button>
-                </div>
-            </section>
-        </aside>
-    </div>
+
+            <div class="ai-chat-sidebar">
+                <?php require __DIR__ . '/partials/chat-criteria.html.php'; ?>
+                <?php require __DIR__ . '/partials/chat-results.html.php'; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php require __DIR__ . '/partials/footer.html.php'; ?>

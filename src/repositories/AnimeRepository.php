@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\AnimeAiringStatus;
 use App\Model\AnimeSearchCriteria;
 use InvalidArgumentException;
 use PDO;
@@ -42,7 +43,9 @@ final class AnimeRepository
         'Visual Arts' => 'Sztuki wizualne', 'Workplace' => 'Miejsce pracy',
     ];
 
-    private const SELECT_ANIME = "SELECT a.*,
+    private const SELECT_ANIME = "SELECT a.id, a.mal_id, a.title, a.alternative_titles, a.description,
+        a.description_language, a.cover_url, a.episodes, a.airing_status, a.score, a.studio,
+        a.release_year, a.media_type, a.source_url,
         COALESCE((SELECT jsonb_agg(g.name ORDER BY g.name)
             FROM anime_genres ag JOIN genres g ON g.id = ag.genre_id
             WHERE ag.anime_id = a.id), '[]'::jsonb) AS genre_names
@@ -77,11 +80,16 @@ final class AnimeRepository
         )->fetchAll(PDO::FETCH_ASSOC);
         $genres = array_map(static fn (array $row): array => [
             'id' => (int) $row['id'],
-            'name' => self::GENRE_LABELS[$row['name']] ?? $row['name'],
+            'name' => self::genreLabel($row['name']),
         ], $rows);
         usort($genres, static fn (array $first, array $second): int => strnatcasecmp($first['name'], $second['name']));
 
         return $genres;
+    }
+
+    public static function genreLabel(string $name): string
+    {
+        return self::GENRE_LABELS[$name] ?? $name;
     }
 
     /** @return array{animes: array<int, array>, total: int, page: int, totalPages: int} */
@@ -220,6 +228,37 @@ final class AnimeRepository
         return $this->mapRows($statement->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    public function fillMissingAiringStatuses(iterable $records): int
+    {
+        $values = [];
+        foreach ($records as $record) {
+            $status = AnimeAiringStatus::fromSource($record['airingStatus'] ?? null);
+            if ($status === null) {
+                continue;
+            }
+            [, $identities] = $this->identities($record);
+            foreach ($identities as $identity) {
+                $values[] = ['provider' => $identity['provider'], 'external_id' => $identity['externalId'], 'status' => $status];
+            }
+        }
+        $statement = $this->database->prepare(<<<'SQL'
+            WITH incoming AS (
+                SELECT * FROM jsonb_to_recordset(CAST(:records AS JSONB)) AS source(provider TEXT, external_id TEXT, status TEXT)
+            ), unambiguous AS (
+                SELECT e.anime_id, MIN(i.status) AS status
+                FROM incoming i JOIN anime_external_ids e USING (provider, external_id)
+                GROUP BY e.anime_id
+                HAVING COUNT(DISTINCT i.status) = 1
+            )
+            UPDATE anime a SET airing_status = u.status
+            FROM unambiguous u
+            WHERE a.id = u.anime_id AND a.airing_status IS NULL
+            SQL);
+        $statement->execute(['records' => json_encode($values, JSON_THROW_ON_ERROR)]);
+
+        return $statement->rowCount();
+    }
+
     /** @return array{inserted: int, updated: int, total: int} */
     public function importBatch(iterable $animes, bool $mergeMissing = false): array
     {
@@ -276,6 +315,7 @@ final class AnimeRepository
             'alternative_titles' => json_encode($anime['alternativeTitles'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'description' => $anime['description'], 'description_language' => $anime['descriptionLanguage'],
             'cover_url' => $anime['coverUrl'], 'episodes' => $anime['episodes'], 'score' => $anime['score'],
+            'airing_status' => AnimeAiringStatus::fromSource($anime['airingStatus'] ?? null),
             'studio' => $anime['studio'], 'release_year' => $anime['year'],
             'media_type' => $anime['type'], 'source_url' => $anime['sourceUrl'],
         ];
@@ -283,9 +323,9 @@ final class AnimeRepository
         if ($id === null) {
             $statement = $this->writeStatement('insert_anime',
                 'INSERT INTO anime (mal_id, title, alternative_titles, description, description_language,
-                    cover_url, episodes, score, studio, release_year, media_type, source_url)
+                    cover_url, episodes, airing_status, score, studio, release_year, media_type, source_url)
                  VALUES (:mal_id, :title, :alternative_titles, :description, :description_language,
-                    :cover_url, :episodes, :score, :studio, :release_year, :media_type, :source_url)
+                    :cover_url, :episodes, :airing_status, :score, :studio, :release_year, :media_type, :source_url)
                  RETURNING id'
             );
             $statement->execute($values);
@@ -308,6 +348,7 @@ final class AnimeRepository
                         : ':description_language') . ',
                     cover_url = ' . ($mergeMissing ? 'COALESCE(:cover_url, cover_url)' : ':cover_url') . ',
                     episodes = ' . ($mergeMissing ? 'COALESCE(:episodes, episodes)' : ':episodes') . ',
+                    airing_status = COALESCE(:airing_status, airing_status),
                     score = ' . ($mergeMissing ? 'COALESCE(:score, score)' : ':score') . ',
                     studio = ' . ($mergeMissing ? "COALESCE(NULLIF(:studio, ''), studio)" : ':studio') . ',
                     release_year = ' . ($mergeMissing ? 'COALESCE(:release_year, release_year)' : ':release_year') . ',
@@ -498,10 +539,11 @@ final class AnimeRepository
                 'alternativeTitles' => json_decode($row['alternative_titles'], true, 512, JSON_THROW_ON_ERROR),
                 'description' => $row['description'], 'descriptionLanguage' => $row['description_language'],
                 'coverUrl' => $row['cover_url'], 'episodes' => $row['episodes'] === null ? null : (int) $row['episodes'],
+                'airingStatus' => $row['airing_status'],
                 'score' => $row['score'] === null ? null : (float) $row['score'], 'studio' => $row['studio'],
                 'year' => $row['release_year'] === null ? null : (int) $row['release_year'],
                 'type' => $row['media_type'], 'sourceUrl' => $row['source_url'],
-                'genres' => array_map(static fn (string $genre): string => self::GENRE_LABELS[$genre] ?? $genre, $genres),
+                'genres' => array_map(self::genreLabel(...), $genres),
             ];
         }
 

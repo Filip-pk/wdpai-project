@@ -37,15 +37,17 @@
                 <span class="dashboard-section-icon" aria-hidden="true">✧</span>
                 <h2 id="mood-title"><?= $escape($t('view.catalog.mood_title')) ?></h2>
             </div>
-            <span class="dashboard-demo-badge"><?= $escape($t('view.catalog.ai_preview')) ?></span>
         </header>
 
         <p>
-            <?= $escape($t('view.catalog.mood_intro')) ?>
+            <?= $escape($t('chat.intro')) ?>
         </p>
 
         <form action="/chat" method="post">
-            <fieldset class="mood-fields" disabled>
+            <input type="hidden" name="_csrf" value="<?= $escape($csrfToken) ?>">
+            <input type="hidden" name="intent" value="send">
+            <input type="hidden" name="requestId" value="<?= $escape(bin2hex(random_bytes(16))) ?>">
+            <fieldset class="mood-fields"<?= $isLoggedIn ? '' : ' disabled' ?>>
                 <legend><?= $escape($t('view.catalog.mood_recommendations')) ?></legend>
 
                 <label for="mood-message">
@@ -56,7 +58,7 @@
                     id="mood-message"
                     name="message"
                     rows="4"
-                    maxlength="2000"
+                    maxlength="1200"
                     placeholder="<?= $escape($t('view.catalog.mood_placeholder')) ?>"
                     required
                 ></textarea>
@@ -72,7 +74,7 @@
             </fieldset>
         </form>
 
-        <a class="dashboard-demo-link" href="/chat"><?= $escape($t('view.catalog.sample_assistant')) ?> <span aria-hidden="true">→</span></a>
+        <a class="dashboard-demo-link" href="/chat"><?= $escape($t('chat.open')) ?> <span aria-hidden="true">→</span></a>
     </section>
 
     <section class="dashboard-personas" aria-labelledby="personas-title">

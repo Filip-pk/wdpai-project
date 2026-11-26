@@ -295,6 +295,10 @@ $createController = static function (string $controllerClass) use ($connect, $ap
         );
     }
 
+    if ($controllerClass === ChatController::class) {
+        return new ChatController($connect);
+    }
+
     return new $controllerClass();
 };
 
@@ -359,6 +363,7 @@ $routing->post('/anime/{id}/collections', AnimeController::class, 'addToCollecti
 $routing->post('/anime/{id}/collections/create', AnimeController::class, 'createCollection');
 
 $routing->get('/chat', ChatController::class, 'index');
+$routing->post('/chat', ChatController::class, 'submit');
 $routing->get('/chat/{id}', ChatController::class, 'show');
 
 $routing->get('/messages', MessageController::class, 'index');

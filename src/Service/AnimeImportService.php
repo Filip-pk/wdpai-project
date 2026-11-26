@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Model\AnimeAiringStatus;
 use JsonException;
 use RuntimeException;
 
@@ -212,6 +213,7 @@ final class AnimeImportService
             'descriptionLanguage' => $normalized && ($entry['descriptionLanguage'] ?? null) === 'pl' ? 'pl' : 'en',
             'coverUrl' => $this->coverUrl($coverUrl),
             'episodes' => $this->positiveInteger($entry['episodes'] ?? null),
+            'airingStatus' => AnimeAiringStatus::fromSource($entry[$normalized ? 'airingStatus' : 'status'] ?? null),
             'score' => $score,
             'studio' => $studio,
             'year' => $year,
