@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Model\AnimeAiringStatus;
 use Generator;
 use JsonException;
 use RuntimeException;
@@ -299,6 +300,7 @@ final class FullAnimeImportService
             'description' => $description, 'descriptionLanguage' => 'en',
             'coverUrl' => $cover,
             'episodes' => $this->positiveInteger($row['episodes'] ?? null),
+            'airingStatus' => AnimeAiringStatus::fromSource($row['status'] ?? null),
             'score' => $this->score($row['score'] ?? null),
             'studio' => $this->text($row['studios'] ?? null, 1000), 'year' => $year,
             'type' => $this->text($row['type'] ?? null, 20) ?: 'UNKNOWN',
@@ -314,7 +316,7 @@ final class FullAnimeImportService
         foreach (array_merge($first['genres'], $second['genres']) as $genre) {
             $genres[$genre['sourceId']] = $genre;
         }
-        foreach (['description', 'coverUrl', 'episodes', 'score', 'studio', 'year', 'type'] as $field) {
+        foreach (['description', 'coverUrl', 'episodes', 'airingStatus', 'score', 'studio', 'year', 'type'] as $field) {
             if (($first[$field] === null || $first[$field] === '' || ($field === 'type' && $first[$field] === 'UNKNOWN'))
                 && $second[$field] !== null && $second[$field] !== '') {
                 $first[$field] = $second[$field];
@@ -368,6 +370,7 @@ final class FullAnimeImportService
             'description' => $rich['description'] ?? '', 'descriptionLanguage' => 'en',
             'coverUrl' => $cover ?? $rich['coverUrl'] ?? null,
             'episodes' => $this->positiveInteger($entry['episodes'] ?? null) ?? $rich['episodes'] ?? null,
+            'airingStatus' => AnimeAiringStatus::fromSource($entry['status'] ?? null) ?? $rich['airingStatus'] ?? null,
             'score' => $rich['score'] ?? null, 'studio' => $studio !== '' ? $studio : ($rich['studio'] ?? ''),
             'year' => $this->year($entry['animeSeason']['year'] ?? null) ?? $rich['year'] ?? null,
             'type' => $this->text($entry['type'] ?? null, 20) ?: ($rich['type'] ?? 'UNKNOWN'),

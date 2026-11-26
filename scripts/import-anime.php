@@ -21,6 +21,7 @@ try {
             echo 'Import katalogu anime: próbka lub pełne AOD z opisami ze snapshotu HF.' . PHP_EOL;
             echo 'php scripts/import-anime.php [--limit=200] [--dry-run] [--file=katalog.json] [--save=katalog.json]' . PHP_EOL;
             echo 'php scripts/import-anime.php --all [--dry-run] [--file=storage/imports/anime-full/manifest.json]' . PHP_EOL;
+            echo 'php scripts/import-anime.php --all --airing-status-only [--file=storage/imports/anime-full/manifest.json]' . PHP_EOL;
             echo 'Tryb --dry-run nie łączy się z bazą i nie zmienia jej danych.' . PHP_EOL;
             exit(0);
         }
@@ -28,6 +29,8 @@ try {
             $options['all'] = true;
         } elseif ($argument === '--dry-run') {
             $options['dry-run'] = true;
+        } elseif ($argument === '--airing-status-only') {
+            $options['airing-status-only'] = true;
         } elseif (preg_match('/\A--(limit|file|save)=(.+)\z/', $argument, $match) === 1) {
             $options[$match[1]] = $match[2];
             $explicitLimit = $explicitLimit || $match[1] === 'limit';
@@ -36,6 +39,9 @@ try {
         }
     }
 
+    if (isset($options['airing-status-only']) && !isset($options['all'])) {
+        throw new RuntimeException('Opcja --airing-status-only wymaga --all.');
+    }
     if (isset($options['all'])) {
         if ($explicitLimit || isset($options['save'])) {
             throw new RuntimeException('Tryb --all używa manifestu źródeł; nie łącz go z --limit ani --save.');
@@ -59,11 +65,15 @@ try {
             echo '[OK] Pełny katalog zweryfikowany; baza pozostała bez zmian.' . PHP_EOL;
         } else {
             $repository = new AnimeRepository((new Database())->connect());
-            $result = $repository->importBatch($records, true);
-            echo sprintf(
-                '[OK] Dodano: %d. Zaktualizowano: %d. Łącznie w katalogu: %d.',
-                $result['inserted'], $result['updated'], $result['total'],
-            ) . PHP_EOL;
+            if (isset($options['airing-status-only'])) {
+                echo '[OK] Uzupełniono statusów emisji: ' . $repository->fillMissingAiringStatuses($records) . '.' . PHP_EOL;
+            } else {
+                $result = $repository->importBatch($records, true);
+                echo sprintf(
+                    '[OK] Dodano: %d. Zaktualizowano: %d. Łącznie w katalogu: %d.',
+                    $result['inserted'], $result['updated'], $result['total'],
+                ) . PHP_EOL;
+            }
         }
         echo json_encode($service->report(), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . PHP_EOL;
         exit(0);
