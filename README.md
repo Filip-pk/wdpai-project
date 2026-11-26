@@ -11,6 +11,8 @@ AI i rozmowy z postaciami.
   zakresach liczby odcinków, oceny i roku premiery.
 - Sortowanie oceną źródłową, tytułem, odcinkami i rokiem w obu kierunkach;
   domyślnie najlepiej oceniane anime. Paginacja zachowuje wybrane kryteria.
+- Czat katalogowy z lokalną Ollamą. Pamięta bieżące wymagania, wyszukuje
+  w PostgreSQL i wyświetla karty anime wraz z uzasadnieniem.
 - Rejestracja, logowanie i własna watchlista: dodawanie i usuwanie anime,
   statusy „Planowane”, „Oglądam”, „Ukończone”, „Wstrzymane” i „Porzucone”
   oraz zapis obejrzanych odcinków.
@@ -51,16 +53,14 @@ AI i rozmowy z postaciami.
 - Panel administratora: diagnostyka usług, ostatnie błędy, zarządzanie
   rolą moderatora, podgląd braków katalogu i historia operacji.
 
-Asystent AI, rozmowy z postaciami, personalizowane rekomendacje
-i automatyczna synchronizacja listy MyAnimeList są obecnie demonstracyjne
-lub wyłączone. Katalog korzysta z importowanych ocen; Ollama nie jest jeszcze
-podłączona do aplikacji.
+Rozmowy z postaciami są dostępne jako podgląd. Watchlistę MyAnimeList można
+zaimportować ręcznie z pliku. Katalog korzysta z importowanych ocen.
 
 ## Technologie
 
-PHP 8.3, Composer, PostgreSQL 16, HTML, CSS, JavaScript, Nginx i Docker Compose.
+PHP 8.3, Composer, PostgreSQL 16, HTML, CSS, JavaScript, Nginx, Docker Compose i Ollama.
 Node.js służy do pobrania danych katalogu. pgAdmin i Mailpit ułatwiają lokalną
-pracę z bazą i pocztą; konfiguracja zawiera też usługę Ollama na przyszłość.
+pracę z bazą i pocztą.
 
 ## Uruchomienie od zera — Windows
 
@@ -135,12 +135,12 @@ i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
 uruchomił się już podczas budowania obrazu.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-`database/01`–`17`: tworzy tabele oraz **6 początkowych anime**. Nie trzeba
+z katalogu `database/` i zapisuje **6 początkowych anime**. Nie trzeba
 ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
 dołączane do repozytorium.
 
-Usługę Ollama pomijamy w tym uruchomieniu, ponieważ funkcje AI są obecnie
-demonstracyjne i nie wymagają modelu językowego.
+Ollamę uruchom zgodnie z [instrukcją czatu katalogowego](docs/catalog-chat.md),
+jeśli chcesz korzystać z rekomendacji na stronie `/chat`.
 
 ### 5. Zaimportuj pełny katalog anime
 
