@@ -120,7 +120,8 @@ konto i jego hasło pozostają bez zmian. Właściciel dostaje wtedy wiadomość
 o próbie rejestracji w języku swojego konta.
 
 Sesja przechowuje ID, nazwę, e-mail, czas zalogowania i token CSRF, bez hasła
-ani jego hasha. Ciasteczko ma `HttpOnly`, `SameSite=Lax`, czas życia `0`
+ani jego hasha. Hasła przesłane w formularzach (także w profilu) nie trafiają
+do danych przekazywanych widokom. Ciasteczko ma `HttpOnly`, `SameSite=Lax`, czas życia `0`
 i `Secure` przy HTTPS. Odpowiedzi aplikacji mają `Cache-Control: no-store`.
 Katalog i rozmowy demonstracyjne pozostają dostępne. Profil i watchlista
 wymagają zalogowania; dane i ustawienia są przypisane do konta. Szczegóły
