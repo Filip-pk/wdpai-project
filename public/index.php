@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Controller\AdminController;
 use App\Controller\AchievementController;
-use App\Controller\AnimeController;
+use App\Controller\AdminController;
 use App\Controller\AnimeClueController;
+use App\Controller\AnimeController;
 use App\Controller\AnimeRankingController;
-use App\Controller\AppController;
 use App\Controller\AuthController;
 use App\Controller\ChatController;
 use App\Controller\CollectionController;
@@ -15,57 +14,25 @@ use App\Controller\CommentReactionController;
 use App\Controller\CommunityController;
 use App\Controller\DashboardController;
 use App\Controller\DefaultController;
-use App\Controller\MalImportController;
 use App\Controller\LanguageController;
+use App\Controller\MalImportController;
 use App\Controller\MessageController;
 use App\Controller\ModerationController;
+use App\Controller\PrivacySettingsController;
 use App\Controller\ProfileController;
 use App\Controller\ProfileShowcaseController;
 use App\Controller\ProjectController;
 use App\Controller\QuizController;
 use App\Controller\RankingController;
 use App\Controller\ReplyNotificationController;
-use App\Controller\SettingsController;
 use App\Controller\SecuritySettingsController;
-use App\Controller\PrivacySettingsController;
-use App\Database;
-use App\Repository\AnimeRepository;
-use App\Repository\AdminRepository;
-use App\Repository\AnimeClueRepository;
-use App\Repository\AchievementRepository;
-use App\Repository\AnimeRankingRepository;
-use App\Repository\CollectionRepository;
-use App\Repository\CommentRepository;
-use App\Repository\CommentReactionRepository;
-use App\Repository\CommunityRepository;
-use App\Repository\ExperienceRepository;
-use App\Repository\LoginAttemptRepository;
-use App\Repository\MalImportRepository;
-use App\Repository\MessageRepository;
-use App\Repository\ModerationRepository;
-use App\Repository\ProjectRepository;
-use App\Repository\QuizRepository;
-use App\Repository\RatingRepository;
-use App\Repository\RecommendationRepository;
-use App\Repository\ReplyNotificationRepository;
-use App\Repository\UserRepository;
+use App\Controller\SettingsController;
+use App\ControllerFactory;
 use App\Repository\PreferencesRepository;
-use App\Repository\SecuritySettingsRepository;
-use App\Repository\PrivacySettingsRepository;
-use App\Repository\ProfileShowcaseRepository;
-use App\Repository\WatchlistRepository;
 use App\Routing;
 use App\Service\AccountAccessGuard;
-use App\Service\AchievementService;
-use App\Service\AnimeClueService;
-use App\Service\MailService;
-use App\Service\ApplicationLogger;
 use App\Service\ApplicationErrorHandler;
-use App\Service\DiagnosticService;
-use App\Service\LoginThrottle;
-use App\Service\MalImportService;
-use App\Service\RecommendationService;
-use App\Service\QuizService;
+use App\Service\ApplicationLogger;
 use App\Service\Translator;
 
 // Never show raw errors or stack traces to visitors, even without the Docker PHP configuration.
@@ -97,244 +64,9 @@ Translator::setCurrent(new Translator(
     is_string($_COOKIE['anivibe_language'] ?? null) ? $_COOKIE['anivibe_language'] : 'pl',
 ));
 
-$connection = null;
-$connect = static function () use (&$connection): PDO {
-    return $connection ??= (new Database())->connect();
-};
-
-$createController = static function (string $controllerClass) use ($connect, $applicationLogger): AppController {
-    if ($controllerClass === AdminController::class) {
-        $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
-        return new AdminController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): AdminRepository => new AdminRepository($connect()),
-            new DiagnosticService(
-                static fn (): PDO => (new Database())->connect(),
-                $mailConfiguration,
-                $applicationLogger,
-                dirname(__DIR__),
-            ),
-            $applicationLogger,
-            new MailService(...$mailConfiguration),
-        );
-    }
-    if ($controllerClass === ProfileShowcaseController::class) {
-        return new ProfileShowcaseController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): AnimeRepository => new AnimeRepository($connect()),
-            static fn (): ProfileShowcaseRepository => new ProfileShowcaseRepository($connect()),
-            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
-        );
-    }
-    if ($controllerClass === AnimeClueController::class) {
-        return new AnimeClueController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): AnimeClueService => new AnimeClueService(new AnimeClueRepository($connect())),
-            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
-        );
-    }
-    if ($controllerClass === ModerationController::class) {
-        return new ModerationController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): ModerationRepository => new ModerationRepository($connect()),
-        );
-    }
-    if ($controllerClass === LanguageController::class) {
-        return new LanguageController(
-            static fn (): PreferencesRepository => new PreferencesRepository($connect()),
-        );
-    }
-    if ($controllerClass === PrivacySettingsController::class) {
-        return new PrivacySettingsController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
-        );
-    }
-    if ($controllerClass === SecuritySettingsController::class) {
-        $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
-        return new SecuritySettingsController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): SecuritySettingsRepository => new SecuritySettingsRepository($connect()),
-            new MailService(...$mailConfiguration),
-        );
-    }
-    if ($controllerClass === SettingsController::class) {
-        return new SettingsController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): PreferencesRepository => new PreferencesRepository($connect()),
-            static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
-        );
-    }
-    if ($controllerClass === AnimeRankingController::class) {
-        return new AnimeRankingController(
-            static fn (): AnimeRepository => new AnimeRepository($connect()),
-            static fn (): AnimeRankingRepository => new AnimeRankingRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === AnimeController::class) {
-
-        return new AnimeController(
-            static fn (): AnimeRepository => new AnimeRepository($connect()),
-            static fn (): CollectionRepository => new CollectionRepository($connect()),
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): RatingRepository => new RatingRepository($connect()),
-            static fn (): CommentRepository => new CommentRepository($connect()),
-            static fn (): CommunityRepository => new CommunityRepository($connect()),
-            static fn (): ReplyNotificationRepository => new ReplyNotificationRepository($connect()),
-            static fn (): CommentReactionRepository => new CommentReactionRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === CollectionController::class) {
-
-        return new CollectionController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): CollectionRepository => new CollectionRepository($connect()),
-            static fn (): AnimeRepository => new AnimeRepository($connect()),
-            static fn (): WatchlistRepository => new WatchlistRepository($connect()),
-            static fn (): RatingRepository => new RatingRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === MessageController::class) {
-
-        return new MessageController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): MessageRepository => new MessageRepository($connect()),
-            static fn (): CommunityRepository => new CommunityRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === CommunityController::class) {
-        return new CommunityController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): CommunityRepository => new CommunityRepository($connect()),
-            static fn (): MessageRepository => new MessageRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === CommentReactionController::class) {
-        return new CommentReactionController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): CommentRepository => new CommentRepository($connect()),
-            static fn (): CommunityRepository => new CommunityRepository($connect()),
-            static fn (): CommentReactionRepository => new CommentReactionRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === ReplyNotificationController::class) {
-        return new ReplyNotificationController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): ReplyNotificationRepository => new ReplyNotificationRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === ProfileController::class) {
-
-        return new ProfileController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): WatchlistRepository => new WatchlistRepository($connect()),
-            static fn (): AnimeRepository => new AnimeRepository($connect()),
-            static fn (): RatingRepository => new RatingRepository($connect()),
-            static fn (): ExperienceRepository => new ExperienceRepository($connect()),
-            static fn (): CommunityRepository => new CommunityRepository($connect()),
-            static fn (): PrivacySettingsRepository => new PrivacySettingsRepository($connect()),
-            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
-            static fn (): ProfileShowcaseRepository => new ProfileShowcaseRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === MalImportController::class) {
-
-        return new MalImportController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): MalImportService => new MalImportService(new MalImportRepository($connect())),
-            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
-        );
-    }
-
-    if ($controllerClass === RankingController::class) {
-
-        return new RankingController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): ExperienceRepository => new ExperienceRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === DashboardController::class) {
-        return new DashboardController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): AnimeRepository => new AnimeRepository($connect()),
-            static fn (): RatingRepository => new RatingRepository($connect()),
-            static fn (): RecommendationService => new RecommendationService(new RecommendationRepository($connect())),
-            static fn (): QuizService => new QuizService(new QuizRepository($connect())),
-        );
-    }
-
-    if ($controllerClass === QuizController::class) {
-        return new QuizController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): QuizService => new QuizService(new QuizRepository($connect())),
-            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
-        );
-    }
-
-    if ($controllerClass === AchievementController::class) {
-        return new AchievementController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            static fn (): AchievementService => new AchievementService(new AchievementRepository($connect())),
-        );
-    }
-
-    if ($controllerClass === AuthController::class) {
-        $mailConfiguration = (require dirname(__DIR__) . '/config.php')['mail'];
-
-        return new AuthController(
-            static fn (): UserRepository => new UserRepository($connect()),
-            new MailService(...$mailConfiguration),
-            static fn (): LoginThrottle => new LoginThrottle(new LoginAttemptRepository($connect())),
-            $applicationLogger,
-        );
-    }
-
-    if ($controllerClass === ProjectController::class) {
-        return new ProjectController(
-            static fn (): ProjectRepository => new ProjectRepository($connect()),
-        );
-    }
-
-    if ($controllerClass === ChatController::class) {
-        return new ChatController($connect);
-    }
-
-    return new $controllerClass();
-};
-
-$routing = new Routing(static function (string $controllerClass) use ($createController, $connect): AppController {
-    $controller = $createController($controllerClass);
-    $controller->setModerationRepository(
-        static fn (): ModerationRepository => new ModerationRepository($connect()),
-    );
-    $controller->setCommunityRepository(
-        static fn (): CommunityRepository => new CommunityRepository($connect()),
-    );
-    $controller->setPreferencesRepository(
-        static fn (): PreferencesRepository => new PreferencesRepository($connect()),
-    );
-    try {
-        $controller->initializeLanguage($controllerClass !== AuthController::class);
-    } catch (RuntimeException $exception) {
-        if (!$controller instanceof DefaultController
-            || (!$exception instanceof PDOException && !$exception->getPrevious() instanceof PDOException)) {
-            throw $exception;
-        }
-        // The public home page can use the session language while the database is unavailable.
-        $controller = new DefaultController();
-        $controller->initializeLanguage(false);
-    }
-    return $controller;
-});
+// Builds each routed controller; its repositories share one lazily opened connection.
+$controllers = new ControllerFactory($applicationLogger, dirname(__DIR__));
+$routing = new Routing($controllers);
 
 $routing->get('/', DefaultController::class, 'index');
 $routing->post('/language', LanguageController::class, 'save');
@@ -446,7 +178,7 @@ $routing->get('/projects/{id}', ProjectController::class, 'show');
 try {
     if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
         $ban = AccountAccessGuard::begin(
-            $connect(),
+            $controllers->connection(),
             $_SESSION['user_id'],
             ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
                 && parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) === '/profile/import/confirm',
@@ -458,7 +190,7 @@ try {
                 || ($method === 'POST' && (in_array($path, ['/language', '/logout'], true)
                     || preg_match('~^/account/notices/[1-9][0-9]*/read$~', (string) $path) === 1));
             if (!$allowed) {
-                $preferences = (new PreferencesRepository($connect()))->forUser($_SESSION['user_id']);
+                $preferences = (new PreferencesRepository($controllers->connection()))->forUser($_SESSION['user_id']);
                 Translator::setCurrent(new Translator($preferences['language'] ?? 'pl'));
                 AccountAccessGuard::finish(false);
                 if ($method !== 'GET' || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')) {
