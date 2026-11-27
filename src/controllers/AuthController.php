@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Service\AccountSecurityService;
 use App\Service\ApplicationLogger;
 use App\Service\LoginThrottle;
 use App\Service\MailService;
@@ -51,7 +52,7 @@ final class AuthController extends AppController
                         'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za {minutes} min.',
                         ['minutes' => (int) ceil($retryAfter / 60)],
                     );
-                } elseif ($user === null || !$this->isPasswordValid($password)
+                } elseif ($user === null || !AccountSecurityService::isPasswordValid($password)
                     || !password_verify($password, $user['password_hash'])) {
                     $this->throttle()?->recordFailure($email, $this->clientAddress());
                     $this->auditSignIn('admin.log.login_failed', $email);
@@ -121,8 +122,8 @@ final class AuthController extends AppController
                 if (!$this->isEmailValid($email)) {
                     $errors[] = Translator::message('Podaj poprawny adres e-mail (maksymalnie 255 znaków).');
                 }
-                if (!$this->isPasswordValid($password)) {
-                    $errors[] = Translator::message('Hasło musi mieć co najmniej 8 znaków i maksymalnie 72 bajty, bez znaku NUL.');
+                if (!AccountSecurityService::isPasswordStrong($password, $email)) {
+                    $errors[] = Translator::message('Hasło musi mieć co najmniej 8 znaków i maksymalnie 72 bajty, zawierać literę i cyfrę, nie może zawierać znaku NUL ani być adresem e-mail.');
                 }
                 if ($password !== $this->postString('passwordConfirmation')) {
                     $errors[] = Translator::message('Hasła nie są takie same.');
@@ -244,13 +245,5 @@ final class AuthController extends AppController
     private function isEmailValid(string $email): bool
     {
         return strlen($email) <= 255 && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-    }
-
-    private function isPasswordValid(string $password): bool
-    {
-        $length = preg_match_all('/./us', $password);
-
-        return $length !== false && $length >= 8 && strlen($password) <= 72
-            && !str_contains($password, "\0");
     }
 }

@@ -52,6 +52,17 @@ $run('Nowe hasła respektują liczbę znaków, limit bcrypt i NUL', static funct
     }
 });
 
+$run('Nowe hasła wymagają litery, cyfry i nie mogą być adresem e-mail', static function () use ($assert): void {
+    foreach (['tylkolitery', '1234567890', 'ąęśćżźół', "Haslo123\0", 'Ada.Nowak7', 'ADA.NOWAK7@EXAMPLE.TEST'] as $weak) {
+        $assert(!AccountSecurityService::isPasswordStrong($weak, 'ada.nowak7@example.test'));
+    }
+    foreach (['Haslo2026', 'zażółć9gęśl', 'Testowe-Haslo-2026!', 'ada.nowak7-2026'] as $strong) {
+        $assert(AccountSecurityService::isPasswordStrong($strong, 'ada.nowak7@example.test'));
+    }
+    $assert(AccountSecurityService::isPasswordStrong('Haslo2026'));
+    $assert(AccountSecurityService::isPasswordValid('tylkolitery'), 'Older passwords can still be verified.');
+});
+
 $run('Zmiana hasła wymaga aktualnego hasha i izoluje konto', static function () use ($repository, $assert, $hash, $newHash): void {
     $assert(!$repository->changePassword(1, 'outdated-hash', $newHash));
     $assert($repository->changePassword(1, $hash, $newHash));

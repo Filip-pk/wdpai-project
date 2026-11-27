@@ -100,6 +100,8 @@ test('account security validates passwords and confirms the new mailbox before c
             { newPassword: 'short', newPasswordConfirmation: 'short' },
             { newPassword: 'ą'.repeat(37), newPasswordConfirmation: 'ą'.repeat(37) },
             { newPassword: 'password\0', newPasswordConfirmation: 'password\0' },
+            { newPassword: 'Tylko-Litery-Haslo', newPasswordConfirmation: 'Tylko-Litery-Haslo' },
+            { newPassword: first.email, newPasswordConfirmation: first.email },
             { newPasswordConfirmation: 'not-the-same' },
             { newPassword: undefined, 'newPassword[]': nextPassword },
         ]) {

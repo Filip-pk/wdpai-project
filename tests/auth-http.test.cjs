@@ -94,11 +94,17 @@ test('registration, sessions, protected projects and logout', async (t) => {
             { passwordConfirmation: 'different' },
             { password: 'ą'.repeat(37), passwordConfirmation: 'ą'.repeat(37) },
             { password: 'Haslo\0testowe', passwordConfirmation: 'Haslo\0testowe' },
+            { password: 'Tylko-Litery-Haslo', passwordConfirmation: 'Tylko-Litery-Haslo' },
+            { password: '2026-1234-5678', passwordConfirmation: '2026-1234-5678' },
+            { password: email.toUpperCase(), passwordConfirmation: email.toUpperCase() },
         ]) {
             const page = await client.request('/register', { ...valid, ...invalid });
             assert.equal(page.status, 422);
             passwordIsEmpty(page, password);
             assert.ok(!page.html.includes('<svg onload=alert(1)>'));
+            if (invalid.password && /^(Tylko|2026)/.test(invalid.password)) {
+                assert.ok(page.html.includes('zawierać literę i cyfrę'), 'The password rules are explained');
+            }
         }
         const escaped = await client.request('/register', { ...valid, passwordConfirmation: 'different' });
         assert.ok(escaped.html.includes('&lt;svg onload=alert(1)&gt;'));

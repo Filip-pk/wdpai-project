@@ -111,6 +111,10 @@ Nieprawidłowy CSRF zwraca `403`, błędy rejestracji `422`, a błędne dane
 logowania `401` z jednym ogólnym komunikatem. `GET /logout` nie wylogowuje.
 Pola haseł pozostają puste po błędzie. Nazwa ma 1–120 znaków, e-mail do 255,
 a hasło minimum 8 znaków i maksimum 72 bajty, bez NUL (limit bcrypt).
+Nowe hasło (rejestracja i zmiana w ustawieniach) musi też zawierać literę
+i cyfrę oraz nie może być adresem e-mail ani jego częścią przed `@`.
+Logowanie sprawdza tylko limity długości, więc starsze hasła nadal działają.
+Reguły są w `AccountSecurityService`.
 Unikalność e-maila egzekwuje również baza, z obsługą równoległej rejestracji.
 
 Rejestracja nie zdradza, czy adres ma już konto. Dla zajętego adresu

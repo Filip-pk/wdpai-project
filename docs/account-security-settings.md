@@ -3,8 +3,10 @@
 Sekcja **Konto i bezpieczeństwo** na `/settings` wymaga zalogowania. Każdy zapis
 sprawdza token CSRF i korzysta z identyfikatora konta z sesji.
 
-Hasło zmienisz, podając obecne hasło i dwukrotnie nowe. Obowiązuje minimum
-8 znaków i limit 72 bajtów bcrypt, bez znaku NUL. Hasło jest hashowane przez
+Hasło zmienisz, podając obecne hasło i dwukrotnie nowe. Nowe hasło musi mieć
+minimum 8 znaków i mieścić się w limicie 72 bajtów bcrypt, zawierać co najmniej
+jedną literę i jedną cyfrę, nie może zawierać znaku NUL ani być adresem e-mail
+konta (lub jego częścią przed `@`). Hasło jest hashowane przez
 `password_hash()`, a zapis sprawdza poprzedni hash, aby uniknąć nadpisania
 równoległej zmiany. Po zapisie identyfikator sesji jest regenerowany.
 

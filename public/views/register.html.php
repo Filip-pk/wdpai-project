@@ -69,7 +69,7 @@
                         placeholder="<?= $escape($t('view.interface.at_least_8_characters')) ?>"
                         required
                     >
-                    <p id="register-password-help" class="auth-help"><?= $escape($t('view.interface.at_least_8_characters_up_to_72_bytes')) ?></p>
+                    <p id="register-password-help" class="auth-help"><?= $escape($t('view.interface.password_help_letter_and_digit')) ?></p>
                 </div>
 
                 <div class="auth-field">
