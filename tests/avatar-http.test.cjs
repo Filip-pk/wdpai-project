@@ -1,7 +1,10 @@
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
 const test = require('node:test');
 const { deflateSync } = require('node:zlib');
+const { php } = require('./helpers/admin-fixtures.cjs');
 
 const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const password = 'Awatar-Testowy-2026!';
@@ -103,6 +106,17 @@ function upload(token, bytes = png(480, 320, [70, 110, 180]), options = {}) {
     return form;
 }
 
+// The database keeps only the relative path; the file itself lives in storage/uploads.
+function storedAvatar(email) {
+    const stored = php(String.raw`
+$input = json_decode($argv[1], true, 512, JSON_THROW_ON_ERROR);
+$statement = (new App\Database())->connect()->prepare('SELECT avatar_path, avatar_data IS NULL AS no_database_copy FROM users WHERE email = :email');
+$statement->execute(['email' => $input['email']]);
+echo json_encode($statement->fetch(PDO::FETCH_ASSOC), JSON_THROW_ON_ERROR);
+`, { email });
+    return { ...stored, file: stored.avatar_path ? path.resolve(__dirname, '../storage/uploads', stored.avatar_path) : null };
+}
+
 async function account(name) {
     const client = browser();
     const email = `avatar-${randomUUID()}@example.test`;
@@ -154,6 +168,10 @@ test('avatar uploads are validated, persistent and assigned to the signed-in acc
             upload(first.token, png(4097, 1, [10, 20, 30])),
             upload(first.token, png(8, 8, [10, 20, 30]), { field: 'avatar[]' }),
             upload(first.token, Buffer.alloc(4 * 1024 * 1024 + 1)),
+            // A real PNG is still refused under a disallowed or missing extension.
+            upload(first.token, png(8, 8, [10, 20, 30]), { name: 'avatar.gif' }),
+            upload(first.token, png(8, 8, [10, 20, 30]), { name: 'avatar.php' }),
+            upload(first.token, png(8, 8, [10, 20, 30]), { name: 'avatar' }),
         ]) {
             const page = await first.client.request('/profile/avatar', form);
             assert.equal(page.status, 422);
@@ -182,6 +200,11 @@ test('avatar uploads are validated, persistent and assigned to the signed-in acc
         assert.equal(image.bytes.readUInt32BE(20), 256);
         assert.equal(image.bytes.includes(Buffer.from(maliciousTail)), false);
         assert.deepEqual(avatarUrls(await second.client.request('/profile')), []);
+        const stored = storedAvatar(first.email);
+        assert.match(stored.avatar_path, /^avatars\/[a-f0-9]{32}\.png$/, 'A random safe file name');
+        assert.equal(stored.no_database_copy, true, 'The database holds the path, not the image');
+        assert.deepEqual(fs.readFileSync(stored.file), image.bytes, 'The served image is the stored file');
+        first.stored = stored;
     });
 
     await t.test('JPEG is accepted without replacing another account image', async () => {
@@ -224,6 +247,11 @@ test('avatar uploads are validated, persistent and assigned to the signed-in acc
         assert.notEqual(replacement, firstUrl);
         assert.equal((await guest.request(replacement)).status, 200);
         assert.equal((await guest.request(firstUrl)).status, 404);
+        const replaced = storedAvatar(first.email);
+        assert.notEqual(replaced.avatar_path, first.stored.avatar_path);
+        assert.ok(fs.existsSync(replaced.file));
+        // The old file is not referenced any more; the cleanup task removes it later (docs/maintenance.md).
+        assert.ok(fs.existsSync(first.stored.file));
         const invalid = await first.client.request('/profile/avatar', upload(first.token, Buffer.from('invalid image')));
         assert.equal(invalid.status, 422);
         assert.match(invalid.html, /<link\b[^>]*href="\/css\/profile\.css(?:\?[^"]*)?"/);

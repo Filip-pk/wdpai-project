@@ -88,7 +88,9 @@ function browser() {
                 if (value.startsWith('PHPSESSID=')) cookie = value.split(';', 1)[0];
             }
             const html = await response.text();
-            assert.doesNotMatch(html, /SQLSTATE|PDOException|Stack trace|Fatal error|Warning:/i);
+            // Leaked PHP errors carry these markers. A bare class name such as PDOException is allowed,
+            // because the admin error list shows the class of each recorded exception by design.
+            assert.doesNotMatch(html, /SQLSTATE\[|Uncaught [\w\\]+|Stack trace|Fatal error|Warning:/i);
             return { status: response.status, headers: response.headers, html };
         },
     };

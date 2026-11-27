@@ -229,13 +229,13 @@ $formatDate = static fn (string $date): string => ModerationNoticeFormatter::dat
                     <li><article class="admin-card admin-log" data-log-id="<?= $escape($entry['id']) ?>">
                         <div class="admin-card-top">
                             <h2><?= $escape($t($entry['messageKey'])) ?></h2>
-                            <span class="admin-status" data-status="<?= $entry['level'] === 'error' ? 'error' : 'warning' ?>"><?= $escape($t('admin.level.' . $entry['level'])) ?></span>
+                            <span class="admin-status" data-status="<?= $escape(['error' => 'error', 'warning' => 'warning'][$entry['level']] ?? 'ok') ?>"><?= $escape($t('admin.level.' . $entry['level'])) ?></span>
                         </div>
                         <dl class="admin-meta">
                             <div><dt><?= $escape($t('admin.identifier')) ?></dt><dd><code><?= $escape($entry['id']) ?></code></dd></div>
                             <div><dt><?= $escape($t('admin.created_at')) ?></dt><dd><time datetime="<?= $escape($entry['createdAt']) ?>"><?= $escape($formatDate($entry['createdAt'])) ?></time></dd></div>
                             <div><dt><?= $escape($t('admin.module')) ?></dt><dd><?= $escape($entry['module']) ?></dd></div>
-                            <?php foreach (['class', 'path', 'service', 'errorId', 'code', 'account', 'client'] as $contextKey): ?>
+                            <?php foreach (['class', 'path', 'service', 'errorId', 'code', 'account', 'client', ...$cleanupCounts] as $contextKey): ?>
                                 <?php if (isset($entry['context'][$contextKey])): ?><div><dt><?= $escape($t('admin.context.' . $contextKey)) ?></dt><dd><code><?= $escape($entry['context'][$contextKey]) ?></code></dd></div><?php endif; ?>
                             <?php endforeach; ?>
                         </dl>

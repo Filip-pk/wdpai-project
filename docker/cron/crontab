@@ -1,0 +1,5 @@
+# AniVibe scheduled tasks (busybox crond, container time UTC). See docs/maintenance.md.
+# Cleanup every hour at minute 15. The job loads the variables saved by anivibe-cron,
+# runs as www-data so the files it touches stay writable for PHP-FPM, and writes its
+# summary to the container log: docker compose logs cron
+15 * * * * . /run/anivibe-cron.env && su -p -s /bin/sh www-data -c 'php /app/scripts/cleanup.php' > /proc/1/fd/1 2> /proc/1/fd/2

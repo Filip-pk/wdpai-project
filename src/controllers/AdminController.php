@@ -63,6 +63,7 @@ final class AdminController extends AppController
             'diagnostics' => $_SESSION['admin_diagnostics'] ?? [],
             'logEntries' => $tab === 'errors' ? $this->logger->recent($filters['level'], $filters['module'], $page) : [],
             'logModules' => ApplicationLogger::MODULES,
+            'cleanupCounts' => ApplicationLogger::CLEANUP_COUNTS,
             'userList' => $tab === 'users' ? $this->admins()->users($filters['query'], $page) : [],
             'messageReports' => $tab === 'reports' ? $this->admins()->messageReports($page) : [],
             'catalog' => $tab === 'catalog' ? $this->admins()->catalog($filters['query'], $filters['missing'], $page) : [],

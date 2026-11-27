@@ -81,30 +81,27 @@ final class UserRepository
         ];
     }
 
-    public function updateAvatar(int $userId, string $contents, string $version): void
+    /**
+     * Points the account at a new avatar file. The version is the public cache key in avatar URLs;
+     * the path stays private. A photo saved in the database by older versions is dropped with it.
+     */
+    public function updateAvatar(int $userId, string $path, string $version): void
     {
         $statement = $this->database->prepare(
-            'UPDATE users SET avatar_data = :contents, avatar_version = :version WHERE id = :id'
+            'UPDATE users SET avatar_path = :path, avatar_version = :version, avatar_data = NULL WHERE id = :id'
         );
-        $statement->bindValue('contents', $contents, PDO::PARAM_LOB);
-        $statement->bindValue('version', $version);
-        $statement->bindValue('id', $userId, PDO::PARAM_INT);
-        $statement->execute();
+        $statement->execute(['path' => $path, 'version' => $version, 'id' => $userId]);
     }
 
-    public function findAvatar(int $userId, string $version): ?string
+    public function findAvatarPath(int $userId, string $version): ?string
     {
         $statement = $this->database->prepare(
-            'SELECT avatar_data FROM users WHERE id = :id AND avatar_version = :version'
+            'SELECT avatar_path FROM users WHERE id = :id AND avatar_version = :version'
         );
         $statement->execute(['id' => $userId, 'version' => $version]);
-        $contents = $statement->fetchColumn();
+        $path = $statement->fetchColumn();
 
-        if (is_resource($contents)) {
-            $contents = stream_get_contents($contents);
-        }
-
-        return is_string($contents) && $contents !== '' ? $contents : null;
+        return is_string($path) && $path !== '' ? $path : null;
     }
 
     private function avatarUrl(array $user): ?string

@@ -13,6 +13,9 @@ use Throwable;
 
 final class CommunityRepository
 {
+    /** Rate limits read at most the last ten minutes; older activity is deleted after a day. */
+    public const ACTIVITY_RETENTION_SECONDS = 86400;
+
     private static int $savepointSequence = 0;
 
     public function __construct(private readonly PDO $connection)
@@ -298,8 +301,11 @@ final class CommunityRepository
     public function assertActionAllowed(int $userId, string $action, string $hash): void
     {
         [$limit, $window] = $this->actionLimit($action);
-        $cleanup = $this->connection->prepare("DELETE FROM community_activity WHERE user_id = :id AND created_at < clock_timestamp() - INTERVAL '1 day'");
-        $cleanup->execute(['id' => $userId]);
+        $cleanup = $this->connection->prepare('DELETE FROM community_activity WHERE user_id = :id
+            AND created_at < clock_timestamp() - make_interval(secs => :retention)');
+        $cleanup->bindValue('id', $userId, PDO::PARAM_INT);
+        $cleanup->bindValue('retention', self::ACTIVITY_RETENTION_SECONDS, PDO::PARAM_INT);
+        $cleanup->execute();
         $statement = $this->connection->prepare(
             'SELECT COUNT(*) FILTER (WHERE created_at > clock_timestamp() - make_interval(secs => :window)) AS recent_count,
                     CEIL(EXTRACT(EPOCH FROM MIN(created_at) FILTER (WHERE created_at > clock_timestamp() - make_interval(secs => :oldest_window))

@@ -77,11 +77,17 @@ try {
     });
 
     $run('Profil publiczny nie udostępnia e-maila, hasha ani ustawień konta', static function () use (
-        $repository, $assert, $hash,
+        $repository, $connection, $assert, $hash,
     ): void {
         $id = $repository->create('Łucja <svg>', 'private@example.test', $hash);
         $repository->updateProfile($id, 'Łucja <svg>', 'Mecha & fantasy', 'dark');
-        $repository->updateAvatar($id, 'test-image', str_repeat('b', 32));
+        $connection->exec("UPDATE pg_temp.users SET avatar_data = 'legacy-image' WHERE id = " . $id);
+        $repository->updateAvatar($id, 'avatars/' . str_repeat('c', 32) . '.png', str_repeat('b', 32));
+        $stored = $connection->query('SELECT avatar_path, avatar_data FROM pg_temp.users WHERE id = ' . $id)->fetch(PDO::FETCH_ASSOC);
+        $assert($stored === ['avatar_path' => 'avatars/' . str_repeat('c', 32) . '.png', 'avatar_data' => null],
+            'Baza przechowuje tylko ścieżkę pliku, a dawna kopia zdjęcia znika przy zmianie.');
+        $assert($repository->findAvatarPath($id, str_repeat('b', 32)) === 'avatars/' . str_repeat('c', 32) . '.png');
+        $assert($repository->findAvatarPath($id, str_repeat('a', 32)) === null, 'Stara wersja adresu nie wskazuje pliku.');
         $user = $repository->findPublicById($id);
 
         $assert($user !== null && array_keys($user) === ['id', 'name', 'interests', 'created_at', 'avatar_url', 'isAdmin']);

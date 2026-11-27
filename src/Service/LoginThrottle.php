@@ -12,7 +12,8 @@ final class LoginThrottle
     public const ACCOUNT_LIMIT = 5;
     public const CLIENT_LIMIT = 100;
     public const WINDOW_SECONDS = 900;
-    private const RETENTION_SECONDS = 86400;
+    /** Failures are kept a day; the cleanup task removes older ones even without new failures. */
+    public const RETENTION_SECONDS = 86400;
 
     public function __construct(private readonly LoginAttemptRepository $attempts)
     {
