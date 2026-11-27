@@ -1,0 +1,10 @@
+# Keep secrets, generated files and local data out of the images.
+.env
+.git
+.idea
+.vscode
+vendor
+node_modules
+storage
+docker/data
+docker/nginx/certs

@@ -20,10 +20,11 @@ docker compose exec -T php php scripts/prepare-admin-logs.php
 Migracja jest transakcyjna i może zostać wykonana ponownie. Dodaje flagę
 `users.is_admin`, tabelę `admin_actions` i indeksy, zachowując dotychczasowe
 dane i role. Nowa pusta baza wykonuje ją automatycznie podczas inicjalizacji.
-Przygotowanie katalogu logów jest potrzebne również na nowej instalacji.
-Skrypt ustawia prawa tylko `storage/logs` i rozpoznanych plików logów;
-w kontenerze uruchomionym jako root przypisuje je procesowi `www-data`.
-Nie zmienia konfiguracji Dockera ani uprawnień innych katalogów.
+Kontener `php` przygotowuje katalog logów przy każdym starcie
+([entrypoint.sh](../docker/php/entrypoint.sh)), więc drugie polecenie jest
+potrzebne tylko po ręcznej zmianie praw. Skrypt ustawia prawa tylko
+`storage/logs` i rozpoznanych plików logów; w kontenerze uruchomionym jako
+root przypisuje je procesowi `www-data`. Nie zmienia uprawnień innych katalogów.
 
 ## Pierwszy administrator i role
 
