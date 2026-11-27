@@ -47,14 +47,27 @@ try {
     $assert($logger->recent('error', 'mail')['pagination']['total'] === 0, 'Filters must not return unrelated records.');
     echo "[OK] Exception privacy, safe context, newest-first ordering and filters\n";
 
+    $logger->record('warning', 'auth', 'admin.log.login_failed', [
+        'path' => '/login', 'account' => '0123456789abcdef', 'client' => 'private@example.test',
+        'password' => 'TOP_SECRET',
+    ]);
+    $audit = $logger->recent('warning', 'auth')['items'][0];
+    $assert($audit['messageKey'] === 'admin.log.login_failed', 'Failed sign-ins must be audited.');
+    $assert(($audit['context']['account'] ?? null) === '0123456789abcdef', 'A shortened account hash may be retained.');
+    $assert(!isset($audit['context']['client']), 'A client value that is not a shortened hash must be dropped.');
+    $data = file_get_contents($directory . '/application.jsonl');
+    $assert(!str_contains($data, 'TOP_SECRET') && !str_contains($data, 'private@example.test'),
+        'A sign-in audit must never store a password, e-mail or IP address.');
+    echo "[OK] Sign-in audit keeps only shortened hashes\n";
+
     for ($i = 0; $i < 30; $i++) {
         $logger->record('info', 'admin', 'admin.log.event');
     }
     $assert(count($logger->recent()['items']) === 20, 'The first page must be bounded to twenty records.');
-    $assert(count($logger->recent('', '', 2)['items']) === 12, 'The second page must contain the remaining records.');
+    $assert(count($logger->recent('', '', 2)['items']) === 13, 'The second page must contain the remaining records.');
     $assert($logger->recent('', '', 999)['pagination']['page'] === 2, 'Page numbers must be clamped.');
     file_put_contents($directory . '/application.jsonl', "INVALID_JSON\n" . str_repeat('x', 3000) . "\n", FILE_APPEND);
-    $assert($logger->recent()['pagination']['total'] === 32, 'Malformed records must be skipped.');
+    $assert($logger->recent()['pagination']['total'] === 33, 'Malformed records must be skipped.');
     echo "[OK] Pagination and malformed input are bounded\n";
 
     $locked = fopen($directory . '/.application.lock', 'c');

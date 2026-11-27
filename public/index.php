@@ -39,6 +39,7 @@ use App\Repository\CommentRepository;
 use App\Repository\CommentReactionRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
+use App\Repository\LoginAttemptRepository;
 use App\Repository\MalImportRepository;
 use App\Repository\MessageRepository;
 use App\Repository\ModerationRepository;
@@ -61,6 +62,7 @@ use App\Service\MailService;
 use App\Service\ApplicationLogger;
 use App\Service\ApplicationErrorHandler;
 use App\Service\DiagnosticService;
+use App\Service\LoginThrottle;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
 use App\Service\QuizService;
@@ -286,6 +288,8 @@ $createController = static function (string $controllerClass) use ($connect, $ap
         return new AuthController(
             static fn (): UserRepository => new UserRepository($connect()),
             new MailService(...$mailConfiguration),
+            static fn (): LoginThrottle => new LoginThrottle(new LoginAttemptRepository($connect())),
+            $applicationLogger,
         );
     }
 

@@ -195,3 +195,25 @@ test('registration, sessions, protected projects and logout', async (t) => {
         assert.ok(!login.html.includes('&lt;svg onload=alert(1)&gt;'));
     });
 });
+
+test('repeated failed sign-ins lock the account for this client, even with the correct password', async () => {
+    const client = browser();
+    const email = `throttle-${randomUUID()}@example.test`;
+    const password = 'Limit-Prob-2026!';
+    const token = csrfFrom(await client.request('/register'));
+    redirected(await client.request('/register', {
+        name: 'Limit prób', email, password, passwordConfirmation: password, csrfToken: token,
+    }), '/login?registered=1&mail=sent');
+
+    for (let attempt = 1; attempt <= 5; attempt++) {
+        const page = await client.request('/login', { email, password: `Wrong-${attempt}-2026!`, csrfToken: token });
+        assert.equal(page.status, 401);
+    }
+    const blocked = await client.request('/login', { email, password, csrfToken: token });
+    assert.equal(blocked.status, 429);
+    const retryAfter = Number(blocked.headers.get('retry-after'));
+    assert.ok(retryAfter > 0 && retryAfter <= 900, 'Retry-After tells how long the lock lasts');
+    assert.ok(blocked.html.includes('Zbyt wiele nieudanych prób logowania.'));
+    passwordIsEmpty(blocked, password);
+    redirected(await client.request('/projects'), '/login');
+});

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Service\ApplicationLogger;
+use App\Service\LoginThrottle;
 use App\Service\MailService;
 use App\Service\Translator;
 use Closure;
@@ -16,6 +18,8 @@ final class AuthController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private readonly MailService $mailer,
+        private LoginThrottle|Closure|null $throttle = null,
+        private readonly ?ApplicationLogger $logger = null,
     ) {
     }
 
@@ -35,13 +39,26 @@ final class AuthController extends AppController
                 http_response_code(403);
                 $errors[] = Translator::message('Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
             } else {
-                $user = $this->isEmailValid($email) ? $this->users()->findByEmail($email) : null;
+                $retryAfter = $this->throttle()?->retryAfter($email, $this->clientAddress()) ?? 0;
+                $user = $retryAfter === 0 && $this->isEmailValid($email) ? $this->users()->findByEmail($email) : null;
 
-                if ($user === null || !$this->isPasswordValid($password)
+                if ($retryAfter > 0) {
+                    // The limit applies before the password check, so a correct password does not reveal itself.
+                    http_response_code(429);
+                    header('Retry-After: ' . $retryAfter);
+                    $this->auditSignIn('admin.log.login_throttled', $email);
+                    $errors[] = Translator::message(
+                        'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za {minutes} min.',
+                        ['minutes' => (int) ceil($retryAfter / 60)],
+                    );
+                } elseif ($user === null || !$this->isPasswordValid($password)
                     || !password_verify($password, $user['password_hash'])) {
+                    $this->throttle()?->recordFailure($email, $this->clientAddress());
+                    $this->auditSignIn('admin.log.login_failed', $email);
                     http_response_code(401);
                     $errors[] = Translator::message('Nieprawidłowy e-mail lub hasło.');
                 } else {
+                    $this->throttle()?->recordSuccess($email, $this->clientAddress());
                     if (!session_regenerate_id(true)) {
                         throw new \RuntimeException('Nie udało się odnowić sesji.');
                     }
@@ -132,8 +149,7 @@ final class AuthController extends AppController
                         $this->mailer->sendWelcomeEmail($email, $name, $language);
                         $mailStatus = 'sent';
                     } catch (RuntimeException $exception) {
-                        (new \App\Service\ApplicationLogger(dirname(__DIR__, 2) . '/storage/logs'))
-                            ->recordException($exception, 'mail', '/register');
+                        $this->logger()->recordException($exception, 'mail', '/register');
                         $mailStatus = 'failed';
                     }
 
@@ -188,6 +204,35 @@ final class AuthController extends AppController
         }
 
         return $this->users;
+    }
+
+    private function throttle(): ?LoginThrottle
+    {
+        if ($this->throttle instanceof Closure) {
+            $this->throttle = ($this->throttle)();
+        }
+
+        return $this->throttle;
+    }
+
+    private function logger(): ApplicationLogger
+    {
+        return $this->logger ?? new ApplicationLogger(dirname(__DIR__, 2) . '/storage/logs');
+    }
+
+    private function clientAddress(): string
+    {
+        return is_string($_SERVER['REMOTE_ADDR'] ?? null) ? $_SERVER['REMOTE_ADDR'] : '';
+    }
+
+    /** Records a sign-in event with shortened hashes only: no password, e-mail or IP address. */
+    private function auditSignIn(string $messageKey, string $email): void
+    {
+        $this->logger()->record('warning', 'auth', $messageKey, [
+            'path' => '/login',
+            'account' => substr(LoginThrottle::fingerprint($email), 0, 16),
+            'client' => substr(LoginThrottle::fingerprint($this->clientAddress()), 0, 16),
+        ]);
     }
 
     private function isEmailValid(string $email): bool

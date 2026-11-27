@@ -14,6 +14,7 @@ final class ApplicationLogger
     private const MESSAGES = [
         'admin.log.exception', 'admin.log.diagnostic_failed', 'admin.log.event',
         'admin.log.mail_failed', 'admin.log.runtime_error', 'admin.log.fatal_error',
+        'admin.log.login_failed', 'admin.log.login_throttled',
     ];
     private readonly int $maxBytes;
     private readonly int $retentionDays;
@@ -180,6 +181,12 @@ final class ApplicationLogger
         }
         if (is_int($context['code'] ?? null) && $context['code'] >= 0 && $context['code'] <= 65535) {
             $safe['code'] = $context['code'];
+        }
+        // Sign-in audit: shortened SHA-256 identifiers only, never an e-mail or IP address.
+        foreach (['account', 'client'] as $key) {
+            if (is_string($context[$key] ?? null) && preg_match('/\A[a-f0-9]{16}\z/', $context[$key]) === 1) {
+                $safe[$key] = $context[$key];
+            }
         }
 
         return $safe;

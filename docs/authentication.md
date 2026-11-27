@@ -115,8 +115,26 @@ Projekty są wspólne; ich model nie zawiera właściciela. Profil, watchlisty,
 kolekcje, oceny i komentarze sprawdzają właściciela, a prywatne rozmowy
 uczestników. Rola moderatora daje dostęp do zgłoszonych fragmentów treści
 oraz ich ukrywania, bez dostępu do pozostałej historii cudzych rozmów.
-Reset hasła i ograniczanie prób logowania to osobne etapy. Laboratorium
-nie podłącza AI.
+Reset hasła to osobny etap. Laboratorium nie podłącza AI.
+
+## Limit prób logowania i audyt
+
+Po 5 nieudanych próbach dla tego samego e-maila z jednego adresu IP albo
+po 100 nieudanych próbach z jednego adresu IP w ciągu 15 minut `POST /login`
+zwraca `429` z nagłówkiem `Retry-After`. Limit działa przed sprawdzeniem
+hasła, więc poprawne hasło w czasie blokady też nie przechodzi, a komunikat
+jest taki sam dla istniejących i nieistniejących kont. Udane logowanie
+czyści licznik tego konta z danego adresu.
+
+Tabela `login_attempts` (migracja `32`) przechowuje tylko skróty SHA-256
+e-maila i adresu IP; rekordy starsze niż doba są usuwane przy kolejnych
+zapisach. Każda nieudana i zablokowana próba trafia do dziennika
+administratora (moduł `auth`) jako 16-znakowe skróty konta i adresu,
+bez hasła, e-maila i IP. Istniejącą bazę uzupełnij poleceniem:
+
+```cmd
+docker compose exec -T db sh -c "PGUSER=$POSTGRES_USER PGDATABASE=$POSTGRES_DB exec psql -X -v ON_ERROR_STOP=1" < database\32-login-attempts.sql
+```
 
 ## Weryfikacja
 
@@ -127,6 +145,7 @@ zmienną raz w danym oknie CMD:
 ```cmd
 set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
 docker compose exec php php tests/user-repository.test.php
+docker compose exec php php tests/login-throttle.test.php
 docker compose exec php php tests/projects-application.test.php
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs tests/mail-http.test.cjs
 ```
