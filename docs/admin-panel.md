@@ -83,8 +83,12 @@ wykonuje cztery niezależne próby i zapisuje wyniki w bieżącej sesji:
   czasu i nie zapisują danych.
 - Poczta: połączenie SMTP, powitanie serwera i `EHLO`, bez wysyłki wiadomości.
 - Ollama: żądanie `/api/tags`, ograniczony rozmiar odpowiedzi, brak
-  przekierowań i limit czasu. Brak modeli lub niedostępność są ostrzeżeniem,
-  ponieważ funkcje AI aplikacji nadal nie są podłączone.
+  przekierowań i limit czasu. Karta sprawdza, czy pobrany jest model czatu
+  katalogu z `OLLAMA_CHAT_MODEL` (domyślnie `qwen3:4b`); nazwa bez tagu
+  oznacza `:latest`, tak jak w Ollamie. Niedostępna usługa, pusta lista
+  modeli albo brak modelu czatu są ostrzeżeniem: nie działa wtedy tylko
+  czat `/chat`, pozostała część aplikacji działa normalnie. Brakujący model
+  pobierzesz poleceniem z [catalog-chat.md](catalog-chat.md).
 - Środowisko: PHP, wymagane rozszerzenia, autoloader i zapis logów.
 
 Każda karta pokazuje status tekstowy, czas odpowiedzi, czas sprawdzenia

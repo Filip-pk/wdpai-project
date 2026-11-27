@@ -11,6 +11,8 @@ use Throwable;
 
 final class DiagnosticService
 {
+    private const MODEL_NAME = '/\A[a-zA-Z0-9][a-zA-Z0-9_.:\/-]{0,119}\z/';
+
     /** Every table created by database/*.sql; tests/admin-diagnostics.test.php keeps this list in step. */
     public const REQUIRED_TABLES = [
         'admin_actions', 'anime', 'anime_clue_answers', 'anime_clue_attempts', 'anime_collection_items',
@@ -39,6 +41,7 @@ final class DiagnosticService
         private readonly ApplicationLogger $logger,
         private readonly string $rootPath,
         private readonly ?string $ollamaUrl = null,
+        private readonly ?string $chatModel = null,
     ) {
     }
 
@@ -171,14 +174,16 @@ final class DiagnosticService
 
     private function ollama(): array
     {
-        $configured = $this->ollamaUrl ?? (getenv('OLLAMA_URL') === false ? 'http://ollama:11434' : getenv('OLLAMA_URL'));
+        $configured = $this->ollamaUrl ?? (getenv('OLLAMA_URL') === false ? OllamaClient::DEFAULT_URL : getenv('OLLAMA_URL'));
         $url = is_string($configured) ? rtrim($configured, '/') : '';
         $parts = parse_url($url);
+        $chatModel = $this->chatModel ?? OllamaClient::configuredModel();
         if (!is_array($parts) || !in_array($parts['scheme'] ?? '', ['http', 'https'], true)
             || !is_string($parts['host'] ?? null)
             || preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9.-]*\z/', $parts['host']) !== 1
             || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])
-            || strlen($url) > 512 || preg_match('/[\x00-\x20\x7F]/', $url) === 1) {
+            || strlen($url) > 512 || preg_match('/[\x00-\x20\x7F]/', $url) === 1
+            || preg_match(self::MODEL_NAME, $chatModel) !== 1) {
             return $this->result('not_configured', 'admin.diag.ollama_not_configured');
         }
         $stream = null;
@@ -211,15 +216,26 @@ final class DiagnosticService
             $models = [];
             foreach (array_slice($response['models'], 0, 20) as $model) {
                 $name = $model['name'] ?? null;
-                if (!is_string($name) || preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9_.:\/-]{0,119}\z/', $name) !== 1) {
+                if (!is_string($name) || preg_match(self::MODEL_NAME, $name) !== 1) {
                     throw new RuntimeException('Ollama model name invalid.');
                 }
                 $models[] = $name;
             }
+            if ($models === []) {
+                return $this->result('warning', 'admin.diag.ollama_empty');
+            }
+            // Ollama treats a name without a tag as name:latest, so compare both sides the same way.
+            $withTag = static fn (string $name): string => str_contains($name, ':') ? $name : $name . ':latest';
+            $available = [];
+            foreach ($response['models'] as $model) {
+                if (is_array($model) && is_string($model['name'] ?? null)) {
+                    $available[] = $withTag($model['name']);
+                }
+            }
 
-            return $models === []
-                ? $this->result('warning', 'admin.diag.ollama_empty')
-                : $this->result('ok', 'admin.diag.ollama_ok', ['count' => count($response['models'])], $models);
+            return in_array($withTag($chatModel), $available, true)
+                ? $this->result('ok', 'admin.diag.ollama_ok', ['count' => count($response['models']), 'model' => $chatModel], $models)
+                : $this->result('warning', 'admin.diag.ollama_model_missing', ['model' => $chatModel], $models);
         } catch (Throwable $exception) {
             $this->logger->recordException($exception, 'ollama');
 

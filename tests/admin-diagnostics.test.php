@@ -171,8 +171,8 @@ function withDiagnosticServer(string $scenario, callable $action): array
 $root = dirname(__DIR__);
 $directory = sys_get_temp_dir() . '/anivibe-diagnostics-' . bin2hex(random_bytes(8));
 $logger = new ApplicationLogger($directory);
-$service = static fn (Closure $connect, array $mail = [], string $ollama = ''): DiagnosticService =>
-    new DiagnosticService($connect, $mail, $logger, $root, $ollama);
+$service = static fn (Closure $connect, array $mail = [], string $ollama = '', string $model = 'llama3.2'): DiagnosticService =>
+    new DiagnosticService($connect, $mail, $logger, $root, $ollama, $model);
 $cards = static fn (DiagnosticService $diagnostics): array => array_column($diagnostics->checkAll(), null, 'service');
 
 try {
@@ -258,6 +258,21 @@ try {
             'Unsafe server-side URL configuration must be rejected.');
     }
     echo "[OK] Ollama models, empty list, malformed/oversized responses and redirect rejection\n";
+
+    // The catalogue chat needs its configured model, not just any model.
+    foreach (['llama3.2' => 'ok', 'llama3.2:latest' => 'ok', 'qwen3:4b' => 'warning', 'llama3.2:1b' => 'warning'] as $model => $expected) {
+        withDiagnosticServer('http-models', static function (int $port) use ($cards, $service, $model, $expected): void {
+            $ollama = $cards($service(static fn (): PDO => new DiagnosticFakePdo(), [], 'http://127.0.0.1:' . $port, $model))['ollama'];
+            diagnosticAssert($ollama['status'] === $expected, 'Unexpected status for chat model ' . $model . '.');
+            diagnosticAssert($ollama['parameters']['model'] === $model, 'The card names the configured chat model.');
+            diagnosticAssert($ollama['messageKey'] === ($expected === 'ok' ? 'admin.diag.ollama_ok' : 'admin.diag.ollama_model_missing'),
+                'A missing chat model has its own explanation.');
+            diagnosticAssert($ollama['details'] === ['llama3.2:latest'], 'Downloaded models stay listed.');
+        });
+    }
+    diagnosticAssert($cards($service(static fn (): PDO => new DiagnosticFakePdo(), [], 'http://127.0.0.1:1', '<script>'))['ollama']['status']
+        === 'not_configured', 'An invalid chat model name is a configuration problem.');
+    echo "[OK] Ollama diagnostics check the catalogue chat model\n";
 
     $sent = withDiagnosticServer('smtp-send', static function (int $port): void {
         (new MailService('127.0.0.1', $port, 'noreply@anivibe.local', 'AniVibe', 2))->sendDiagnosticEmail('admin@example.test');
