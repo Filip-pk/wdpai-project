@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const mailpitUrl = process.env.ANIVIBE_MAILPIT_URL ?? 'http://127.0.0.1:8025';
 const originalPassword = 'Security-Original-2026!';
 const nextPassword = 'Security-Changed-2026!';
@@ -100,6 +100,8 @@ test('account security validates passwords and confirms the new mailbox before c
             { newPassword: 'short', newPasswordConfirmation: 'short' },
             { newPassword: 'ą'.repeat(37), newPasswordConfirmation: 'ą'.repeat(37) },
             { newPassword: 'password\0', newPasswordConfirmation: 'password\0' },
+            { newPassword: 'Tylko-Litery-Haslo', newPasswordConfirmation: 'Tylko-Litery-Haslo' },
+            { newPassword: first.email, newPasswordConfirmation: first.email },
             { newPasswordConfirmation: 'not-the-same' },
             { newPassword: undefined, 'newPassword[]': nextPassword },
         ]) {

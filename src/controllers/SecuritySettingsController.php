@@ -35,8 +35,8 @@ final class SecuritySettingsController extends AppController
         if (!AccountSecurityService::verifyPassword($this->postString('currentPassword'), $oldHash)) {
             $errors[] = Translator::message('Podaj poprawne obecne hasło.');
         }
-        if (!AccountSecurityService::isPasswordValid($password)) {
-            $errors[] = Translator::message('Nowe hasło musi mieć co najmniej 8 znaków i maksymalnie 72 bajty, bez znaku NUL.');
+        if (!AccountSecurityService::isPasswordStrong($password, $user['email'])) {
+            $errors[] = Translator::message('Nowe hasło musi mieć co najmniej 8 znaków i maksymalnie 72 bajty, zawierać literę i cyfrę, nie może zawierać znaku NUL ani być adresem e-mail.');
         }
         if ($password !== $this->postString('newPasswordConfirmation')) {
             $errors[] = Translator::message('Nowe hasła nie są takie same.');

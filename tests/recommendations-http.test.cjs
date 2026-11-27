@@ -3,7 +3,7 @@ const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 const { createAnimeCommunityFixtures, cleanupAnimeCommunityFixtures } = require('./helpers/anime-community-fixtures.cjs');
 
-const base = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const base = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const password = 'Rekomendacje-Test-2026!';
 
 function browser() {
@@ -75,7 +75,7 @@ test('dashboard recommendations follow the current account watchlist and ratings
             assert.deepEqual(result.seeds, []);
             assert.match(page.html, /propozycje|propozycj/i);
             assert.match(page.html, /\/css\/dashboard\.css\?v=[a-f0-9]{12}/);
-            assert.equal((await guest.request('/dashboard', {})).status, 404, 'Recommendations are read-only');
+            assert.equal((await guest.request('/dashboard', {})).status, 405, 'Recommendations are read-only');
         });
 
         await watch(first, action.animes[0]); await rate(first, action.animes[0], 10);

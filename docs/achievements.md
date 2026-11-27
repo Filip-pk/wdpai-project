@@ -105,7 +105,7 @@ Testy używają własnych oznaczonych kont, tytułów, gatunków i historycznych
 zestawów, których tożsamość sprawdzają przed posprzątaniem. Nie nadpisują
 istniejących zestawów dnia. Test widoków wymaga Chrome lub Edge;
 opcjonalnie `ANIVIBE_BROWSER` wskazuje ścieżkę przeglądarki, a
-`ANIVIBE_TEST_URL` adres aplikacji (domyślnie `http://127.0.0.1:8080`).
+`ANIVIBE_TEST_URL` adres aplikacji (domyślnie `https://127.0.0.1:8443`).
 
 Pięć odznak rozpoznawania anime wymaga także migracji 26. Zasady punktacji,
 stan rund i osobny test integracji odznak opisuje

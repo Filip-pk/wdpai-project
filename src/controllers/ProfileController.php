@@ -51,12 +51,12 @@ final class ProfileController extends AppController
         $form = $user;
 
         if ($this->isPost()) {
+            // Only safe profile fields reach the view; a submitted password is never kept in $form.
             $form = [
                 'name' => trim($this->postString('name')),
                 'email' => strtolower(trim($this->postString('email'))),
                 'interests' => trim($this->postString('interests')),
                 'theme' => $this->postString('theme'),
-                'currentPassword' => $this->postString('currentPassword'),
             ];
 
             if (!$this->isCsrfTokenValid($this->postString('csrfToken'))) {

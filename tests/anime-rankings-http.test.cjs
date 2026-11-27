@@ -3,7 +3,7 @@ const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 const { createAnimeCommunityFixtures, cleanupAnimeCommunityFixtures } = require('./helpers/anime-community-fixtures.cjs');
 
-const base = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const base = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const password = 'Rankingi-Anime-Test-2026!';
 
 function browser() {
@@ -108,7 +108,7 @@ test('public anime rankings use community votes and distinct watching accounts w
             const people = await guest.request('/ranking');
             redirected(people); assert.equal(people.location, '/login');
             assert.equal((await users[0].client.request('/ranking')).status, 200);
-            assert.equal((await guest.request('/anime/ranking', { mode: 'watched' })).status, 404, 'Ranking is read-only');
+            assert.equal((await guest.request('/anime/ranking', { mode: 'watched' })).status, 405, 'Ranking is read-only');
         });
 
         await t.test('best ranking orders by the community mean and keeps exact counts without join multiplication', async () => {

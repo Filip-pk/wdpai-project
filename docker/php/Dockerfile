@@ -34,6 +34,14 @@ RUN { \
       echo 'max_file_uploads = 20'; \
     } > /usr/local/etc/php/conf.d/mealplanner.ini
 
+# Visitors never see raw PHP errors; they go to the container log instead.
+RUN { \
+      echo 'display_errors = Off'; \
+      echo 'display_startup_errors = Off'; \
+      echo 'log_errors = On'; \
+      echo 'expose_php = Off'; \
+    } > /usr/local/etc/php/conf.d/anivibe-errors.ini
+
 COPY . .
 
 RUN composer install \

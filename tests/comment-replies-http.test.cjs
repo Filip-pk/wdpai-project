@@ -4,7 +4,7 @@ const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 const test = require('node:test');
 
-const base = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const base = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 function client() {
     let cookie = '';

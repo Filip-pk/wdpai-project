@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 
 function browser(initialCookie = '') {
     let cookie = initialCookie;
@@ -59,6 +59,7 @@ test('registration, sessions, protected projects and logout', async (t) => {
     await t.test('public forms create a session and guests cannot access projects', async () => {
         const page = await client.request('/register');
         assert.equal(page.status, 200);
+        assert.equal(page.headers.get('x-powered-by'), null, 'The PHP version is not advertised');
         anonymousToken = csrfFrom(page);
         anonymousCookie = client.cookie;
         assert.ok(anonymousCookie.startsWith('PHPSESSID='));
@@ -71,7 +72,9 @@ test('registration, sessions, protected projects and logout', async (t) => {
             redirected(await client.request(path), '/login');
         }
         assert.equal((await client.request('/login')).status, 200);
-        assert.equal((await client.request('/logout')).status, 404);
+        const logoutPage = await client.request('/logout');
+        assert.equal(logoutPage.status, 405);
+        assert.equal(logoutPage.headers.get('allow'), 'POST');
     });
 
     await t.test('missing, incorrect and array CSRF tokens are rejected', async () => {
@@ -93,18 +96,24 @@ test('registration, sessions, protected projects and logout', async (t) => {
             { passwordConfirmation: 'different' },
             { password: 'ą'.repeat(37), passwordConfirmation: 'ą'.repeat(37) },
             { password: 'Haslo\0testowe', passwordConfirmation: 'Haslo\0testowe' },
+            { password: 'Tylko-Litery-Haslo', passwordConfirmation: 'Tylko-Litery-Haslo' },
+            { password: '2026-1234-5678', passwordConfirmation: '2026-1234-5678' },
+            { password: email.toUpperCase(), passwordConfirmation: email.toUpperCase() },
         ]) {
             const page = await client.request('/register', { ...valid, ...invalid });
             assert.equal(page.status, 422);
             passwordIsEmpty(page, password);
             assert.ok(!page.html.includes('<svg onload=alert(1)>'));
+            if (invalid.password && /^(Tylko|2026)/.test(invalid.password)) {
+                assert.ok(page.html.includes('zawierać literę i cyfrę'), 'The password rules are explained');
+            }
         }
         const escaped = await client.request('/register', { ...valid, passwordConfirmation: 'different' });
         assert.ok(escaped.html.includes('&lt;svg onload=alert(1)&gt;'));
         assert.ok(escaped.html.includes(email));
     });
 
-    await t.test('registration persists the account and rejects case-insensitive duplicates', async () => {
+    await t.test('registration persists the account and hides case-insensitive duplicates', async () => {
         const fields = { name, email: `  ${email.toUpperCase()}  `, password,
             passwordConfirmation: password, csrfToken: anonymousToken };
         redirected(await client.request('/register', fields), '/login?registered=1&mail=sent');
@@ -112,9 +121,14 @@ test('registration, sessions, protected projects and logout', async (t) => {
         const login = await client.request('/login?registered=1');
         assert.equal(login.status, 200);
         assert.equal(csrfFrom(login), anonymousToken);
-        const duplicate = await client.request('/register', { ...fields, email });
-        assert.equal(duplicate.status, 422);
-        passwordIsEmpty(duplicate, password);
+        assert.doesNotMatch(login.html, /już istnieje|already exists/i);
+        // A duplicate looks exactly like a new registration and never replaces the stored password.
+        const otherPassword = 'Inne-Haslo-Rejestracji-2026!';
+        const duplicate = await client.request('/register', {
+            ...fields, email, password: otherPassword, passwordConfirmation: otherPassword,
+        });
+        redirected(duplicate, '/login?registered=1&mail=sent');
+        passwordIsEmpty(duplicate, otherPassword);
     });
 
     await t.test('invalid credentials return the same message without exposing passwords', async () => {
@@ -175,7 +189,9 @@ test('registration, sessions, protected projects and logout', async (t) => {
     });
 
     await t.test('logout requires POST and valid CSRF and destroys the previous session', async () => {
-        assert.equal((await client.request('/logout')).status, 404);
+        const logoutPage = await client.request('/logout');
+        assert.equal(logoutPage.status, 405);
+        assert.equal(logoutPage.headers.get('allow'), 'POST');
         for (const token of [{}, { csrfToken: anonymousToken }, { 'csrfToken[]': signedInToken }]) {
             assert.equal((await client.request('/logout', token)).status, 403);
             assert.equal((await client.request('/projects')).status, 200);
@@ -194,4 +210,26 @@ test('registration, sessions, protected projects and logout', async (t) => {
         assert.notEqual(csrfFrom(login), signedInToken);
         assert.ok(!login.html.includes('&lt;svg onload=alert(1)&gt;'));
     });
+});
+
+test('repeated failed sign-ins lock the account for this client, even with the correct password', async () => {
+    const client = browser();
+    const email = `throttle-${randomUUID()}@example.test`;
+    const password = 'Limit-Prob-2026!';
+    const token = csrfFrom(await client.request('/register'));
+    redirected(await client.request('/register', {
+        name: 'Limit prób', email, password, passwordConfirmation: password, csrfToken: token,
+    }), '/login?registered=1&mail=sent');
+
+    for (let attempt = 1; attempt <= 5; attempt++) {
+        const page = await client.request('/login', { email, password: `Wrong-${attempt}-2026!`, csrfToken: token });
+        assert.equal(page.status, 401);
+    }
+    const blocked = await client.request('/login', { email, password, csrfToken: token });
+    assert.equal(blocked.status, 429);
+    const retryAfter = Number(blocked.headers.get('retry-after'));
+    assert.ok(retryAfter > 0 && retryAfter <= 900, 'Retry-After tells how long the lock lasts');
+    assert.ok(blocked.html.includes('Zbyt wiele nieudanych prób logowania.'));
+    passwordIsEmpty(blocked, password);
+    redirected(await client.request('/projects'), '/login');
 });

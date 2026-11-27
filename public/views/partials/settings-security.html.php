@@ -29,7 +29,7 @@
             <div class="settings-field">
                 <label for="settings-password-new"><?= $escape($t('view.interface.new_password')) ?></label>
                 <input id="settings-password-new" name="newPassword" type="password" autocomplete="new-password" aria-describedby="settings-password-help" required>
-                <p id="settings-password-help"><?= $escape($t('view.interface.at_least_8_characters_and_up_to_72_bytes_accented_characters_use_more_than_one_byte')) ?></p>
+                <p id="settings-password-help"><?= $escape($t('view.interface.password_help_letter_digit_and_bytes')) ?></p>
             </div>
             <div class="settings-field">
                 <label for="settings-password-confirm"><?= $escape($t('view.interface.confirm_new_password')) ?></label>

@@ -35,7 +35,7 @@ test('achievements follow saved activity, preserve unlocks and respect profile p
             assert.equal(ownedAchievementRecords(fixture).length, 0);
             const forged = await owner.request('/achievements?userId=' + fixture.other.id + '&achievement_code=quiz_perfect&progress=999');
             card(forged, 'quiz_perfect', false, 0);
-            assert.equal((await owner.request('/achievements', { csrfToken: token, code: 'quiz_perfect', progress: 999 })).status, 404);
+            assert.equal((await owner.request('/achievements', { csrfToken: token, code: 'quiz_perfect', progress: 999 })).status, 405);
             assert.equal(ownedAchievementRecords(fixture).length, 0);
         });
 

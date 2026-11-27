@@ -39,6 +39,7 @@ use App\Repository\CommentRepository;
 use App\Repository\CommentReactionRepository;
 use App\Repository\CommunityRepository;
 use App\Repository\ExperienceRepository;
+use App\Repository\LoginAttemptRepository;
 use App\Repository\MalImportRepository;
 use App\Repository\MessageRepository;
 use App\Repository\ModerationRepository;
@@ -61,10 +62,16 @@ use App\Service\MailService;
 use App\Service\ApplicationLogger;
 use App\Service\ApplicationErrorHandler;
 use App\Service\DiagnosticService;
+use App\Service\LoginThrottle;
 use App\Service\MalImportService;
 use App\Service\RecommendationService;
 use App\Service\QuizService;
 use App\Service\Translator;
+
+// Never show raw errors or stack traces to visitors, even without the Docker PHP configuration.
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+ini_set('log_errors', '1');
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -286,6 +293,8 @@ $createController = static function (string $controllerClass) use ($connect, $ap
         return new AuthController(
             static fn (): UserRepository => new UserRepository($connect()),
             new MailService(...$mailConfiguration),
+            static fn (): LoginThrottle => new LoginThrottle(new LoginAttemptRepository($connect())),
+            $applicationLogger,
         );
     }
 
@@ -468,8 +477,15 @@ try {
     );
 
     if (!$routeFound) {
-        http_response_code(404);
-        (new DefaultController())->notFound();
+        $allowedMethods = $routing->allowedMethods($_SERVER['REQUEST_URI']);
+        if ($allowedMethods !== []) {
+            http_response_code(405);
+            header('Allow: ' . implode(', ', $allowedMethods));
+            (new DefaultController())->methodNotAllowed();
+        } else {
+            http_response_code(404);
+            (new DefaultController())->notFound();
+        }
     }
     AccountAccessGuard::finish(http_response_code() < 400);
 } catch (Throwable $exception) {

@@ -34,6 +34,23 @@ final class MailService
         $this->sendMessage($to, $translator->translate('mail.welcome.subject'), $body);
     }
 
+    /** Tells the owner that someone tried to register with their address; the form itself stays neutral. */
+    public function sendExistingAccountNotice(string $to, string $fullName, string $locale = 'pl'): void
+    {
+        if (preg_match('//u', $fullName) !== 1) {
+            throw new RuntimeException('Nieprawidłowe dane odbiorcy wiadomości.');
+        }
+
+        $safeName = trim(preg_replace('/[\x00-\x1F\x7F]+/', ' ', $fullName) ?? '');
+        $translator = new Translator($locale);
+        $body = $translator->translate('mail.welcome.greeting', ['user' => $safeName]) . "\r\n\r\n"
+            . $translator->translate('mail.existing_account.intro') . "\r\n\r\n"
+            . $translator->translate('mail.existing_account.sign_in') . "\r\n\r\n"
+            . $translator->translate('mail.existing_account.ignore') . "\r\n\r\n"
+            . $translator->translate('mail.regards') . "\r\n" . $translator->translate('mail.team');
+        $this->sendMessage($to, $translator->translate('mail.existing_account.subject'), $body);
+    }
+
     public function sendEmailChangeConfirmation(string $to, string $code, string $locale = 'pl'): void
     {
         if (preg_match('/\A[a-f0-9]{32}\z/', $code) !== 1) {

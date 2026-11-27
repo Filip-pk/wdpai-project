@@ -181,7 +181,7 @@ $formatDate = static fn (string $date): string => ModerationNoticeFormatter::dat
                             <div><dt><?= $escape($t('admin.identifier')) ?></dt><dd><code><?= $escape($entry['id']) ?></code></dd></div>
                             <div><dt><?= $escape($t('admin.created_at')) ?></dt><dd><time datetime="<?= $escape($entry['createdAt']) ?>"><?= $escape($formatDate($entry['createdAt'])) ?></time></dd></div>
                             <div><dt><?= $escape($t('admin.module')) ?></dt><dd><?= $escape($entry['module']) ?></dd></div>
-                            <?php foreach (['class', 'path', 'service', 'errorId', 'code'] as $contextKey): ?>
+                            <?php foreach (['class', 'path', 'service', 'errorId', 'code', 'account', 'client'] as $contextKey): ?>
                                 <?php if (isset($entry['context'][$contextKey])): ?><div><dt><?= $escape($t('admin.context.' . $contextKey)) ?></dt><dd><code><?= $escape($entry['context'][$contextKey]) ?></code></dd></div><?php endif; ?>
                             <?php endforeach; ?>
                         </dl>

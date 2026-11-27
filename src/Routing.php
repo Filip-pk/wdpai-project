@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Attribute\AllowedMethods;
 use App\Controller\AppController;
 use Closure;
+use ReflectionMethod;
 
 final class Routing
 {
@@ -79,6 +81,11 @@ final class Routing
                 continue;
             }
 
+            // An #[AllowedMethods] attribute on the action is checked as well as the route table.
+            if (!$this->actionAllows($route['controller'], $route['action'], $method)) {
+                continue;
+            }
+
             $parameters = array_filter(
                 $matches,
                 static fn (int|string $key): bool => is_string($key),
@@ -106,5 +113,41 @@ final class Routing
         }
 
         return false;
+    }
+
+    /**
+     * Methods accepted at this address, for a 405 response with an Allow header.
+     * An empty list means the address itself is unknown (404).
+     *
+     * @return list<string>
+     */
+    public function allowedMethods(string $uri): array
+    {
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        $methods = [];
+
+        foreach ($this->routes as $route) {
+            if (preg_match($route['pattern'], $path) === 1
+                && $this->actionAllows($route['controller'], $route['action'], $route['method'])) {
+                $methods[] = $route['method'];
+            }
+        }
+
+        return array_values(array_unique($methods));
+    }
+
+    private function actionAllows(string $controller, string $action, string $method): bool
+    {
+        if (!method_exists($controller, $action)) {
+            return true;
+        }
+
+        foreach ((new ReflectionMethod($controller, $action))->getAttributes(AllowedMethods::class) as $attribute) {
+            if (!$attribute->newInstance()->allows($method)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

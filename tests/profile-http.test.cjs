@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const password = 'Profil-Testowy-2026!';
 
 function browser() {

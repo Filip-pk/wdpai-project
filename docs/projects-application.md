@@ -55,7 +55,7 @@ Trasy `/projects` i `/projects/{id}` wymagają zalogowania zgodnie z
 
 ## Weryfikacja
 
-Dla domyślnego portu aplikacji otwórz `http://localhost:8080/projects`.
+Dla domyślnego portu aplikacji otwórz `https://localhost:8443/projects`.
 Sprawdź statusy przykładów, przejdź do szczegółów wybranego projektu i odśwież stronę.
 Tytuły oraz identyfikatory powinny pozostać takie same. Otwórz adres projektu
 z nieistniejącym ID i sprawdź odpowiedź `404`.
