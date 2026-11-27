@@ -102,12 +102,14 @@ test('invalid or missing project addresses return a safe 404', async () => {
 test('the existing AniVibe routes remain available', async () => {
     const routes = [
         '/', '/dashboard', '/anime', '/anime/1', '/chat',
-        '/profile', '/watchlist', '/admin',
+        '/profile', '/watchlist',
     ];
 
     for (const route of routes) {
         assert.ok((await getPage(route)).includes('AniVibe'));
     }
+    // The admin panel exists but needs the administrator role, which this account does not have.
+    assert.equal((await request('/admin')).status, 403);
     for (const route of ['/login', '/register']) {
         const page = await request(route);
         assert.equal(page.status, 303);
