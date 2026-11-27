@@ -21,7 +21,7 @@ final class MailService
     {
         $this->validateConfiguration();
 
-        if (!$this->isEmailValid($to) || preg_match('//u', $fullName) !== 1) {
+        if (!AccountSecurityService::isEmailValid($to) || preg_match('//u', $fullName) !== 1) {
             throw new RuntimeException('Nieprawidłowe dane odbiorcy wiadomości.');
         }
 
@@ -76,7 +76,7 @@ final class MailService
     private function sendMessage(string $to, string $subject, string $body): void
     {
         $this->validateConfiguration();
-        if (!$this->isEmailValid($to)) {
+        if (!AccountSecurityService::isEmailValid($to)) {
             throw new RuntimeException('Nieprawidłowe dane odbiorcy wiadomości.');
         }
 
@@ -126,18 +126,11 @@ final class MailService
         if ($this->host === '' || strlen($this->host) > 253
             || preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9.-]*\z/', $this->host) !== 1
             || $this->port < 1 || $this->port > 65535 || $this->timeout < 1
-            || !$this->isEmailValid($this->from)
+            || !AccountSecurityService::isEmailValid($this->from)
             || trim($this->fromName) === '' || preg_match('//u', $this->fromName) !== 1
             || preg_match('/[\x00-\x1F\x7F]/', $this->fromName) === 1) {
             throw new RuntimeException('Nieprawidłowa konfiguracja poczty SMTP.');
         }
-    }
-
-    private function isEmailValid(string $email): bool
-    {
-        return strlen($email) <= 255
-            && filter_var($email, FILTER_VALIDATE_EMAIL) !== false
-            && preg_match('/[\x00-\x20\x7F<>]/', $email) !== 1;
     }
 
     /** @param resource $socket

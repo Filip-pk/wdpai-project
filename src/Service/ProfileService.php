@@ -25,7 +25,7 @@ final class ProfileService
             || str_contains($form['name'], "\0")) {
             $errors[] = Translator::current()->translate('message.profile.name_length');
         }
-        if (strlen($form['email']) > 255 || !filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
+        if (!AccountSecurityService::isEmailValid($form['email'])) {
             $errors[] = Translator::current()->translate('message.profile.email_valid');
         }
         if ($interestsLength === false || $interestsLength > 1000

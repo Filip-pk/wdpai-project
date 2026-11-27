@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Model\Pagination;
 use App\Repository\DatabaseValue;
+use App\Service\AccountSecurityService;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -34,6 +35,16 @@ try {
         $assert(!DatabaseValue::toBool($value), 'Fałsz lub nieznana wartość: ' . var_export($value, true));
     }
     echo "[OK] Wartości logiczne z bazy są odczytywane ściśle\n";
+    $passed++;
+
+    foreach (['ola@example.test', 'a.b+anime@sub.example.test', str_repeat('a', 64) . '@' . str_repeat('b', 60) . '.test'] as $email) {
+        $assert(AccountSecurityService::isEmailValid($email), 'Poprawny adres: ' . $email);
+    }
+    foreach (['', 'bez-malpy', 'a@', '"a b"@example.test', '"<x>"@example.test', "a@example.test\r\nBcc: x@y.z",
+        str_repeat('a', 250) . '@example.test'] as $email) {
+        $assert(!AccountSecurityService::isEmailValid($email), 'Odrzucony adres: ' . json_encode($email));
+    }
+    echo "[OK] Jedna reguła adresu e-mail odrzuca spacje, nawiasy i znaki sterujące\n";
     $passed++;
 } catch (Throwable $exception) {
     $failed++;
