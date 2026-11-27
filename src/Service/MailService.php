@@ -6,7 +6,7 @@ namespace App\Service;
 
 use RuntimeException;
 
-final class MailService
+final class MailService implements Mailer
 {
     public function __construct(
         private readonly string $host,

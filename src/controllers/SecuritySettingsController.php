@@ -7,7 +7,7 @@ namespace App\Controller;
 use App\Repository\SecuritySettingsRepository;
 use App\Repository\UserRepository;
 use App\Service\AccountSecurityService;
-use App\Service\MailService;
+use App\Service\Mailer;
 use App\Service\Translator;
 use Closure;
 use PDOException;
@@ -18,7 +18,7 @@ final class SecuritySettingsController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private SecuritySettingsRepository|Closure $security,
-        private readonly MailService $mailer,
+        private readonly Mailer $mailer,
     ) {
     }
 

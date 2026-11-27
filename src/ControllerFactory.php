@@ -60,6 +60,7 @@ use App\Service\AnimeClueService;
 use App\Service\ApplicationLogger;
 use App\Service\DiagnosticService;
 use App\Service\LoginThrottle;
+use App\Service\Mailer;
 use App\Service\MailService;
 use App\Service\MalImportService;
 use App\Service\QuizService;
@@ -185,7 +186,7 @@ final class ControllerFactory
         return fn (): object => new $class($this->connection());
     }
 
-    private function mailer(): MailService
+    private function mailer(): Mailer
     {
         return new MailService(...$this->mailConfiguration());
     }

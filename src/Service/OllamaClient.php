@@ -8,7 +8,7 @@ use JsonException;
 use RuntimeException;
 use stdClass;
 
-final class OllamaClient
+final class OllamaClient implements ChatModel
 {
     private const MAX_RESPONSE_BYTES = 65536;
     public const DEFAULT_URL = 'http://ollama:11434';

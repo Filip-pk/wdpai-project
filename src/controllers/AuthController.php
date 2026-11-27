@@ -9,7 +9,7 @@ use App\Repository\UserRepository;
 use App\Service\AccountSecurityService;
 use App\Service\ApplicationLogger;
 use App\Service\LoginThrottle;
-use App\Service\MailService;
+use App\Service\Mailer;
 use App\Service\Translator;
 use Closure;
 use PDOException;
@@ -19,7 +19,7 @@ final class AuthController extends AppController
 {
     public function __construct(
         private UserRepository|Closure $users,
-        private readonly MailService $mailer,
+        private readonly Mailer $mailer,
         private LoginThrottle|Closure|null $throttle = null,
         private readonly ?ApplicationLogger $logger = null,
     ) {
