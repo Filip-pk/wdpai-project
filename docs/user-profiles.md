@@ -1,7 +1,6 @@
 # Profile użytkowników, ustawienia i watchlisty
 
 Profil i pulpit używają konta z `users`, odczytanego po ID z sesji.
-Nie pobierają już przykładowego użytkownika z `DemoData`.
 
 ## Migracja
 
