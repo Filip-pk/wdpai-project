@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict nmsIsOSb9iVMMcLw7Mt27ayjW46JZK4znBAyAbPzYbtiNQZsJxsoBOcBybZARsx
+\restrict ZgPiaq4yf2DcWUbvzgpweXvHf7bMqaKj7rWkjRqEbJzNmt2isEneXdcgRhjVJiX
 
 -- Dumped from database version 16.16
 -- Dumped by pg_dump version 16.16
@@ -847,7 +847,6 @@ CREATE TABLE public.users (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     interests text DEFAULT ''::text NOT NULL,
     theme character varying(10) DEFAULT 'system'::character varying NOT NULL,
-    avatar_data bytea,
     avatar_version character varying(32),
     is_moderator boolean DEFAULT false NOT NULL,
     font_size character varying(16) DEFAULT 'standard'::character varying NOT NULL,
@@ -921,12 +920,12 @@ COPY public.admin_actions (id, actor_id, actor_name, target_id, target_name, act
 --
 
 COPY public.anime (id, mal_id, title, alternative_titles, description, description_language, cover_url, episodes, score, studio, release_year, media_type, source_url, source_updated_at, airing_status) FROM stdin;
-1	20	Naruto	[]	Młody ninja marzy o zostaniu Hokage i zdobyciu uznania swojej wioski.	pl	\N	220	8.30	Pierrot	2002	TV	https://myanimelist.net/anime/20	2026-11-27 11:29:16.699827+00	\N
-2	1535	Death Note	[]	Odkrycie tajemniczego notesu rozpoczyna pojedynek intelektów między jego właścicielem a detektywem.	pl	\N	37	8.60	Madhouse	2006	TV	https://myanimelist.net/anime/1535	2026-11-27 11:29:16.699827+00	\N
-3	42310	Cyberpunk: Edgerunners	[]	W Night City David Martinez dołącza do grupy najemników i próbuje przetrwać w świecie cybernetycznych modyfikacji oraz potężnych korporacji.	pl	\N	10	8.60	Trigger	2022	ONA	https://myanimelist.net/anime/42310	2026-11-27 11:29:16.699827+00	\N
-4	9253	Steins;Gate	[]	Eksperymenty grupy przyjaciół prowadzą do odkrycia możliwości zmieniania przeszłości.	pl	\N	24	9.10	White Fox	2011	TV	https://myanimelist.net/anime/9253	2026-11-27 11:29:16.699827+00	\N
-5	16498	Shingeki no Kyojin	[]	Ludzkość ukryta za gigantycznymi murami staje w obliczu ataku tytanów. Dane dotyczą pierwszego sezonu.	pl	\N	25	8.70	Wit Studio	2013	TV	https://myanimelist.net/anime/16498	2026-11-27 11:29:16.699827+00	\N
-6	44511	Chainsaw Man	[]	Denji zostaje wciągnięty w niebezpieczny świat łowców demonów.	pl	\N	12	8.60	MAPPA	2022	TV	https://myanimelist.net/anime/44511	2026-11-27 11:29:16.699827+00	\N
+1	20	Naruto	[]	Młody ninja marzy o zostaniu Hokage i zdobyciu uznania swojej wioski.	pl	\N	220	8.30	Pierrot	2002	TV	https://myanimelist.net/anime/20	2026-11-27 15:48:21.29377+00	\N
+2	1535	Death Note	[]	Odkrycie tajemniczego notesu rozpoczyna pojedynek intelektów między jego właścicielem a detektywem.	pl	\N	37	8.60	Madhouse	2006	TV	https://myanimelist.net/anime/1535	2026-11-27 15:48:21.29377+00	\N
+3	42310	Cyberpunk: Edgerunners	[]	W Night City David Martinez dołącza do grupy najemników i próbuje przetrwać w świecie cybernetycznych modyfikacji oraz potężnych korporacji.	pl	\N	10	8.60	Trigger	2022	ONA	https://myanimelist.net/anime/42310	2026-11-27 15:48:21.29377+00	\N
+4	9253	Steins;Gate	[]	Eksperymenty grupy przyjaciół prowadzą do odkrycia możliwości zmieniania przeszłości.	pl	\N	24	9.10	White Fox	2011	TV	https://myanimelist.net/anime/9253	2026-11-27 15:48:21.29377+00	\N
+5	16498	Shingeki no Kyojin	[]	Ludzkość ukryta za gigantycznymi murami staje w obliczu ataku tytanów. Dane dotyczą pierwszego sezonu.	pl	\N	25	8.70	Wit Studio	2013	TV	https://myanimelist.net/anime/16498	2026-11-27 15:48:21.29377+00	\N
+6	44511	Chainsaw Man	[]	Denji zostaje wciągnięty w niebezpieczny świat łowców demonów.	pl	\N	12	8.60	MAPPA	2022	TV	https://myanimelist.net/anime/44511	2026-11-27 15:48:21.29377+00	\N
 \.
 
 
@@ -951,8 +950,8 @@ COPY public.anime_clue_attempts (user_id, game_id, round_index, hints_used, scor
 --
 
 COPY public.anime_collection_items (collection_id, anime_id, added_at) FROM stdin;
-1	2	2026-11-27 11:29:17.357562+00
-1	4	2026-11-27 11:29:17.357562+00
+1	2	2026-11-27 15:48:22.182566+00
+1	4	2026-11-27 15:48:22.182566+00
 \.
 
 
@@ -961,7 +960,7 @@ COPY public.anime_collection_items (collection_id, anime_id, added_at) FROM stdi
 --
 
 COPY public.anime_collections (id, user_id, name, description, is_default, created_at) FROM stdin;
-1	1	Thrillery z twistem	Tytuły, do których chcę wracać.	f	2026-11-27 11:29:17.357562+00
+1	1	Thrillery z twistem	Tytuły, do których chcę wracać.	f	2026-11-27 15:48:22.182566+00
 \.
 
 
@@ -970,10 +969,10 @@ COPY public.anime_collections (id, user_id, name, description, is_default, creat
 --
 
 COPY public.anime_comments (id, anime_id, user_id, body, created_at, updated_at, moderated_at, parent_id, deleted_at) FROM stdin;
-1	4	1	Spokojny początek, ale ostatnie odcinki wynagradzają wszystko. Warto dać szansę!	2026-11-25 11:29:17.357562+00	\N	\N	\N	\N
-2	2	1	Pojedynek Lighta i L to dla mnie najlepsza część całej serii.	2026-11-24 11:29:17.357562+00	\N	\N	\N	\N
-3	6	4	SPOILER: w ostatnim odcinku sezonu ginie najważniejsza postać!	2026-11-26 11:29:17.357562+00	\N	\N	\N	\N
-4	2	2	Zgadzam się, szczególnie odcinki w połowie serii.	2026-11-25 11:29:17.357562+00	\N	\N	2	\N
+1	4	1	Spokojny początek, ale ostatnie odcinki wynagradzają wszystko. Warto dać szansę!	2026-11-25 15:48:22.182566+00	\N	\N	\N	\N
+2	2	1	Pojedynek Lighta i L to dla mnie najlepsza część całej serii.	2026-11-24 15:48:22.182566+00	\N	\N	\N	\N
+3	6	4	SPOILER: w ostatnim odcinku sezonu ginie najważniejsza postać!	2026-11-26 15:48:22.182566+00	\N	\N	\N	\N
+4	2	2	Zgadzam się, szczególnie odcinki w połowie serii.	2026-11-25 15:48:22.182566+00	\N	\N	2	\N
 \.
 
 
@@ -1019,10 +1018,10 @@ COPY public.anime_genres (anime_id, genre_id) FROM stdin;
 --
 
 COPY public.comment_reactions (user_id, comment_id, value, updated_at) FROM stdin;
-2	1	1	2026-11-27 11:29:17.384603+00
-3	1	1	2026-11-27 11:29:17.38498+00
-2	2	1	2026-11-27 11:29:17.385009+00
-3	2	1	2026-11-27 11:29:17.385023+00
+2	1	1	2026-11-27 15:48:22.213053+00
+3	1	1	2026-11-27 15:48:22.213424+00
+2	2	1	2026-11-27 15:48:22.21345+00
+3	2	1	2026-11-27 15:48:22.213466+00
 \.
 
 
@@ -1031,7 +1030,7 @@ COPY public.comment_reactions (user_id, comment_id, value, updated_at) FROM stdi
 --
 
 COPY public.comment_reply_notifications (id, user_id, reply_id, created_at, read_at) FROM stdin;
-1	1	4	2026-11-25 11:29:17.357562+00	\N
+1	1	4	2026-11-25 15:48:22.182566+00	\N
 \.
 
 
@@ -1048,8 +1047,8 @@ COPY public.community_activity (id, user_id, action, content_hash, created_at) F
 --
 
 COPY public.community_reports (id, reporter_id, reported_user_id, target_type, target_id, snapshot, reason, status, created_at, resolved_by, resolved_at) FROM stdin;
-1	1	4	comment	3	SPOILER: w ostatnim odcinku sezonu ginie najważniejsza postać!	Spoiler zakończenia bez ostrzeżenia.	open	2026-11-27 11:29:17.391386+00	\N	\N
-2	1	4	message	3	Darmowe konto premium! Wejdź na http://spam.example i podaj swoje hasło.	Spam i próba wyłudzenia hasła.	open	2026-11-27 11:29:17.392357+00	\N	\N
+1	1	4	comment	3	SPOILER: w ostatnim odcinku sezonu ginie najważniejsza postać!	Spoiler zakończenia bez ostrzeżenia.	open	2026-11-27 15:48:22.220305+00	\N	\N
+2	1	4	message	3	Darmowe konto premium! Wejdź na http://spam.example i podaj swoje hasło.	Spam i próba wyłudzenia hasła.	open	2026-11-27 15:48:22.221563+00	\N	\N
 \.
 
 
@@ -1115,8 +1114,8 @@ COPY public.moderation_notices (id, user_id, action_id, created_at, read_at) FRO
 --
 
 COPY public.private_conversations (id, first_user_id, second_user_id, created_at) FROM stdin;
-1	1	2	2026-11-25 11:29:17.357562+00
-2	1	4	2026-11-25 11:29:17.357562+00
+1	1	2	2026-11-25 15:48:22.182566+00
+2	1	4	2026-11-25 15:48:22.182566+00
 \.
 
 
@@ -1133,9 +1132,9 @@ COPY public.private_message_reads (user_id, conversation_id, last_read_message_i
 --
 
 COPY public.private_messages (id, conversation_id, sender_id, body, created_at, moderated_at) FROM stdin;
-1	1	1	Cześć! Polecisz coś podobnego do Steins;Gate?	2026-11-25 11:29:17.357562+00	\N
-2	1	2	Spróbuj Death Note: też ma mnóstwo zwrotów akcji.	2026-11-25 12:29:17.357562+00	\N
-3	2	4	Darmowe konto premium! Wejdź na http://spam.example i podaj swoje hasło.	2026-11-26 15:29:17.357562+00	\N
+1	1	1	Cześć! Polecisz coś podobnego do Steins;Gate?	2026-11-25 15:48:22.182566+00	\N
+2	1	2	Spróbuj Death Note: też ma mnóstwo zwrotów akcji.	2026-11-25 16:48:22.182566+00	\N
+3	2	4	Darmowe konto premium! Wejdź na http://spam.example i podaj swoje hasło.	2026-11-26 19:48:22.182566+00	\N
 \.
 
 
@@ -1168,14 +1167,14 @@ COPY public.user_achievements (user_id, achievement_code, unlocked_at) FROM stdi
 --
 
 COPY public.user_anime_experience (user_id, anime_id, watched, completed, updated_at) FROM stdin;
-1	1	220	t	2026-11-27 11:29:17.357562+00
-1	2	37	t	2026-11-27 11:29:17.357562+00
-1	3	4	f	2026-11-27 11:29:17.357562+00
-1	4	12	f	2026-11-27 11:29:17.357562+00
-1	6	0	f	2026-11-27 11:29:17.357562+00
-2	4	24	t	2026-11-27 11:29:17.357562+00
-2	5	25	t	2026-11-27 11:29:17.357562+00
-3	2	10	f	2026-11-27 11:29:17.357562+00
+1	1	220	t	2026-11-27 15:48:22.182566+00
+1	2	37	t	2026-11-27 15:48:22.182566+00
+1	3	4	f	2026-11-27 15:48:22.182566+00
+1	4	12	f	2026-11-27 15:48:22.182566+00
+1	6	0	f	2026-11-27 15:48:22.182566+00
+2	4	24	t	2026-11-27 15:48:22.182566+00
+2	5	25	t	2026-11-27 15:48:22.182566+00
+3	2	10	f	2026-11-27 15:48:22.182566+00
 \.
 
 
@@ -1184,12 +1183,12 @@ COPY public.user_anime_experience (user_id, anime_id, watched, completed, update
 --
 
 COPY public.user_anime_ratings (user_id, anime_id, rating, updated_at) FROM stdin;
-1	4	9	2026-11-27 11:29:17.357562+00
-1	2	10	2026-11-27 11:29:17.357562+00
-1	1	8	2026-11-27 11:29:17.357562+00
-2	4	10	2026-11-27 11:29:17.357562+00
-2	5	9	2026-11-27 11:29:17.357562+00
-3	2	9	2026-11-27 11:29:17.357562+00
+1	4	9	2026-11-27 15:48:22.182566+00
+1	2	10	2026-11-27 15:48:22.182566+00
+1	1	8	2026-11-27 15:48:22.182566+00
+2	4	10	2026-11-27 15:48:22.182566+00
+2	5	9	2026-11-27 15:48:22.182566+00
+3	2	9	2026-11-27 15:48:22.182566+00
 \.
 
 
@@ -1253,11 +1252,11 @@ COPY public.user_watchlist (user_id, anime_id, status, watched) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.users (id, name, email, password_hash, created_at, interests, theme, avatar_data, avatar_version, is_moderator, font_size, line_height, interface_density, high_contrast, reduced_motion, strong_focus, large_controls, message_text_size, comment_text_size, message_policy, public_ratings, public_statistics, language, is_admin, avatar_path) FROM stdin;
-1	Demo Użytkownik	user@demo.anivibe.test	$2y$10$UAMoFi1KiDb4YASkoC3V7.iztPc2LlVBytbpZunit1qAuk2H5NHPC	2026-11-27 11:29:17.357562	Thrillery psychologiczne, podróże w czasie i klasyczne shōnen.	system	\N	\N	f	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	f	\N
-2	Demo Moderator	moderator@demo.anivibe.test	$2y$10$GQ7Sk8rMSnts40KuuboNkOOKTphZmzK3ffXGwEnZkRcpfAgIAtvwK	2026-11-27 11:29:17.357562	Dbam o kulturę dyskusji pod anime.	system	\N	\N	t	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	f	\N
-3	Demo Administrator	admin@demo.anivibe.test	$2y$10$NgjZKAtz9NWwi3WLBxp0hOwYQ1eHFkv0DXGdSj5nxMjU3Ev.p7n7u	2026-11-27 11:29:17.357562	Diagnostyka, role i zgłoszenia wiadomości.	system	\N	\N	f	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	t	\N
-4	Demo Spamer	spammer@demo.anivibe.test	$2y$10$Tr9qKe/6oAYkGiennHUZmOs4yOaLg5o7Ppv3i0PtE2kRS4UDVhUAi	2026-11-27 11:29:17.357562	Konto do pokazania zgłoszeń i moderacji.	system	\N	\N	f	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	f	\N
+COPY public.users (id, name, email, password_hash, created_at, interests, theme, avatar_version, is_moderator, font_size, line_height, interface_density, high_contrast, reduced_motion, strong_focus, large_controls, message_text_size, comment_text_size, message_policy, public_ratings, public_statistics, language, is_admin, avatar_path) FROM stdin;
+1	Demo Użytkownik	user@demo.anivibe.test	$2y$10$UAMoFi1KiDb4YASkoC3V7.iztPc2LlVBytbpZunit1qAuk2H5NHPC	2026-11-27 15:48:22.182566	Thrillery psychologiczne, podróże w czasie i klasyczne shōnen.	system	\N	f	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	f	\N
+2	Demo Moderator	moderator@demo.anivibe.test	$2y$10$GQ7Sk8rMSnts40KuuboNkOOKTphZmzK3ffXGwEnZkRcpfAgIAtvwK	2026-11-27 15:48:22.182566	Dbam o kulturę dyskusji pod anime.	system	\N	t	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	f	\N
+3	Demo Administrator	admin@demo.anivibe.test	$2y$10$NgjZKAtz9NWwi3WLBxp0hOwYQ1eHFkv0DXGdSj5nxMjU3Ev.p7n7u	2026-11-27 15:48:22.182566	Diagnostyka, role i zgłoszenia wiadomości.	system	\N	f	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	t	\N
+4	Demo Spamer	spammer@demo.anivibe.test	$2y$10$Tr9qKe/6oAYkGiennHUZmOs4yOaLg5o7Ppv3i0PtE2kRS4UDVhUAi	2026-11-27 15:48:22.182566	Konto do pokazania zgłoszeń i moderacji.	system	\N	f	standard	standard	comfortable	0	0	0	0	standard	standard	everyone	f	t	pl	f	\N
 \.
 
 
@@ -2463,5 +2462,5 @@ ALTER TABLE ONLY public.user_watchlist
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nmsIsOSb9iVMMcLw7Mt27ayjW46JZK4znBAyAbPzYbtiNQZsJxsoBOcBybZARsx
+\unrestrict ZgPiaq4yf2DcWUbvzgpweXvHf7bMqaKj7rWkjRqEbJzNmt2isEneXdcgRhjVJiX
 

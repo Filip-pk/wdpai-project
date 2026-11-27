@@ -203,10 +203,15 @@ try {
             if (preg_match('/\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?([a-z_]+)/i', $statement, $match) === 1) {
                 $declared['tables'][] = strtolower($match[1]);
             }
-            if (preg_match('/\bALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:public\.)?([a-z_]+)/i', $statement, $match) === 1
-                && preg_match_all('/\bADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_]+)/i', $statement, $added) > 0) {
+            if (preg_match('/\bALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:public\.)?([a-z_]+)/i', $statement, $match) === 1) {
+                preg_match_all('/\bADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_]+)/i', $statement, $added);
                 foreach ($added[1] as $column) {
                     $declared['columns'][] = strtolower($match[1]) . '.' . strtolower($column);
+                }
+                // A later migration may drop a column again (35 drops users.avatar_data).
+                preg_match_all('/\bDROP\s+COLUMN\s+(?:IF\s+EXISTS\s+)?([a-z_]+)/i', $statement, $dropped);
+                foreach ($dropped[1] as $column) {
+                    $declared['columns'] = array_values(array_diff($declared['columns'], [strtolower($match[1]) . '.' . strtolower($column)]));
                 }
             }
         }

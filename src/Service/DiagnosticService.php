@@ -29,7 +29,7 @@ final class DiagnosticService
     public const REQUIRED_COLUMNS = [
         'anime.airing_status', 'anime.chat_synopsis', 'anime.search_text', 'anime_clue_attempts.wrong_answers',
         'anime_comments.deleted_at', 'anime_comments.moderated_at', 'anime_comments.parent_id',
-        'private_messages.moderated_at', 'users.avatar_data', 'users.avatar_path', 'users.avatar_version', 'users.comment_text_size',
+        'private_messages.moderated_at', 'users.avatar_path', 'users.avatar_version', 'users.comment_text_size',
         'users.font_size', 'users.high_contrast', 'users.interests', 'users.interface_density', 'users.is_admin',
         'users.is_moderator', 'users.language', 'users.large_controls', 'users.line_height', 'users.message_policy',
         'users.message_text_size', 'users.public_ratings', 'users.public_statistics', 'users.reduced_motion',

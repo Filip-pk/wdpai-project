@@ -98,26 +98,21 @@ nieużywane pliki starsze niż godzina usuwa
 [zadanie cykliczne](maintenance.md). Kontener `php` przy starcie tworzy katalog
 zdjęć i nadaje go procesowi `www-data`.
 
-### Zdjęcia zapisane przed migracją 34
+### Zdjęcia zapisane przed migracjami 34 i 35
 
-Wcześniejsze wersje zapisywały obraz w `users.avatar_data` (`BYTEA`). Na
-istniejącej bazie zastosuj migrację `34`, a następnie skopiuj te zdjęcia
-do plików:
+Wcześniejsze wersje zapisywały obraz w kolumnie `users.avatar_data` (`BYTEA`).
+Nowa baza już jej nie ma. Na starszej bazie wykonaj kolejno migrację `34`,
+skopiowanie zdjęć do plików i migrację `35`, która usuwa starą kolumnę:
 
 ```cmd
 docker compose exec -T db sh -c "psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $POSTGRES_DB -f /docker-entrypoint-initdb.d/34-avatar-files.sql"
 docker compose exec -u www-data php php scripts/migrate-avatars.php
+docker compose exec -T db sh -c "psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $POSTGRES_DB -f /docker-entrypoint-initdb.d/35-drop-avatar-data.sql"
 ```
 
-Skrypt można uruchomić ponownie. Domyślnie zostawia kopię w bazie, dzięki
-czemu starsza wersja aplikacji nadal pokazuje zdjęcia. Gdy nie będziesz już
-jej używać, usuń kopie zgodne bajt w bajt z plikami:
-
-```cmd
-docker compose exec -u www-data php php scripts/migrate-avatars.php --clear
-```
-
-Kolumna `avatar_data` pozostaje w schemacie do czasu decyzji o jej usunięciu.
+Każde z poleceń można powtórzyć. Migracja `35` przerywa się bez zmian, jeśli
+jakieś zdjęcie z bazy nie ma jeszcze pliku, i podaje polecenie kopiujące.
+Po niej skrypt kopiujący tylko informuje, że nie ma czego przenosić.
 
 Listę MyAnimeList można przenieść przez [import pliku XML/XML.GZ](mal-watchlist-import.md).
 Automatyczna synchronizacja MyAnimeList i AI nadal są demonstracyjne.
