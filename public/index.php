@@ -68,6 +68,11 @@ use App\Service\RecommendationService;
 use App\Service\QuizService;
 use App\Service\Translator;
 
+// Never show raw errors or stack traces to visitors, even without the Docker PHP configuration.
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+ini_set('log_errors', '1');
+
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 $applicationLogger = new ApplicationLogger(dirname(__DIR__) . '/storage/logs');

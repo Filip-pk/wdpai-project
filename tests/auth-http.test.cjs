@@ -59,6 +59,7 @@ test('registration, sessions, protected projects and logout', async (t) => {
     await t.test('public forms create a session and guests cannot access projects', async () => {
         const page = await client.request('/register');
         assert.equal(page.status, 200);
+        assert.equal(page.headers.get('x-powered-by'), null, 'The PHP version is not advertised');
         anonymousToken = csrfFrom(page);
         anonymousCookie = client.cookie;
         assert.ok(anonymousCookie.startsWith('PHPSESSID='));

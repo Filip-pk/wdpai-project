@@ -87,6 +87,15 @@ Po zmianie konfiguracji przebuduj serwer:
 docker compose up -d --build server
 ```
 
+## Błędy PHP
+
+Obraz PHP ustawia `display_errors=Off`, `display_startup_errors=Off`,
+`log_errors=On` i `expose_php=Off`, a `public/index.php` dodatkowo wyłącza
+wyświetlanie błędów na wypadek uruchomienia bez Dockera. Odwiedzający widzi
+tylko ogólną stronę `500` z identyfikatorem błędu; szczegóły trafiają do logu
+kontenera i dziennika administratora. Nagłówek `X-Powered-By` nie zdradza
+wersji PHP. Zmiana wymaga przebudowy: `docker compose up -d --build php`.
+
 ## Przepływ
 
 | Żądanie | Zachowanie |
