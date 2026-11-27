@@ -76,9 +76,11 @@ Nowa baza wykonuje również skrypt `04` automatycznie. Przebudowanie samego
 serwera Nginx wczytuje limit przesyłania potrzebny do zdjęć do 4 MB.
 
 W profilu wybierz JPG lub PNG do 4 MB i kliknij „Zapisz zdjęcie”. Maksymalne
-wymiary pliku to 4096 × 4096 pikseli. Zdjęcie zostanie przycięte centralnie
-do kwadratu 256 × 256 i zapisane jako PNG, bez metadanych oryginału.
-Przesłanie kolejnego pliku zastępuje dotychczasowe zdjęcie.
+wymiary pliku to 4096 × 4096 pikseli. Serwer sprawdza rozmiar, rozszerzenie
+nazwy (`jpg`, `jpeg`, `png`) i rzeczywisty typ MIME odczytany z zawartości
+pliku; nazwa i typ podane przez przeglądarkę nie wystarczą. Zdjęcie zostanie
+przycięte centralnie do kwadratu 256 × 256 i zapisane jako PNG, bez metadanych
+oryginału. Przesłanie kolejnego pliku zastępuje dotychczasowe zdjęcie.
 
 Zdjęcie wyświetla się w podsumowaniu profilu oraz przy nazwie konta we
 wspólnej nawigacji. Brak zdjęcia zachowuje symbol zastępczy. Zapis jest
@@ -86,10 +88,37 @@ przypisany do zalogowanego konta, wymaga CSRF i pozostaje po ponownym
 logowaniu. W innej otwartej sesji wejście na profil lub pulpit odświeża
 zdjęcie w nawigacji.
 
-Baza przechowuje wyłącznie przetworzony obraz w `users.avatar_data` (`BYTEA`)
-i losową wersję `avatar_version`. Odczyt `/avatars/{id}?v=...` zwraca sam
-obraz PNG z `nosniff`; link do zdjęcia jest dostępny również bez logowania.
-Oryginalne nazwy plików i ścieżki przesyłania nie są zapisywane.
+Przetworzony obraz trafia do pliku o losowej nazwie w `storage/uploads/avatars`,
+poza katalogiem publicznym. Baza przechowuje tylko jego względną ścieżkę
+w `users.avatar_path` (np. `avatars/<32 znaki hex>.png`) i losową wersję
+`avatar_version`, używaną w adresie zdjęcia. Odczyt `/avatars/{id}?v=...`
+zwraca sam obraz PNG z `nosniff`; link do zdjęcia jest dostępny również bez
+logowania. Oryginalne nazwy plików nie są zapisywane. Poprzedni plik nie jest
+usuwany w trakcie zapisu, bo transakcja żądania może zostać wycofana;
+nieużywane pliki starsze niż godzina usuwa
+[zadanie cykliczne](maintenance.md). Kontener `php` przy starcie tworzy katalog
+zdjęć i nadaje go procesowi `www-data`.
+
+### Zdjęcia zapisane przed migracją 34
+
+Wcześniejsze wersje zapisywały obraz w `users.avatar_data` (`BYTEA`). Na
+istniejącej bazie zastosuj migrację `34`, a następnie skopiuj te zdjęcia
+do plików:
+
+```cmd
+docker compose exec -T db sh -c "psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $POSTGRES_DB -f /docker-entrypoint-initdb.d/34-avatar-files.sql"
+docker compose exec -u www-data php php scripts/migrate-avatars.php
+```
+
+Skrypt można uruchomić ponownie. Domyślnie zostawia kopię w bazie, dzięki
+czemu starsza wersja aplikacji nadal pokazuje zdjęcia. Gdy nie będziesz już
+jej używać, usuń kopie zgodne bajt w bajt z plikami:
+
+```cmd
+docker compose exec -u www-data php php scripts/migrate-avatars.php --clear
+```
+
+Kolumna `avatar_data` pozostaje w schemacie do czasu decyzji o jej usunięciu.
 
 Listę MyAnimeList można przenieść przez [import pliku XML/XML.GZ](mal-watchlist-import.md).
 Automatyczna synchronizacja MyAnimeList i AI nadal są demonstracyjne.
@@ -113,6 +142,8 @@ node --test tests/user-profiles-http.test.cjs
 node --test tests/avatar-http.test.cjs
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs
 docker compose exec php php tests/user-repository.test.php
+docker compose exec php php tests/avatar-storage.test.php
+docker compose exec php php tests/legacy-avatar-migration.test.php
 docker compose exec php php tests/projects-application.test.php
 docker compose exec -T php php tests/pagination.test.php
 ```
@@ -122,7 +153,9 @@ Test paginacji działa na tabelach tymczasowych i nie zostawia kont w bazie.
 Test profili tworzy dwa losowe konta w lokalnej bazie i zachowuje je.
 Test publicznych profili również tworzy konta testowe; sprawdza publiczny
 odczyt, prywatność, statystyki, filtrowanie, paginację i izolację zmian.
-Test zdjęć tworzy kolejne dwa konta oraz sprawdza walidację plików,
-izolację kont, wyświetlanie, trwałość i zastępowanie zdjęcia.
+Test zdjęć tworzy kolejne dwa konta oraz sprawdza walidację plików
+(także rozszerzenie), izolację kont, wyświetlanie, zapis pliku i ścieżki,
+trwałość i zastępowanie zdjęcia. Testy przechowywania i migracji zdjęć
+działają na katalogach i tabelach tymczasowych.
 Do kontroli układu sprawdź jasny i ciemny motyw przy szerokościach
 375 i 1280 px oraz obsługę formularzy klawiszem Tab.

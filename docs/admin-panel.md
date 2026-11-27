@@ -115,7 +115,8 @@ wykonuje cztery niezależne próby i zapisuje wyniki w bieżącej sesji:
   modeli albo brak modelu czatu są ostrzeżeniem: nie działa wtedy tylko
   czat `/chat`, pozostała część aplikacji działa normalnie. Brakujący model
   pobierzesz poleceniem z [catalog-chat.md](catalog-chat.md).
-- Środowisko: PHP, wymagane rozszerzenia, autoloader i zapis logów.
+- Środowisko: PHP, wymagane rozszerzenia, autoloader, zapis logów i katalog
+  zdjęć profilowych `storage/uploads/avatars`.
 
 Każda karta pokazuje status tekstowy, czas odpowiedzi, czas sprawdzenia
 i szczegóły. Wynik pochodzi z ostatniego ręcznego testu w danej sesji,
@@ -141,8 +142,10 @@ pozostają logi aplikacji oraz `docker compose logs`.
 
 Logi JSONL znajdują się w `storage/logs`, poza katalogiem publicznym,
 i są ignorowane przez Git. Obejmują wyjątki obsługi żądań, błędy poczty
-i diagnostyki oraz ostrzeżenia i błędy krytyczne PHP po uruchomieniu
-obsługi błędów. Nie importują wcześniejszych logów kontenerów Nginx/PHP.
+i diagnostyki, ostrzeżenia i błędy krytyczne PHP po uruchomieniu obsługi
+błędów oraz wyniki [zadania czyszczącego](maintenance.md) w module
+`maintenance` (poziom „Informacja”, z liczbą usuniętych wierszy i plików).
+Nie importują wcześniejszych logów kontenerów Nginx/PHP.
 
 Wpis zawiera losowy identyfikator, czas UTC, poziom, moduł, stały komunikat
 i ograniczone metadane: klasę wyjątku oraz zanonimizowaną ścieżkę.

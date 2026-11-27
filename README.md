@@ -51,6 +51,8 @@ własną watchlistę, śledzić postępy oglądania i korzystać z rekomendacji 
 - Wiadomość powitalna po rejestracji, przechwytywana lokalnie przez Mailpit.
 - Panel administratora: diagnostyka usług, ostatnie błędy, zarządzanie
   rolą moderatora, podgląd braków katalogu i historia operacji.
+- Zadanie cykliczne (cron) co godzinę usuwa przeterminowane dane bezpieczeństwa
+  i nieużywane pliki zdjęć, zapisując wynik w logu.
 
 Watchlistę MyAnimeList można zaimportować ręcznie z pliku. Katalog korzysta
 z importowanych ocen.
@@ -136,10 +138,11 @@ docker compose exec php php scripts/check-postgres.php
 
 Pierwsza budowa pobiera obrazy i przygotowuje PHP, więc może potrwać kilka
 minut. Usługa `db` powinna być `healthy`, a pozostałe uruchomione. Kontener
-`php` przy starcie sam instaluje autoloader Composera i przygotowuje katalog
-logów, więc nie trzeba wykonywać `composer install`. Polecenie uruchamia też
+`php` przy starcie sam instaluje autoloader Composera i przygotowuje katalogi
+logów i zdjęć, więc nie trzeba wykonywać `composer install`. Usługa `cron`
+uruchamia [zadanie czyszczące](docs/maintenance.md). Polecenie uruchamia też
 Ollamę; samą aplikację bez czatu AI uruchomisz poleceniem
-`docker compose up -d --build db php server mailpit`.
+`docker compose up -d --build db php server mailpit cron`.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
 z katalogu `database/`: tworzy schemat, zapisuje **6 początkowych anime**
@@ -172,8 +175,9 @@ lub okładkę, a część opisów jest po angielsku.
 Import wykonujesz raz dla danej bazy, a później ewentualnie przy aktualizacji
 katalogu. Nie odbywa się automatycznie przy starcie strony. Pliki w
 `storage/imports` nie trafiają do repozytorium i po imporcie nie są potrzebne
-do zwykłego działania aplikacji. Konta, watchlisty, zdjęcia profilowe oraz
-katalog są przechowywane w PostgreSQL.
+do zwykłego działania aplikacji. Konta, watchlisty i katalog są przechowywane
+w PostgreSQL, a pliki zdjęć profilowych w `storage/uploads` (baza zapisuje
+tylko ich ścieżki).
 
 Źródła, licencje, dodatkowe opcje i aktualizacje opisuje
 [dokumentacja katalogu anime](docs/anime-catalog.md).
@@ -273,7 +277,7 @@ Uruchom Docker Desktop, otwórz CMD w katalogu projektu i włącz istniejące
 kontenery:
 
 ```cmd
-docker compose start db php server mailpit pgadmin-wdpai
+docker compose start db php server mailpit cron pgadmin-wdpai
 ```
 
 Aby zatrzymać środowisko:
@@ -289,6 +293,9 @@ restartu możesz też użyć `docker compose restart`.
 zależy od nazwy projektu Compose, np. `my-app_pg-data`. Do codziennej pracy
 używaj `stop` i `start`. Zwykłe `docker compose down` i ponowne `up` również
 zachowują bazę, jeśli używasz tej samej nazwy projektu.
+
+Zdjęcia profilowe leżą w katalogu projektu, w `storage/uploads` (ignorowanym
+przez Git), więc kopia zapasowa obejmuje bazę i ten katalog.
 
 `docker compose down -v` usuwa wolumen i dane bazy. Polecenie
 `docker volume prune -a` może usunąć nieużywany nazwany wolumen.
@@ -340,6 +347,7 @@ docker compose exec php php scripts/check-postgres.php
 - [Rozpoznaj anime: 200 tytułów, wskazówki i punktacja](docs/anime-clues.md)
 - [Import listy MyAnimeList z XML/XML.GZ](docs/mal-watchlist-import.md)
 - [Wiadomości powitalne i Mailpit](docs/welcome-email.md)
+- [Zadanie cykliczne (cron): czyszczenie danych](docs/maintenance.md)
 - [Panel administratora, uprawnienia i diagnostyka](docs/admin-panel.md)
 - [Środowisko PostgreSQL i przechowywanie danych](docs/postgresql-environment.md)
 
