@@ -9,14 +9,11 @@ use App\Service\RateLimitException;
 use Closure;
 use InvalidArgumentException;
 use PDO;
-use Throwable;
 
 final class CommunityRepository
 {
     /** Rate limits read at most the last ten minutes; older activity is deleted after a day. */
     public const ACTIVITY_RETENTION_SECONDS = 86400;
-
-    private static int $savepointSequence = 0;
 
     public function __construct(private readonly PDO $connection)
     {
@@ -260,16 +257,9 @@ final class CommunityRepository
     {
         $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
         sort($userIds, SORT_NUMERIC);
-        $ownsTransaction = !$this->connection->inTransaction();
-        $savepoint = 'community_' . ++self::$savepointSequence;
 
-        if ($ownsTransaction) {
-            $this->connection->beginTransaction();
-        } else {
-            $this->connection->exec('SAVEPOINT ' . $savepoint);
-        }
-
-        try {
+        return Transaction::run($this->connection, function () use ($userIds, $callback): mixed {
+            // Accounts are always locked in id order, so concurrent operations cannot deadlock.
             if ($userIds !== []) {
                 $placeholders = implode(', ', array_fill(0, count($userIds), '?'));
                 $statement = $this->connection->prepare('SELECT id FROM users WHERE id IN (' . $placeholders . ') ORDER BY id FOR UPDATE');
@@ -277,25 +267,8 @@ final class CommunityRepository
                 $statement->fetchAll(PDO::FETCH_COLUMN);
             }
 
-            $result = $callback();
-
-            if ($ownsTransaction) {
-                $this->connection->commit();
-            } else {
-                $this->connection->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->connection->inTransaction()) {
-                $this->connection->rollBack();
-            } elseif (!$ownsTransaction && $this->connection->inTransaction()) {
-                $this->connection->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->connection->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-
-            throw $exception;
-        }
+            return $callback();
+        });
     }
 
     public function assertActionAllowed(int $userId, string $action, string $hash): void

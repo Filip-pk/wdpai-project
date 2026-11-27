@@ -6,7 +6,6 @@ namespace App\Repository;
 
 use InvalidArgumentException;
 use PDO;
-use Throwable;
 
 final class ProfileShowcaseRepository
 {
@@ -63,14 +62,7 @@ final class ProfileShowcaseRepository
             throw new InvalidArgumentException('Elementy gablotki nie mogą się powtarzać.');
         }
 
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'showcase_' . bin2hex(random_bytes(6));
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        try {
+        Transaction::run($this->database, function () use ($userId, $animeIds, $badgeCodes): void {
             // Lock the account, including an initially empty showcase, before replacing either list.
             $lock = $this->database->prepare('SELECT id FROM users WHERE id = :user_id FOR UPDATE');
             $lock->execute(['user_id' => $userId]);
@@ -94,20 +86,7 @@ final class ProfileShowcaseRepository
             foreach ($badgeCodes as $index => $code) {
                 $badge->execute(['user_id' => $userId, 'position' => $index + 1, 'achievement_code' => $code]);
             }
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            throw $exception;
-        }
+        });
     }
 
     private function validateUser(int $userId): void

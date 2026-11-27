@@ -10,7 +10,6 @@ use InvalidArgumentException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
-use Throwable;
 
 final class AnimeRepository
 {
@@ -470,47 +469,28 @@ final class AnimeRepository
 
     private function writeScope(callable $operation): mixed
     {
-        $nested = $this->database->inTransaction();
-        if ($nested) {
-            $this->database->exec('SAVEPOINT anime_catalog_import');
-        } else {
-            $this->database->beginTransaction();
-        }
-
         try {
-            $this->database->query('SELECT pg_advisory_xact_lock(1668178293, 1)')->fetchColumn();
-            $this->writeContextActive = true;
-            foreach ($this->database->query('SELECT id, mal_id FROM anime') as $row) {
-                $id = (int) $row['id'];
-                $malId = $row['mal_id'] === null ? null : (int) $row['mal_id'];
-                $this->animeMalIds[$id] = $malId;
-                if ($malId !== null) {
-                    $this->malIds[$malId] = $id;
+            return Transaction::run($this->database, function () use ($operation): mixed {
+                // One import at a time: the identity maps below must match what this import writes.
+                $this->database->query('SELECT pg_advisory_xact_lock(1668178293, 1)')->fetchColumn();
+                $this->writeContextActive = true;
+                foreach ($this->database->query('SELECT id, mal_id FROM anime') as $row) {
+                    $id = (int) $row['id'];
+                    $malId = $row['mal_id'] === null ? null : (int) $row['mal_id'];
+                    $this->animeMalIds[$id] = $malId;
+                    if ($malId !== null) {
+                        $this->malIds[$malId] = $id;
+                    }
                 }
-            }
-            foreach ($this->database->query('SELECT provider, external_id, anime_id FROM anime_external_ids') as $row) {
-                $this->externalIds[$row['provider'] . "\0" . $row['external_id']] = (int) $row['anime_id'];
-            }
-            foreach ($this->database->query('SELECT id, source_id, name FROM genres') as $row) {
-                $this->genreIds[(int) $row['source_id']] = ['id' => (int) $row['id'], 'name' => $row['name']];
-            }
+                foreach ($this->database->query('SELECT provider, external_id, anime_id FROM anime_external_ids') as $row) {
+                    $this->externalIds[$row['provider'] . "\0" . $row['external_id']] = (int) $row['anime_id'];
+                }
+                foreach ($this->database->query('SELECT id, source_id, name FROM genres') as $row) {
+                    $this->genreIds[(int) $row['source_id']] = ['id' => (int) $row['id'], 'name' => $row['name']];
+                }
 
-            $result = $operation();
-            if ($nested) {
-                $this->database->exec('RELEASE SAVEPOINT anime_catalog_import');
-            } else {
-                $this->database->commit();
-            }
-
-            return $result;
-        } catch (Throwable $exception) {
-            if ($nested) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT anime_catalog_import');
-                $this->database->exec('RELEASE SAVEPOINT anime_catalog_import');
-            } elseif ($this->database->inTransaction()) {
-                $this->database->rollBack();
-            }
-            throw $exception;
+                return $operation();
+            });
         } finally {
             $this->writeContextActive = false;
             $this->writeStatements = [];

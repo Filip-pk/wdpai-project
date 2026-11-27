@@ -20,8 +20,6 @@ final class MessageRepository
             ON recipient.id = CASE WHEN conversations.first_user_id = :viewer_id
                 THEN conversations.second_user_id ELSE conversations.first_user_id END';
 
-    private int $savepointCounter = 0;
-
     public function __construct(private readonly PDO $database)
     {
     }
@@ -132,69 +130,48 @@ final class MessageRepository
             return null;
         }
 
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'private_message_start_' . ++$this->savepointCounter;
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        $completed = false;
-
         try {
-            $this->lockUsers($userId, $recipientId);
-            if (!$this->canReceiveFromUser($userId, $recipientId)) {
-                return null;
-            }
-
-            $statement = $this->database->prepare(
-                'INSERT INTO private_conversations (first_user_id, second_user_id)
-                 SELECT first_user.id, second_user.id FROM users AS first_user
-                 CROSS JOIN users AS second_user
-                 WHERE first_user.id = :first_user_id AND second_user.id = :second_user_id
-                   AND NOT EXISTS (
-                       SELECT 1 FROM user_blocks b JOIN users blocked_user ON blocked_user.id = b.blocked_id
-                       WHERE ((b.blocker_id = first_user.id AND b.blocked_id = second_user.id)
-                          OR (b.blocker_id = second_user.id AND b.blocked_id = first_user.id))
-                         AND NOT COALESCE((to_jsonb(blocked_user)->>\'is_admin\')::boolean, false)
-                   )
-                 ON CONFLICT (first_user_id, second_user_id)
-                 DO UPDATE SET first_user_id = EXCLUDED.first_user_id RETURNING id'
-            );
-            $statement->execute([
-                'first_user_id' => min($userId, $recipientId), 'second_user_id' => max($userId, $recipientId),
-            ]);
-            $conversationId = $statement->fetchColumn();
-            if ($conversationId === false) {
-                return null;
-            }
-            if ($this->sendForUser($userId, (int) $conversationId, $body) === null) {
-                return null;
-            }
-
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            $completed = true;
-
-            return (int) $conversationId;
+            // A conversation without its first message must not remain, so a null result rolls back.
+            return Transaction::run($this->database, fn (): ?int => $this->startConversation($userId, $recipientId, $body),
+                keep: static fn (?int $conversationId): bool => $conversationId !== null);
         } catch (PDOException $exception) {
             if ($exception->getCode() === '23503') {
                 return null;
             }
             throw $exception;
-        } finally {
-            if (!$completed && $this->database->inTransaction()) {
-                if ($ownsTransaction) {
-                    $this->database->rollBack();
-                } else {
-                    $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                    $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-                }
-            }
         }
+    }
+
+    private function startConversation(int $userId, int $recipientId, string $body): ?int
+    {
+        $this->lockUsers($userId, $recipientId);
+        if (!$this->canReceiveFromUser($userId, $recipientId)) {
+            return null;
+        }
+
+        $statement = $this->database->prepare(
+            'INSERT INTO private_conversations (first_user_id, second_user_id)
+             SELECT first_user.id, second_user.id FROM users AS first_user
+             CROSS JOIN users AS second_user
+             WHERE first_user.id = :first_user_id AND second_user.id = :second_user_id
+               AND NOT EXISTS (
+                   SELECT 1 FROM user_blocks b JOIN users blocked_user ON blocked_user.id = b.blocked_id
+                   WHERE ((b.blocker_id = first_user.id AND b.blocked_id = second_user.id)
+                      OR (b.blocker_id = second_user.id AND b.blocked_id = first_user.id))
+                     AND NOT COALESCE((to_jsonb(blocked_user)->>\'is_admin\')::boolean, false)
+               )
+             ON CONFLICT (first_user_id, second_user_id)
+             DO UPDATE SET first_user_id = EXCLUDED.first_user_id RETURNING id'
+        );
+        $statement->execute([
+            'first_user_id' => min($userId, $recipientId), 'second_user_id' => max($userId, $recipientId),
+        ]);
+        $conversationId = $statement->fetchColumn();
+        if ($conversationId === false || $this->sendForUser($userId, (int) $conversationId, $body) === null) {
+            return null;
+        }
+
+        return (int) $conversationId;
     }
 
     public function sendForUser(int $userId, int $conversationId, string $body): ?int

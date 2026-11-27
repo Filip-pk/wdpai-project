@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use PDO;
-use Throwable;
 
 final class SecuritySettingsRepository
 {
@@ -72,14 +71,7 @@ final class SecuritySettingsRepository
 
     public function confirmEmailChange(int $userId, string $tokenHash): ?string
     {
-        $ownsTransaction = !$this->database->inTransaction();
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT confirm_email_change');
-        }
-
-        try {
+        return Transaction::run($this->database, function () use ($userId, $tokenHash): ?string {
             // Serializacja z równoległą zmianą hasła lub danych tego samego konta.
             $user = $this->database->prepare('SELECT password_hash FROM users WHERE id = :id FOR UPDATE');
             $user->execute(['id' => $userId]);
@@ -92,34 +84,14 @@ final class SecuritySettingsRepository
             );
             $pending->execute(['id' => $userId, 'tokenHash' => $tokenHash, 'passwordHash' => $currentHash ?: '']);
             $email = $pending->fetchColumn();
-
             if (!is_string($email)) {
-                if ($ownsTransaction) {
-                    $this->database->rollBack();
-                } else {
-                    $this->database->exec('ROLLBACK TO SAVEPOINT confirm_email_change');
-                    $this->database->exec('RELEASE SAVEPOINT confirm_email_change');
-                }
                 return null;
             }
 
             $update = $this->database->prepare('UPDATE users SET email = :email WHERE id = :id');
             $update->execute(['id' => $userId, 'email' => $email]);
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT confirm_email_change');
-            }
 
             return $email;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT confirm_email_change');
-                $this->database->exec('RELEASE SAVEPOINT confirm_email_change');
-            }
-            throw $exception;
-        }
+        }, keep: static fn (?string $email): bool => $email !== null);
     }
 }

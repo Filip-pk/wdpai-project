@@ -8,7 +8,6 @@ use App\Data\Achievements;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PDO;
-use Throwable;
 
 final class AchievementRepository
 {
@@ -19,30 +18,7 @@ final class AchievementRepository
     /** Execute one complete synchronization without committing an outer request transaction. */
     public function transaction(callable $operation): mixed
     {
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'achievements_' . bin2hex(random_bytes(6));
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        try {
-            $result = $operation();
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            throw $exception;
-        }
+        return Transaction::run($this->database, $operation);
     }
 
     /** @return array{quizCount: int, correctAnswers: int, perfectQuizzes: int, episodes: int, completedAnime: int, completedGenres: int, quizDates: list<string>} */

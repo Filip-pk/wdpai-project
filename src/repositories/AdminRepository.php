@@ -8,7 +8,6 @@ use App\Service\CommunityService;
 use InvalidArgumentException;
 use PDO;
 use RuntimeException;
-use Throwable;
 
 final class AdminRepository
 {
@@ -125,7 +124,7 @@ final class AdminRepository
             return false;
         }
 
-        return $this->transaction(function () use ($actorId, $targetId, $enabled, $reason): bool {
+        return Transaction::run($this->database, function () use ($actorId, $targetId, $enabled, $reason): bool {
             $this->accountLock($actorId, true);
             $this->accountLock($targetId, false);
             $users = $this->lockUsers([$actorId, $targetId]);
@@ -155,7 +154,7 @@ final class AdminRepository
             return false;
         }
 
-        return $this->transaction(function () use ($userId, $enabled): bool {
+        return Transaction::run($this->database, function () use ($userId, $enabled): bool {
             // Serialize grants/revocations so two revocations cannot remove the last two administrators.
             $this->database->query('SELECT pg_advisory_xact_lock(746562, 29)')->fetchColumn();
             $this->accountLock($userId, false);
@@ -192,7 +191,7 @@ final class AdminRepository
         if ($actorId <= 0 || ($targetId !== null && $targetId <= 0)) {
             throw new InvalidArgumentException('Nieprawidłowy użytkownik historii administracji.');
         }
-        $this->transaction(function () use ($actorId, $action, $targetId, $details): void {
+        Transaction::run($this->database, function () use ($actorId, $action, $targetId, $details): void {
             $this->accountLock($actorId, true);
             $users = $this->lockUsers($targetId === null ? [$actorId] : [$actorId, $targetId]);
             if (!$this->isAdmin($actorId)) {
@@ -276,7 +275,7 @@ final class AdminRepository
         }
         $reportedId = $reported === null ? null : (int) $reported;
 
-        return $this->transaction(function () use ($actorId, $reportId, $reason, $hide, $reportedId): bool {
+        return Transaction::run($this->database, function () use ($actorId, $reportId, $reason, $hide, $reportedId): bool {
             $this->accountLock($actorId, true);
             // Lock both accounts first, as report creation does, then re-check every condition.
             $users = $this->lockUsers($reportedId === null ? [$actorId] : [$actorId, $reportedId]);
@@ -382,35 +381,6 @@ final class AdminRepository
         }
 
         return $users;
-    }
-
-    private function transaction(callable $callback): mixed
-    {
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'admin_' . bin2hex(random_bytes(6));
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        try {
-            $result = $callback();
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            throw $exception;
-        }
     }
 
     private function executePage(\PDOStatement $statement, array $parameters, array $pagination): void

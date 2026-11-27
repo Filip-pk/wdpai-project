@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Service\CommentService;
-use Closure;
 use InvalidArgumentException;
 use PDO;
-use Throwable;
 
 final class CommentRepository
 {
-    private static int $savepointSequence = 0;
-
     private const SELECT_COMMENTS = '
         SELECT comments.id, comments.anime_id, comments.user_id,
                CASE WHEN comments.moderated_at IS NULL AND comments.deleted_at IS NULL THEN comments.body END AS body,
@@ -140,7 +136,7 @@ final class CommentRepository
 
     public function removeForUser(int $userId, int $animeId, int $commentId): bool
     {
-        return $this->withinTransaction(function () use ($userId, $animeId, $commentId): bool {
+        return Transaction::run($this->database, function () use ($userId, $animeId, $commentId): bool {
             $target = $this->findByIdForUser($userId, $animeId, $commentId);
             if ($target === null || $target['isDeleted']) {
                 return false;
@@ -180,7 +176,7 @@ final class CommentRepository
     {
         $this->validateBody($body);
 
-        return $this->withinTransaction(function () use ($userId, $animeId, $parentId, $body): ?int {
+        return Transaction::run($this->database, function () use ($userId, $animeId, $parentId, $body): ?int {
             $lock = $this->database->prepare('SELECT id FROM anime_comments WHERE id = :id AND anime_id = :anime_id AND parent_id IS NULL AND deleted_at IS NULL AND moderated_at IS NULL FOR UPDATE');
             $lock->execute(['id' => $parentId, 'anime_id' => $animeId]);
             if ($lock->fetchColumn() === false) {
@@ -195,36 +191,6 @@ final class CommentRepository
 
             return (int) $statement->fetchColumn();
         });
-    }
-
-    private function withinTransaction(Closure $callback): mixed
-    {
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'comment_' . ++self::$savepointSequence;
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-
-        try {
-            $result = $callback();
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            throw $exception;
-        }
     }
 
     private function validateBody(string $body): void
