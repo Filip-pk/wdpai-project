@@ -55,8 +55,9 @@ final class AuthController extends AppController
                         'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za {minutes} min.',
                         ['minutes' => (int) ceil($retryAfter / 60)],
                     );
-                } elseif ($user === null || !AccountSecurityService::isPasswordValid($password)
-                    || !password_verify($password, $user['password_hash'])) {
+                } elseif (!AccountSecurityService::verifyPassword($password, $user['password_hash'] ?? null)) {
+                    // For an unknown account the password is still verified against a fixed hash,
+                    // so the response takes as long as for a wrong password.
                     $this->throttle()?->recordFailure($email, $this->clientAddress());
                     $this->auditSignIn('admin.log.login_failed', $email);
                     http_response_code(401);

@@ -36,9 +36,20 @@ final class AccountSecurityService
         return $password !== $email && ($localPart === false || $password !== $localPart);
     }
 
+    /**
+     * bcrypt hash (PASSWORD_DEFAULT cost) of a random password nobody knows. Verifying against it
+     * makes a missing account take as long as a wrong password, so timing does not reveal accounts.
+     */
+    public const UNKNOWN_ACCOUNT_HASH = '$2y$10$WU2y/WDY5h.3L.SFp2DPK.AW8aVybw3A5GmWh2b48PQJ2TaDhJKJG';
+
     public static function verifyPassword(string $password, ?string $hash): bool
     {
-        return $hash !== null && self::isPasswordValid($password) && password_verify($password, $hash);
+        if (!self::isPasswordValid($password)) {
+            return false;
+        }
+        $matches = password_verify($password, $hash ?? self::UNKNOWN_ACCOUNT_HASH);
+
+        return $hash !== null && $matches;
     }
 
     public static function isEmailValid(string $email): bool

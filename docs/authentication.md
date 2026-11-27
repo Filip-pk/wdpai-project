@@ -116,6 +116,13 @@ Router sprawdza go obok tabeli tras: GET tylko wyświetla formularz, dane są
 czytane wyłącznie z POST. Gdy adres istnieje, ale metoda nie pasuje,
 aplikacja odpowiada `405` z nagłówkiem `Allow` (np. `GET /logout` →
 `Allow: POST`); nieznany adres nadal daje `404`.
+
+Logowanie na nieistniejący adres trwa tyle samo co logowanie z błędnym
+hasłem: `AccountSecurityService::verifyPassword()` zawsze wywołuje
+`password_verify()`, a dla brakującego konta sprawdza hasło ze stałym hashem
+losowego hasła (`UNKNOWN_ACCOUNT_HASH`, koszt zgodny z `PASSWORD_DEFAULT`).
+Czas odpowiedzi nie zdradza więc, czy konto istnieje.
+
 Pola haseł pozostają puste po błędzie. Nazwa ma 1–120 znaków, e-mail do 255,
 a hasło minimum 8 znaków i maksimum 72 bajty, bez NUL (limit bcrypt).
 Nowe hasło (rejestracja i zmiana w ustawieniach) musi też zawierać literę
@@ -174,6 +181,7 @@ set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
 docker compose exec php php tests/user-repository.test.php
 docker compose exec php php tests/login-throttle.test.php
 docker compose exec php php tests/routing-methods.test.php
+docker compose exec php php tests/login-timing.test.php
 docker compose exec php php tests/projects-application.test.php
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs tests/mail-http.test.cjs
 ```
