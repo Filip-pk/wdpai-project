@@ -37,6 +37,9 @@ test('administrator access, diagnostics, mail and role changes are protected and
         await t.test('ordinary members and moderators cannot access administration', async () => {
             for (const client of [member, moderator]) {
                 for (const tab of tabs) assert.equal((await client.request('/admin?tab=' + tab)).status, 403);
+                const denied = await client.request('/admin');
+                assert.match(denied.html, /<a href="\/" class="error-button error-button-primary">/, 'Denied users are sent home');
+                assert.doesNotMatch(denied.html, /href="\/admin"|error-button-secondary/, 'No link back to the page that was denied');
                 assert.doesNotMatch((await client.request('/profile')).html, /href="\/admin"/);
                 for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator']) {
                     assert.equal((await client.request(route, { csrfToken: csrf(await client.request('/profile')) })).status, 403);
@@ -68,6 +71,9 @@ test('administrator access, diagnostics, mail and role changes are protected and
             }
             assert.deepEqual(fixtureState(fixture), before);
             assert.equal((await messagesTo(fixture.admin.email)).messages_count, 0);
+            const rejected = await admin.request('/admin/diagnostics', { csrfToken: '' });
+            assert.match(rejected.html, /<a href="\/admin" class="error-button error-button-primary">/, 'Admin errors lead back to the panel');
+            assert.doesNotMatch(rejected.html, /Wróć do dyskusji|wrócić do rozmowy/i, 'Admin errors do not mention discussions');
         });
 
         await t.test('readiness probes are manual, independently reported and audited without sending mail', async () => {

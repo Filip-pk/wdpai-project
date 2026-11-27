@@ -135,7 +135,8 @@ final class AdminController extends AppController
     {
         $user = $this->currentUser($this->users());
         if (!$this->admins()->isAdmin($user['id'])) {
-            $this->fail(403, 'admin.error.access');
+            // A link back to /admin would only lead to this page again.
+            $this->fail(403, 'admin.error.access', false);
             return null;
         }
         return $user;
@@ -163,13 +164,16 @@ final class AdminController extends AppController
         return true;
     }
 
-    private function fail(int $status, string $key): void
+    private function fail(int $status, string $key, bool $panelLink = true): void
     {
+        $translator = Translator::current();
         http_response_code($status);
         $this->render('community-error', [
-            'pageTitle' => Translator::current()->translate('admin.title'),
-            'message' => Translator::current()->translate($key),
-            'backUrl' => '/admin',
+            'pageTitle' => $translator->translate('admin.title'),
+            'message' => $translator->translate($key),
+            'backUrl' => $panelLink ? '/admin' : '/',
+            'backLabel' => $translator->translate($panelLink ? 'admin.back_to_panel' : 'view.interface.home'),
+            'errorHint' => $translator->translate($panelLink ? 'admin.error.hint' : 'admin.error.access_hint'),
         ]);
     }
 
