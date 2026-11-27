@@ -77,8 +77,14 @@ final class AdminController extends AppController
             return;
         }
         $_SESSION['admin_diagnostics'] = $this->diagnostics->checkAll();
-        $this->admins()->audit($user['id'], 'diagnostics_checked');
         $_SESSION['admin_notice'] = 'admin.notice.diagnostics_saved';
+        // As with the mail test, an audit outage must not hide results that were already collected.
+        try {
+            $this->admins()->audit($user['id'], 'diagnostics_checked');
+        } catch (Throwable $exception) {
+            $this->logger->recordException($exception, 'admin', '/admin/diagnostics');
+            $_SESSION['admin_errors'] = ['admin.error.audit'];
+        }
         $this->redirect('/admin?tab=diagnostics');
     }
 
