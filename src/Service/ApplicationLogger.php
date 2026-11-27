@@ -11,12 +11,15 @@ final class ApplicationLogger
 {
     private const LEVELS = ['error', 'warning', 'info'];
     /** Fixed module names; the admin error filter offers exactly these. */
-    public const MODULES = ['application', 'database', 'mail', 'smtp', 'ollama', 'environment', 'admin', 'auth', 'diagnostics'];
+    public const MODULES = ['application', 'database', 'mail', 'smtp', 'ollama', 'environment', 'admin', 'auth', 'diagnostics', 'maintenance'];
     private const MESSAGES = [
         'admin.log.exception', 'admin.log.diagnostic_failed', 'admin.log.event',
         'admin.log.mail_failed', 'admin.log.runtime_error', 'admin.log.fatal_error',
         'admin.log.login_failed', 'admin.log.login_throttled',
+        'admin.log.cleanup_finished', 'admin.log.cleanup_skipped', 'admin.log.cleanup_failed',
     ];
+    /** Counts of rows and files removed by the cleanup task. */
+    public const CLEANUP_COUNTS = ['loginAttempts', 'emailChanges', 'activity', 'avatarFiles'];
     private readonly int $maxBytes;
     private readonly int $retentionDays;
     private readonly int $maxFiles;
@@ -186,6 +189,11 @@ final class ApplicationLogger
         // Sign-in audit: shortened SHA-256 identifiers only, never an e-mail or IP address.
         foreach (['account', 'client'] as $key) {
             if (is_string($context[$key] ?? null) && preg_match('/\A[a-f0-9]{16}\z/', $context[$key]) === 1) {
+                $safe[$key] = $context[$key];
+            }
+        }
+        foreach (self::CLEANUP_COUNTS as $key) {
+            if (is_int($context[$key] ?? null) && $context[$key] >= 0) {
                 $safe[$key] = $context[$key];
             }
         }
