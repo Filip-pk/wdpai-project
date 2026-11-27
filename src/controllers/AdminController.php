@@ -227,17 +227,11 @@ final class AdminController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function admins(): AdminRepository
     {
-        if ($this->admins instanceof Closure) {
-            $this->admins = ($this->admins)();
-        }
-        return $this->admins;
+        return self::resolveDependency($this->admins);
     }
 }

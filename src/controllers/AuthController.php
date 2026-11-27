@@ -213,20 +213,12 @@ final class AuthController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function throttle(): ?LoginThrottle
     {
-        if ($this->throttle instanceof Closure) {
-            $this->throttle = ($this->throttle)();
-        }
-
-        return $this->throttle;
+        return self::resolveDependency($this->throttle);
     }
 
     private function logger(): ApplicationLogger

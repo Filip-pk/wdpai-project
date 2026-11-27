@@ -210,41 +210,26 @@ final class CollectionController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function collections(): CollectionRepository
     {
-        if ($this->collections instanceof Closure) {
-            $this->collections = ($this->collections)();
-        }
-        return $this->collections;
+        return self::resolveDependency($this->collections);
     }
 
     private function animes(): AnimeRepository
     {
-        if ($this->animes instanceof Closure) {
-            $this->animes = ($this->animes)();
-        }
-        return $this->animes;
+        return self::resolveDependency($this->animes);
     }
 
     private function ratings(): RatingRepository
     {
-        if ($this->ratings instanceof Closure) {
-            $this->ratings = ($this->ratings)();
-        }
-        return $this->ratings;
+        return self::resolveDependency($this->ratings);
     }
 
     private function watchlists(): WatchlistRepository
     {
-        if ($this->watchlists instanceof Closure) {
-            $this->watchlists = ($this->watchlists)();
-        }
-        return $this->watchlists;
+        return self::resolveDependency($this->watchlists);
     }
 }

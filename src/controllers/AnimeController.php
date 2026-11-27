@@ -577,67 +577,41 @@ final class AnimeController extends AppController
 
     private function collections(): CollectionRepository
     {
-        if ($this->collections instanceof Closure) {
-            $this->collections = ($this->collections)();
-        }
-        return $this->collections;
+        return self::resolveDependency($this->collections);
     }
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function animes(): AnimeRepository
     {
-        if ($this->animes instanceof Closure) {
-            $this->animes = ($this->animes)();
-        }
-
-        return $this->animes;
+        return self::resolveDependency($this->animes);
     }
 
     private function ratings(): RatingRepository
     {
-        if ($this->ratings instanceof Closure) {
-            $this->ratings = ($this->ratings)();
-        }
-        return $this->ratings;
+        return self::resolveDependency($this->ratings);
     }
 
     private function community(): CommunityRepository
     {
-        if ($this->community instanceof Closure) {
-            $this->community = ($this->community)();
-        }
-        return $this->community;
+        return self::resolveDependency($this->community);
     }
 
     private function reactions(): CommentReactionRepository
     {
-        if ($this->reactions instanceof Closure) {
-            $this->reactions = ($this->reactions)();
-        }
-        return $this->reactions;
+        return self::resolveDependency($this->reactions);
     }
 
     private function replyNotifications(): ReplyNotificationRepository
     {
-        if ($this->replyNotifications instanceof Closure) {
-            $this->replyNotifications = ($this->replyNotifications)();
-        }
-        return $this->replyNotifications;
+        return self::resolveDependency($this->replyNotifications);
     }
 
     private function comments(): CommentRepository
     {
-        if ($this->comments instanceof Closure) {
-            $this->comments = ($this->comments)();
-        }
-
-        return $this->comments;
+        return self::resolveDependency($this->comments);
     }
 }

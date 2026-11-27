@@ -198,17 +198,11 @@ final class ModerationController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function moderation(): ModerationRepository
     {
-        if ($this->moderation instanceof Closure) {
-            $this->moderation = ($this->moderation)();
-        }
-        return $this->moderation;
+        return self::resolveDependency($this->moderation);
     }
 }

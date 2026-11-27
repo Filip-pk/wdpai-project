@@ -20,13 +20,9 @@ final class AchievementController extends AppController
     public function index(): void
     {
         $this->requireLogin();
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
+        self::resolveDependency($this->users);
         $user = $this->currentUser($this->users);
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
+        self::resolveDependency($this->achievements);
         $this->achievements->synchronize($user['id']);
         $this->render('achievements', [
             'pageTitle' => Translator::current()->translate('achievements.page_title'),

@@ -55,17 +55,11 @@ final class AnimeRankingController extends AppController
 
     private function animes(): AnimeRepository
     {
-        if ($this->animes instanceof Closure) {
-            $this->animes = ($this->animes)();
-        }
-        return $this->animes;
+        return self::resolveDependency($this->animes);
     }
 
     private function rankings(): AnimeRankingRepository
     {
-        if ($this->rankings instanceof Closure) {
-            $this->rankings = ($this->rankings)();
-        }
-        return $this->rankings;
+        return self::resolveDependency($this->rankings);
     }
 }

@@ -44,17 +44,11 @@ final class RankingController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function experience(): ExperienceRepository
     {
-        if ($this->experience instanceof Closure) {
-            $this->experience = ($this->experience)();
-        }
-        return $this->experience;
+        return self::resolveDependency($this->experience);
     }
 }

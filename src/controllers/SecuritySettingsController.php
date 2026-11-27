@@ -165,17 +165,11 @@ final class SecuritySettingsController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function security(): SecuritySettingsRepository
     {
-        if ($this->security instanceof Closure) {
-            $this->security = ($this->security)();
-        }
-        return $this->security;
+        return self::resolveDependency($this->security);
     }
 }

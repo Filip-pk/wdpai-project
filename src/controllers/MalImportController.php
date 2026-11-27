@@ -93,9 +93,7 @@ final class MalImportController extends AppController
             return;
         }
 
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
+        self::resolveDependency($this->achievements);
         $this->achievements?->synchronize($user['id']);
         unset($_SESSION['mal_import_pending']);
         $_SESSION['mal_import_report'] = ['userId' => $user['id'], 'report' => $report];
@@ -202,17 +200,11 @@ final class MalImportController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function imports(): MalImportService
     {
-        if ($this->imports instanceof Closure) {
-            $this->imports = ($this->imports)();
-        }
-        return $this->imports;
+        return self::resolveDependency($this->imports);
     }
 }

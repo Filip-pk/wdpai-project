@@ -132,25 +132,16 @@ final class AnimeClueController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function game(): AnimeClueService
     {
-        if ($this->game instanceof Closure) {
-            $this->game = ($this->game)();
-        }
-        return $this->game;
+        return self::resolveDependency($this->game);
     }
 
     private function achievements(): AchievementService
     {
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
-        return $this->achievements;
+        return self::resolveDependency($this->achievements);
     }
 }

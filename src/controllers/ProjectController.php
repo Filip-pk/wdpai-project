@@ -54,10 +54,6 @@ final class ProjectController extends AppController
 
     private function projects(): ProjectRepository
     {
-        if ($this->projectRepository instanceof Closure) {
-            $this->projectRepository = ($this->projectRepository)();
-        }
-
-        return $this->projectRepository;
+        return self::resolveDependency($this->projectRepository);
     }
 }
