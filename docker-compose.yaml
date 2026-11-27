@@ -49,6 +49,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:4b}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_FROM: ${MAIL_FROM:-noreply@anivibe.local}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-AniVibe}
     depends_on:
       db:
         condition: service_healthy
