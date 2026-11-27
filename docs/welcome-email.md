@@ -3,7 +3,10 @@
 Po zapisaniu nowego konta `AuthController` wywołuje `MailService`.
 Usługa wysyła pojedynczą wiadomość tekstową UTF-8 przez SMTP do Mailpit,
 bez dodatkowych bibliotek. Hasło ani jego hash nie trafiają do wiadomości.
-Duplikat adresu, błąd walidacji i nieprawidłowy CSRF nie wywołują wysyłki.
+Błąd walidacji i nieprawidłowy CSRF nie wywołują wysyłki. Rejestracja na
+zajęty adres nie tworzy konta ani powitania: wysyła właścicielowi wiadomość
+„AniVibe — ktoś próbował założyć konto na Twój adres”, a formularz
+odpowiada tak samo jak przy nowym koncie.
 
 ## Konfiguracja i podgląd
 
@@ -25,7 +28,9 @@ przy rejestracji. Źródło zawiera `MIME-Version: 1.0`,
 | SMTP przyjął wiadomość | `/login?registered=1&mail=sent` |
 | Wysyłka się nie powiodła | `/login?registered=1&mail=failed` |
 
-W obu przypadkach konto pozostaje aktywne i można się zalogować.
+Te same przekierowania dotyczą rejestracji na zajęty adres, dlatego komunikaty
+na stronie logowania są neutralne („Rejestracja przyjęta…”, „Wysłaliśmy
+wiadomość…”). Nowe konto pozostaje aktywne również przy awarii wysyłki.
 Przy awarii użytkownik dostaje krótki komunikat bez danych technicznych.
 Diagnostyka trafia do logów PHP:
 

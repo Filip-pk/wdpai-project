@@ -134,8 +134,8 @@ test(expectMailFailure ? 'SMTP failure preserves the account and allows login' :
     assert.equal(loginPage.status, 200);
     assert.ok(loginPage.html.includes(`data-mail-status="${status}"`));
     assert.ok(loginPage.html.includes(expectMailFailure
-        ? 'Nie udało się wysłać wiadomości powitalnej. Konto jest aktywne i możesz się zalogować.'
-        : 'Wysłaliśmy wiadomość powitalną na podany adres e-mail.'));
+        ? 'Nie udało się wysłać wiadomości e-mail. Rejestracja została przyjęta.'
+        : 'Wysłaliśmy wiadomość na podany adres e-mail.'));
     assert.doesNotMatch(loginPage.html, /mailpit|SMTP|localhost:1025/i);
 
     if (!expectMailFailure) {
@@ -162,12 +162,22 @@ test(expectMailFailure ? 'SMTP failure preserves the account and allows login' :
         assert.ok(!raw.includes(password));
 
         const duplicate = await client.request('/register', { ...fields, email: email.toUpperCase() });
-        assert.equal(duplicate.status, 422);
+        assert.equal(duplicate.status, 303);
+        assert.equal(duplicate.headers.get('location'), '/login?registered=1&mail=sent',
+            'A duplicate looks exactly like a new registration');
         const invalidCsrf = await client.request('/register', {
             ...fields, email: `csrf-${email}`, csrfToken: 'wrong',
         });
         assert.equal(invalidCsrf.status, 403);
-        assert.equal((await messagesTo(email)).messages_count, 1, 'A duplicate does not send another email');
+        const afterDuplicate = await messagesTo(email);
+        assert.equal(afterDuplicate.messages_count, 2, 'A duplicate sends one notice to the existing owner');
+        const noticeSummary = afterDuplicate.messages.find((item) => item.Subject !== message.Subject);
+        assert.ok(noticeSummary, 'The owner receives a separate notice');
+        const notice = await mailpit(`/api/v1/message/${encodeURIComponent(noticeSummary.ID)}`);
+        assert.equal(notice.Subject, 'AniVibe — ktoś próbował założyć konto na Twój adres');
+        assert.ok(notice.Text.includes(`Cześć ${name}!`));
+        assert.ok(notice.Text.includes('ale konto już istnieje'));
+        assert.ok(!notice.Text.includes(password));
         assert.equal((await messagesTo(`csrf-${email}`)).messages_count, 0, 'Invalid CSRF cannot send email');
     }
 

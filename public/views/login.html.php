@@ -50,17 +50,17 @@
 
             <?php if ($registered ?? false): ?>
                 <p class="auth-notice" role="status">
-                    <?= $escape($t('view.interface.your_account_has_been_created_you_can_now_sign_in')) ?>
+                    <?= $escape($t('view.interface.registration_received_sign_in_if_the_address_was_new')) ?>
                 </p>
             <?php endif; ?>
 
             <?php if (($mailStatus ?? null) === 'sent'): ?>
                 <p class="auth-notice" role="status" data-mail-status="sent">
-                    <?= $escape($t('view.interface.we_sent_a_welcome_email_to_the_address_you_provided')) ?>
+                    <?= $escape($t('view.interface.we_sent_an_email_to_the_address_you_provided')) ?>
                 </p>
             <?php elseif (($mailStatus ?? null) === 'failed'): ?>
                 <p class="auth-notice auth-notice--warning" role="status" data-mail-status="failed">
-                    <?= $escape($t('view.interface.the_welcome_email_could_not_be_sent_your_account_is_active_and_you_can_sign_in')) ?>
+                    <?= $escape($t('view.interface.the_email_could_not_be_sent_registration_received')) ?>
                 </p>
             <?php endif; ?>
 

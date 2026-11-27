@@ -129,24 +129,30 @@ final class AuthController extends AppController
                 }
 
                 if ($errors === []) {
-                    if ($this->users()->findByEmail($email) !== null) {
-                        $errors[] = Translator::message('Konto dla tego adresu już istnieje.');
-                    } else {
+                    // The response is the same whether or not the address already has an account, so the form
+                    // cannot be used to discover accounts; the password is hashed in both cases to match timing.
+                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                    $existingAccount = $this->users()->findByEmail($email);
+                    if ($existingAccount === null) {
                         try {
-                            $this->users()->create($name, $email, password_hash($password, PASSWORD_DEFAULT), $language);
+                            $this->users()->create($name, $email, $passwordHash, $language);
                         } catch (PDOException $exception) {
                             if ($exception->getCode() !== '23505') {
                                 throw $exception;
                             }
 
-                            $errors[] = Translator::message('Konto dla tego adresu już istnieje.');
+                            $existingAccount = $this->users()->findByEmail($email);
                         }
                     }
-                }
 
-                if ($errors === []) {
                     try {
-                        $this->mailer->sendWelcomeEmail($email, $name, $language);
+                        if ($existingAccount === null) {
+                            $this->mailer->sendWelcomeEmail($email, $name, $language);
+                        } else {
+                            $this->mailer->sendExistingAccountNotice(
+                                $existingAccount['email'], $existingAccount['name'], $existingAccount['language'],
+                            );
+                        }
                         $mailStatus = 'sent';
                     } catch (RuntimeException $exception) {
                         $this->logger()->recordException($exception, 'mail', '/register');

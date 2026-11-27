@@ -105,7 +105,7 @@ test('registration, sessions, protected projects and logout', async (t) => {
         assert.ok(escaped.html.includes(email));
     });
 
-    await t.test('registration persists the account and rejects case-insensitive duplicates', async () => {
+    await t.test('registration persists the account and hides case-insensitive duplicates', async () => {
         const fields = { name, email: `  ${email.toUpperCase()}  `, password,
             passwordConfirmation: password, csrfToken: anonymousToken };
         redirected(await client.request('/register', fields), '/login?registered=1&mail=sent');
@@ -113,9 +113,14 @@ test('registration, sessions, protected projects and logout', async (t) => {
         const login = await client.request('/login?registered=1');
         assert.equal(login.status, 200);
         assert.equal(csrfFrom(login), anonymousToken);
-        const duplicate = await client.request('/register', { ...fields, email });
-        assert.equal(duplicate.status, 422);
-        passwordIsEmpty(duplicate, password);
+        assert.doesNotMatch(login.html, /już istnieje|already exists/i);
+        // A duplicate looks exactly like a new registration and never replaces the stored password.
+        const otherPassword = 'Inne-Haslo-Rejestracji-2026!';
+        const duplicate = await client.request('/register', {
+            ...fields, email, password: otherPassword, passwordConfirmation: otherPassword,
+        });
+        redirected(duplicate, '/login?registered=1&mail=sent');
+        passwordIsEmpty(duplicate, otherPassword);
     });
 
     await t.test('invalid credentials return the same message without exposing passwords', async () => {

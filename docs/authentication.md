@@ -113,6 +113,12 @@ Pola haseł pozostają puste po błędzie. Nazwa ma 1–120 znaków, e-mail do 2
 a hasło minimum 8 znaków i maksimum 72 bajty, bez NUL (limit bcrypt).
 Unikalność e-maila egzekwuje również baza, z obsługą równoległej rejestracji.
 
+Rejestracja nie zdradza, czy adres ma już konto. Dla zajętego adresu
+odpowiedź jest taka sama jak dla nowego (`303 /login?registered=1&mail=…`,
+neutralny komunikat), hasło jest haszowane w obu przypadkach, a zapisane
+konto i jego hasło pozostają bez zmian. Właściciel dostaje wtedy wiadomość
+o próbie rejestracji w języku swojego konta.
+
 Sesja przechowuje ID, nazwę, e-mail, czas zalogowania i token CSRF, bez hasła
 ani jego hasha. Ciasteczko ma `HttpOnly`, `SameSite=Lax`, czas życia `0`
 i `Secure` przy HTTPS. Odpowiedzi aplikacji mają `Cache-Control: no-store`.
