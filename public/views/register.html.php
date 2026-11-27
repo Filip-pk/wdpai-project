@@ -65,6 +65,7 @@
                         type="password"
                         autocomplete="new-password"
                         minlength="8"
+                        data-password-rules
                         aria-describedby="register-password-help"
                         placeholder="<?= $escape($t('view.interface.at_least_8_characters')) ?>"
                         required
@@ -80,6 +81,7 @@
                         type="password"
                         autocomplete="new-password"
                         minlength="8"
+                        data-password-confirm
                         placeholder="<?= $escape($t('view.interface.enter_your_password_again')) ?>"
                         required
                     >

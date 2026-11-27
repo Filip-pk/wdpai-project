@@ -122,6 +122,9 @@ $isRedesignPage = $isRedesignPage || $isSettingsPage || $isShowcasePage || $isAd
     <?php if ($isAuthPage): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/login.css') ?>">
     <?php endif; ?>
+    <?php if (!$isErrorPage && ($currentPath === '/register' || $isSettingsPage)): ?>
+        <script src="<?= $assetUrl('/js/password-form.js') ?>" defer></script>
+    <?php endif; ?>
 
     <?php if (!$isErrorPage && ($isUserProfilePage || $isImportPage || $isCollectionsPage || str_starts_with((string) $currentPath, '/anime/') || in_array($currentPath, ['/anime', '/dashboard', '/profile', '/profile/avatar', '/watchlist', '/watchlist/remove', '/chat'], true))): ?>
         <link rel="stylesheet" href="<?= $assetUrl('/css/catalog.css') ?>">
