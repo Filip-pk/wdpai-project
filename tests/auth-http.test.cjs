@@ -72,7 +72,9 @@ test('registration, sessions, protected projects and logout', async (t) => {
             redirected(await client.request(path), '/login');
         }
         assert.equal((await client.request('/login')).status, 200);
-        assert.equal((await client.request('/logout')).status, 404);
+        const logoutPage = await client.request('/logout');
+        assert.equal(logoutPage.status, 405);
+        assert.equal(logoutPage.headers.get('allow'), 'POST');
     });
 
     await t.test('missing, incorrect and array CSRF tokens are rejected', async () => {
@@ -187,7 +189,9 @@ test('registration, sessions, protected projects and logout', async (t) => {
     });
 
     await t.test('logout requires POST and valid CSRF and destroys the previous session', async () => {
-        assert.equal((await client.request('/logout')).status, 404);
+        const logoutPage = await client.request('/logout');
+        assert.equal(logoutPage.status, 405);
+        assert.equal(logoutPage.headers.get('allow'), 'POST');
         for (const token of [{}, { csrfToken: anonymousToken }, { 'csrfToken[]': signedInToken }]) {
             assert.equal((await client.request('/logout', token)).status, 403);
             assert.equal((await client.request('/projects')).status, 200);

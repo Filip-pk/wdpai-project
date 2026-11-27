@@ -24,6 +24,13 @@ final class DefaultController extends AppController
         ]);
     }
 
+    public function methodNotAllowed(): void
+    {
+        $this->render('method-not-allowed', [
+            'pageTitle' => Translator::current()->translate('message.page.method_not_allowed'),
+        ]);
+    }
+
     public function serverError(?string $errorId = null): void
     {
         $retryUrl = null;

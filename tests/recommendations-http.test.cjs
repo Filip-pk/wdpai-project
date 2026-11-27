@@ -75,7 +75,7 @@ test('dashboard recommendations follow the current account watchlist and ratings
             assert.deepEqual(result.seeds, []);
             assert.match(page.html, /propozycje|propozycj/i);
             assert.match(page.html, /\/css\/dashboard\.css\?v=[a-f0-9]{12}/);
-            assert.equal((await guest.request('/dashboard', {})).status, 404, 'Recommendations are read-only');
+            assert.equal((await guest.request('/dashboard', {})).status, 405, 'Recommendations are read-only');
         });
 
         await watch(first, action.animes[0]); await rate(first, action.animes[0], 10);

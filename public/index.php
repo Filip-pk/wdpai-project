@@ -477,8 +477,15 @@ try {
     );
 
     if (!$routeFound) {
-        http_response_code(404);
-        (new DefaultController())->notFound();
+        $allowedMethods = $routing->allowedMethods($_SERVER['REQUEST_URI']);
+        if ($allowedMethods !== []) {
+            http_response_code(405);
+            header('Allow: ' . implode(', ', $allowedMethods));
+            (new DefaultController())->methodNotAllowed();
+        } else {
+            http_response_code(404);
+            (new DefaultController())->notFound();
+        }
     }
     AccountAccessGuard::finish(http_response_code() < 400);
 } catch (Throwable $exception) {

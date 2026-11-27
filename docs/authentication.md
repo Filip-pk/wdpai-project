@@ -109,6 +109,13 @@ wersji PHP. Zmiana wymaga przebudowy: `docker compose up -d --build php`.
 
 Nieprawidłowy CSRF zwraca `403`, błędy rejestracji `422`, a błędne dane
 logowania `401` z jednym ogólnym komunikatem. `GET /logout` nie wylogowuje.
+
+Akcje `login` i `register` mają atrybut `#[AllowedMethods('GET', 'POST')]`,
+a `logout` `#[AllowedMethods('POST')]` (`src/Attribute/AllowedMethods.php`).
+Router sprawdza go obok tabeli tras: GET tylko wyświetla formularz, dane są
+czytane wyłącznie z POST. Gdy adres istnieje, ale metoda nie pasuje,
+aplikacja odpowiada `405` z nagłówkiem `Allow` (np. `GET /logout` →
+`Allow: POST`); nieznany adres nadal daje `404`.
 Pola haseł pozostają puste po błędzie. Nazwa ma 1–120 znaków, e-mail do 255,
 a hasło minimum 8 znaków i maksimum 72 bajty, bez NUL (limit bcrypt).
 Nowe hasło (rejestracja i zmiana w ustawieniach) musi też zawierać literę
@@ -166,6 +173,7 @@ zmienną raz w danym oknie CMD:
 set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
 docker compose exec php php tests/user-repository.test.php
 docker compose exec php php tests/login-throttle.test.php
+docker compose exec php php tests/routing-methods.test.php
 docker compose exec php php tests/projects-application.test.php
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs tests/mail-http.test.cjs
 ```

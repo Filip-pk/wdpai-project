@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Attribute\AllowedMethods;
 use App\Repository\UserRepository;
 use App\Service\AccountSecurityService;
 use App\Service\ApplicationLogger;
@@ -24,6 +25,8 @@ final class AuthController extends AppController
     ) {
     }
 
+    /** GET only renders the form; credentials are read only from a POST. */
+    #[AllowedMethods('GET', 'POST')]
     public function login(): void
     {
         if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
@@ -95,6 +98,8 @@ final class AuthController extends AppController
         ]);
     }
 
+    /** GET only renders the form; the account is created only from a POST. */
+    #[AllowedMethods('GET', 'POST')]
     public function register(): void
     {
         if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
@@ -174,6 +179,7 @@ final class AuthController extends AppController
         ]);
     }
 
+    #[AllowedMethods('POST')]
     public function logout(): void
     {
         if (!$this->isPost() || !$this->isCsrfTokenValid($this->postString('csrfToken'))) {

@@ -144,13 +144,13 @@ test('public user profiles expose identity, EXP and read-only watchlists while p
         }), '/watchlist');
         statistics(await guest.request(route), 2, 1, 1, completed.episodes + 2, totalExp);
         statistics(await guest.request('/users/' + second.id), 1, 0, 1, 1, 5);
-        assert.equal((await second.client.request(route, { name: 'Forged', csrfToken: second.token })).status, 404);
+        assert.equal((await second.client.request(route, { name: 'Forged', csrfToken: second.token })).status, 405);
     });
 
-    await t.test('invalid or missing users and unsupported writes return 404', async () => {
+    await t.test('invalid or missing users return 404 and unsupported writes 405', async () => {
         for (const path of ['/users/0', '/users/2147483647', '/users/999999999999999999999999', '/users/abc', '/users/-1']) {
             assert.equal((await guest.request(path)).status, 404, path);
         }
-        assert.equal((await guest.request(route, { name: 'Forged' })).status, 404);
+        assert.equal((await guest.request(route, { name: 'Forged' })).status, 405);
     });
 });
