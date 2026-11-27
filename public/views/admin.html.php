@@ -143,7 +143,11 @@ $formatDate = static fn (string $date): string => ModerationNoticeFormatter::dat
                 </div>
                 <div class="admin-field">
                     <label for="admin-module"><?= $escape($t('admin.module')) ?></label>
-                    <input id="admin-module" name="module" type="search" maxlength="40" value="<?= $escape($filters['module'] ?? '') ?>">
+                    <select id="admin-module" name="module">
+                        <?php foreach (array_merge([''], $logModules) as $module): ?>
+                            <option value="<?= $escape($module) ?>"<?= ($filters['module'] ?? '') === $module ? ' selected' : '' ?>><?= $escape($module === '' ? $t('admin.all') : $module) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             <?php else: ?>
                 <div class="admin-field">

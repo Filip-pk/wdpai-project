@@ -127,7 +127,9 @@ jest pokazywany również na ekranie 500, jeśli obsługa żądania mogła go za
 Domyślnie zachowujemy maksymalnie 8 plików po około 1 MB przez 7 dni.
 Rotacja i usuwanie starych plików następują przy kolejnym zapisie;
 odczyt pomija przeterminowane pliki i ma ograniczony rozmiar.
-Listy mają filtrowanie i paginację po 20 pozycji. Brak prawa zapisu lub
+Listy mają filtrowanie i paginację po 20 pozycji. Moduł wybierasz z listy
+stałych modułów loggera (`ApplicationLogger::MODULES`, np. `auth`, `mail`,
+`database`); nieznana wartość w adresie oznacza wszystkie moduły. Brak prawa zapisu lub
 chwilowo zajęta blokada nie zastępuje pierwotnej odpowiedzi aplikacji
 innym błędem; w takiej sytuacji wpis może nie powstać.
 

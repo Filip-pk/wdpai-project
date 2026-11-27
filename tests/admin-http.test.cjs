@@ -139,6 +139,20 @@ test('administrator access, diagnostics, mail and role changes are protected and
                     assert.equal((await admin.request('/admin?' + new URLSearchParams({ tab, query }))).status, 422);
                 }
             }
+            const modules = ['application', 'database', 'mail', 'smtp', 'ollama', 'environment', 'admin', 'auth', 'diagnostics'];
+            const errorsPage = await admin.request('/admin?tab=errors&module=auth');
+            assert.equal(errorsPage.status, 200);
+            assert.match(errorsPage.html, /<select id="admin-module" name="module">/, 'Modules are chosen from a fixed list');
+            assert.match(errorsPage.html, /<option value="auth" selected>auth<\/option>/);
+            for (const module of modules) assert.ok(errorsPage.html.includes('<option value="' + module + '"'), module);
+            for (const module of ['nieznany', 'AUTH', '<script>']) {
+                const page = await admin.request('/admin?' + new URLSearchParams({ tab: 'errors', module }));
+                assert.equal(page.status, 200);
+                assert.match(page.html, /<option value="" selected>/, 'An unknown module falls back to all modules');
+                assert.ok(!page.html.includes('value="' + module + '"') && !page.html.includes('&lt;script&gt;'),
+                    'An unknown module is not reflected');
+            }
+            assert.equal((await admin.request('/admin?tab=errors&module[]=auth')).status, 200);
             for (const missing of ['all', 'description', 'image']) {
                 const page = await admin.request('/admin?' + new URLSearchParams({ tab: 'catalog', query: fixture.marker, missing }));
                 assert.equal(page.status, 200);

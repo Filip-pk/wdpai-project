@@ -45,7 +45,8 @@ final class AdminController extends AppController
                 ? $this->queryString('missing') : 'all',
             'level' => in_array($this->queryString('level'), ['error', 'warning', 'info'], true)
                 ? $this->queryString('level') : '',
-            'module' => mb_substr(trim($this->queryString('module')), 0, 40),
+            'module' => in_array($this->queryString('module'), ApplicationLogger::MODULES, true)
+                ? $this->queryString('module') : '',
         ];
         $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
         $notice = $_SESSION['admin_notice'] ?? null;
@@ -61,6 +62,7 @@ final class AdminController extends AppController
             'overview' => $tab === 'overview' ? $this->admins()->overview() : [],
             'diagnostics' => $_SESSION['admin_diagnostics'] ?? [],
             'logEntries' => $tab === 'errors' ? $this->logger->recent($filters['level'], $filters['module'], $page) : [],
+            'logModules' => ApplicationLogger::MODULES,
             'userList' => $tab === 'users' ? $this->admins()->users($filters['query'], $page) : [],
             'catalog' => $tab === 'catalog' ? $this->admins()->catalog($filters['query'], $filters['missing'], $page) : [],
             'history' => $tab === 'history' ? $this->admins()->history($page) : [],
