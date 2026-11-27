@@ -73,8 +73,14 @@ dostępne. Rola admina nadal nie daje wglądu w cudze prywatne rozmowy.
 Wejście do panelu nie uruchamia testów ani wysyłki. „Sprawdź usługi”
 wykonuje cztery niezależne próby i zapisuje wyniki w bieżącej sesji:
 
-- PostgreSQL: połączenie, `SELECT 1`, wymagane tabele i flaga roli admina.
-  Zapytania kontrolne mają limit czasu i nie zapisują danych.
+- PostgreSQL: połączenie, `SELECT 1`, wszystkie tabele tworzone przez
+  migracje z katalogu `database` oraz kolumny dodane do istniejących tabel.
+  Brakujący element pojawia się z nazwą w szczegółach karty, np.
+  `login_attempts`, gdy na istniejącej bazie nie zastosowano migracji `32`.
+  Listy są w `DiagnosticService::REQUIRED_TABLES` i `REQUIRED_COLUMNS`;
+  test diagnostyki porównuje je z plikami migracji, więc nowa migracja
+  bez aktualizacji listy nie przejdzie testu. Zapytania kontrolne mają limit
+  czasu i nie zapisują danych.
 - Poczta: połączenie SMTP, powitanie serwera i `EHLO`, bez wysyłki wiadomości.
 - Ollama: żądanie `/api/tags`, ograniczony rozmiar odpowiedzi, brak
   przekierowań i limit czasu. Brak modeli lub niedostępność są ostrzeżeniem,

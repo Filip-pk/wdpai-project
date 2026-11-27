@@ -11,6 +11,28 @@ use Throwable;
 
 final class DiagnosticService
 {
+    /** Every table created by database/*.sql; tests/admin-diagnostics.test.php keeps this list in step. */
+    public const REQUIRED_TABLES = [
+        'admin_actions', 'anime', 'anime_clue_answers', 'anime_clue_attempts', 'anime_collection_items',
+        'anime_collections', 'anime_comments', 'anime_external_ids', 'anime_genres', 'comment_reactions',
+        'comment_reply_notifications', 'community_activity', 'community_reports', 'daily_anime_clues',
+        'daily_quizzes', 'genres', 'login_attempts', 'moderation_actions', 'moderation_notices',
+        'private_conversations', 'private_message_reads', 'private_messages', 'projects', 'quiz_attempts',
+        'user_achievements', 'user_anime_experience', 'user_anime_ratings', 'user_bans', 'user_blocks',
+        'user_email_changes', 'user_showcase_anime', 'user_showcase_badges', 'user_watchlist', 'users',
+    ];
+
+    /** Every column added to an existing table by database/*.sql, as table.column. */
+    public const REQUIRED_COLUMNS = [
+        'anime.airing_status', 'anime.chat_synopsis', 'anime.search_text', 'anime_clue_attempts.wrong_answers',
+        'anime_comments.deleted_at', 'anime_comments.moderated_at', 'anime_comments.parent_id',
+        'private_messages.moderated_at', 'users.avatar_data', 'users.avatar_version', 'users.comment_text_size',
+        'users.font_size', 'users.high_contrast', 'users.interests', 'users.interface_density', 'users.is_admin',
+        'users.is_moderator', 'users.language', 'users.large_controls', 'users.line_height', 'users.message_policy',
+        'users.message_text_size', 'users.public_ratings', 'users.public_statistics', 'users.reduced_motion',
+        'users.strong_focus', 'users.theme',
+    ];
+
     public function __construct(
         private readonly Closure $connect,
         private readonly array $mailConfiguration,
@@ -58,24 +80,26 @@ final class DiagnosticService
                 if ((int) $connection->query('SELECT 1')->fetchColumn() !== 1) {
                     throw new RuntimeException('Database probe failed.');
                 }
-                $required = [
-                    'users', 'anime', 'genres', 'anime_genres', 'user_watchlist',
-                    'anime_comments', 'community_reports', 'user_bans', 'moderation_actions',
-                    'private_conversations', 'private_messages', 'user_anime_ratings',
-                    'anime_collections', 'anime_collection_items', 'user_achievements',
-                    'user_showcase_anime', 'user_showcase_badges', 'admin_actions',
-                ];
+                // A migration that was not applied to an existing database shows up here by name.
                 $statement = $connection->prepare('SELECT to_regclass(:table_name) IS NOT NULL');
                 $missing = [];
-                foreach ($required as $table) {
+                foreach (self::REQUIRED_TABLES as $table) {
                     $statement->execute(['table_name' => 'public.' . $table]);
                     if (!in_array($statement->fetchColumn(), [true, 1, '1', 't'], true)) {
                         $missing[] = $table;
                     }
                 }
-                $column = $connection->query("SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'is_admin')");
-                if (!in_array($column->fetchColumn(), [true, 1, '1', 't'], true)) {
-                    $missing[] = 'users.is_admin';
+                $column = $connection->prepare("SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = :table_name AND column_name = :column_name)");
+                foreach (self::REQUIRED_COLUMNS as $qualifiedName) {
+                    [$table, $name] = explode('.', $qualifiedName, 2);
+                    if (in_array($table, $missing, true)) {
+                        continue;
+                    }
+                    $column->execute(['table_name' => $table, 'column_name' => $name]);
+                    if (!in_array($column->fetchColumn(), [true, 1, '1', 't'], true)) {
+                        $missing[] = $qualifiedName;
+                    }
                 }
             } finally {
                 $connection->rollBack();
