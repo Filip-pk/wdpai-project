@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use PDO;
 
 final class CollectionRepository
@@ -33,9 +34,7 @@ final class CollectionRepository
         $statement = $this->database->prepare('SELECT count(*) FROM anime_collections WHERE user_id = :user_id');
         $statement->execute(['user_id' => $userId]);
         $total = (int) $statement->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
 
         return [
             'collections' => $this->fetchForUser($userId, $perPage, ($page - 1) * $perPage),
@@ -143,9 +142,7 @@ final class CollectionRepository
         );
         $statement->execute(['user_id' => $userId, 'id' => $collectionId]);
         $total = (int) $statement->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
         $statement = $this->database->prepare(
             'SELECT items.anime_id FROM anime_collection_items items
              JOIN anime_collections collections ON collections.id = items.collection_id
@@ -216,7 +213,7 @@ final class CollectionRepository
         );
         $statement->execute($parameters);
 
-        return in_array($statement->fetchColumn(), [true, 1, '1', 't'], true);
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     public function removeAnimeForUser(int $userId, int $collectionId, int $animeId): bool
@@ -239,7 +236,7 @@ final class CollectionRepository
             'id' => (int) $row['id'],
             'name' => (string) $row['name'],
             'description' => (string) $row['description'],
-            'isDefault' => in_array($row['is_default'], [true, 1, '1', 't'], true),
+            'isDefault' => DatabaseValue::toBool($row['is_default']),
             'animeCount' => (int) $row['anime_count'],
             'previews' => array_map(static fn (array $anime): array => [
                 'id' => (int) $anime['id'], 'title' => (string) $anime['title'],

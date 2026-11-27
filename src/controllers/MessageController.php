@@ -220,28 +220,16 @@ final class MessageController extends AppController
 
     private function community(): CommunityRepository
     {
-        if ($this->community instanceof Closure) {
-            $this->community = ($this->community)();
-        }
-
-        return $this->community;
+        return self::resolveDependency($this->community);
     }
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function messages(): MessageRepository
     {
-        if ($this->messages instanceof Closure) {
-            $this->messages = ($this->messages)();
-        }
-
-        return $this->messages;
+        return self::resolveDependency($this->messages);
     }
 }

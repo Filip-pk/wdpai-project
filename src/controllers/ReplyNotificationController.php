@@ -81,17 +81,11 @@ final class ReplyNotificationController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function notifications(): ReplyNotificationRepository
     {
-        if ($this->notifications instanceof Closure) {
-            $this->notifications = ($this->notifications)();
-        }
-        return $this->notifications;
+        return self::resolveDependency($this->notifications);
     }
 }

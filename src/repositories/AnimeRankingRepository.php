@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Model\AnimeRankingCriteria;
+use App\Model\Pagination;
 use InvalidArgumentException;
 use PDO;
 
@@ -46,9 +47,7 @@ final class AnimeRankingRepository
         $count = $this->database->prepare(self::TOTALS . 'SELECT COUNT(*)' . $from);
         $count->execute($parameters);
         $total = (int) $count->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($criteria->page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $criteria->page, $perPage);
         $offset = ($page - 1) * $perPage;
         $order = $criteria->mode === 'best'
             ? 'ratings.community_average DESC NULLS LAST, ratings.community_count DESC, LOWER(anime.title), anime.id'

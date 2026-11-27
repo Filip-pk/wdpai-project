@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use App\Service\CommunityService;
 use Closure;
 use PDO;
@@ -20,7 +21,7 @@ final class ModerationRepository
     {
         $statement = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
         $statement->execute(['id' => $userId]);
-        return in_array($statement->fetchColumn(), [true, 1, '1', 't'], true);
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     public function activeBanForUser(int $userId): ?array
@@ -62,7 +63,7 @@ final class ModerationRepository
                 'snapshot' => $row['snapshot'], 'reason' => $row['reason'], 'status' => $row['status'],
                 'createdAt' => $row['created_at'], 'reporterName' => $row['reporter_name'],
                 'userId' => (int) $row['user_id'], 'authorName' => $row['author_name'],
-                'isAdmin' => in_array($row['is_admin'], [true, 1, '1', 't'], true),
+                'isAdmin' => DatabaseValue::toBool($row['is_admin']),
                 'animeId' => (int) $row['anime_id'], 'animeTitle' => $row['anime_title'],
                 'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
                 'body' => $row['body'], 'moderatedAt' => $row['moderated_at'], 'deletedAt' => $row['deleted_at'],
@@ -92,7 +93,7 @@ final class ModerationRepository
             $from, $where, $parameters, 'c.created_at DESC, c.id DESC', $page, $perPage,
             fn (array $row): array => [
                 'id' => (int) $row['id'], 'userId' => (int) $row['user_id'], 'authorName' => $row['author_name'],
-                'isAdmin' => in_array($row['is_admin'], [true, 1, '1', 't'], true),
+                'isAdmin' => DatabaseValue::toBool($row['is_admin']),
                 'animeId' => (int) $row['anime_id'], 'animeTitle' => $row['anime_title'],
                 'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
                 'body' => $row['body'], 'createdAt' => $row['created_at'],
@@ -121,8 +122,8 @@ final class ModerationRepository
             $from, $where, $parameters, 'u.id DESC', $page, $perPage,
             static fn (array $row): array => [
                 'id' => (int) $row['id'], 'name' => $row['name'],
-                'isModerator' => in_array($row['is_moderator'], [true, 1, '1', 't'], true),
-                'isAdmin' => in_array($row['is_admin'], [true, 1, '1', 't'], true),
+                'isModerator' => DatabaseValue::toBool($row['is_moderator']),
+                'isAdmin' => DatabaseValue::toBool($row['is_admin']),
                 'activeBan' => $row['ban_id'] === null ? null : [
                     'id' => (int) $row['ban_id'], 'reason' => $row['ban_reason'],
                     'startsAt' => $row['starts_at'], 'endsAt' => $row['ends_at'],
@@ -199,13 +200,13 @@ final class ModerationRepository
         $lookup = $this->connection->prepare("SELECT is_moderator, COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) AS is_admin FROM users u WHERE id = :id");
         $lookup->execute(['id' => $userId]);
         $target = $lookup->fetch();
-        if ($target === false || in_array($target['is_moderator'], [true, 1, '1', 't'], true)
-            || in_array($target['is_admin'], [true, 1, '1', 't'], true)) {
+        if ($target === false || DatabaseValue::toBool($target['is_moderator'])
+            || DatabaseValue::toBool($target['is_admin'])) {
             return false;
         }
         return $this->exclusiveUserMutation($userId, fn (): bool => $this->decision($actor, $userId, $reason, $key, function (array $user, string $reason) use ($actor, $userId, $durationSeconds, $key): bool {
-            if (in_array($user['is_moderator'], [true, 1, '1', 't'], true)
-                || in_array($user['is_admin'], [true, 1, '1', 't'], true)
+            if (DatabaseValue::toBool($user['is_moderator'])
+                || DatabaseValue::toBool($user['is_admin'])
                 || $this->activeBanForUser($userId) !== null) {
                 return false;
             }
@@ -345,7 +346,7 @@ final class ModerationRepository
             // Recheck under the same user locks used by role changes. A stale form
             // must not sanction an account that has since become an administrator.
             return $user !== false
-                && (!$protectAdmin || !in_array($user['is_admin'], [true, 1, '1', 't'], true))
+                && (!$protectAdmin || !DatabaseValue::toBool($user['is_admin']))
                 && $callback($user, $reason);
         });
     }
@@ -411,9 +412,7 @@ final class ModerationRepository
         $count = $this->connection->prepare('SELECT count(*) ' . $from . $condition);
         $count->execute($parameters);
         $total = (int) $count->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
         $statement = $this->connection->prepare($select . $condition . ' ORDER BY ' . $order . ' LIMIT :limit OFFSET :offset');
         foreach ($parameters as $name => $value) {
             $statement->bindValue($name, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);

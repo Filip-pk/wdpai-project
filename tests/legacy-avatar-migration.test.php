@@ -31,7 +31,15 @@ $remove = static function (string $path) use (&$remove): void {
 try {
     $connection = (new Database())->connect();
     $connection->beginTransaction();
+    // A users table as it was between migrations 34 and 35: with the old photo column.
     $connection->exec('CREATE TEMP TABLE users (LIKE public.users INCLUDING ALL) ON COMMIT DROP');
+    $connection->exec('ALTER TABLE pg_temp.users ADD COLUMN IF NOT EXISTS avatar_data BYTEA NULL');
+    // Migration 35 applied to that temporary table instead of public.users.
+    $migration35 = str_replace(
+        ['BEGIN;', 'COMMIT;', 'public.users', "table_schema = 'public'"],
+        ['', '', 'pg_temp.users', 'table_schema = pg_my_temp_schema()::regnamespace::text'],
+        (string) file_get_contents(dirname(__DIR__) . '/database/35-drop-avatar-data.sql'),
+    );
     $storage = new AvatarStorage($directory);
     $png = "\x89PNG\r\n\x1a\n" . 'legacy-photo';
     $otherFile = $storage->save('different-bytes');
@@ -63,18 +71,30 @@ try {
     $first = $row(1);
     $assert(AvatarStorage::isValidPath((string) $first['avatar_path']) && $storage->read($first['avatar_path']) === $png,
         'Plik ma te same bajty co zdjęcie w bazie.');
-    $assert($first['has_copy'] === true, 'Bez --clear kopia w bazie zostaje dla starszych wersji aplikacji.');
     $assert($row(2) === ['avatar_path' => null, 'has_copy' => true], 'Nieprawidłowe dane zostają nietknięte.');
     $assert($row(4)['avatar_path'] === $otherFile, 'Istniejąca ścieżka nie jest nadpisywana.');
     $assert($migration->copyToFiles() === ['copied' => 0, 'skipped' => 1], 'Ponowne kopiowanie nie tworzy nowych plików.');
-    echo "[OK] Kopiowanie zapisuje pliki i ścieżki bez usuwania danych\n";
+    echo "[OK] Kopiowanie zapisuje pliki i ścieżki\n";
     $passed++;
 
-    $assert($migration->clearDatabaseCopies() === 1, 'Usuwana jest tylko kopia zgodna z plikiem.');
-    $assert($row(1) === ['avatar_path' => $first['avatar_path'], 'has_copy' => false], 'Zdjęcie zostaje tylko w pliku.');
-    $assert($row(4)['has_copy'] === true, 'Kopia różna od pliku zostaje w bazie.');
-    $assert($migration->clearDatabaseCopies() === 0, 'Ponowne czyszczenie niczego nie zmienia.');
-    echo "[OK] Opcja --clear usuwa wyłącznie kopie potwierdzone plikiem\n";
+    // Row 2 still has a photo without a file, so migration 35 must refuse to drop the column.
+    $connection->exec('SAVEPOINT refused_migration');
+    try {
+        $connection->exec($migration35);
+        $assert(false, 'Migracja 35 nie może usunąć zdjęcia bez pliku.');
+    } catch (PDOException $exception) {
+        $assert(str_contains($exception->getMessage(), 'migrate-avatars.php'), 'Komunikat wskazuje skrypt przenoszenia.');
+    }
+    $connection->exec('ROLLBACK TO SAVEPOINT refused_migration');
+    $assert($row(1)['has_copy'] === true, 'Odrzucona migracja niczego nie zmienia.');
+    $connection->exec('UPDATE pg_temp.users SET avatar_data = NULL WHERE id = 2');
+    $connection->exec($migration35);
+    $columns = $connection->query("SELECT column_name FROM information_schema.columns
+        WHERE table_schema = pg_my_temp_schema()::regnamespace::text AND table_name = 'users'")->fetchAll(PDO::FETCH_COLUMN);
+    $assert(!in_array('avatar_data', $columns, true) && in_array('avatar_path', $columns, true), 'Zostaje tylko ścieżka.');
+    $assert($migration->copyToFiles() === ['copied' => 0, 'skipped' => 0], 'Po migracji nie ma czego przenosić.');
+    $connection->exec($migration35);
+    echo "[OK] Migracja 35 usuwa kolumnę dopiero, gdy każde zdjęcie ma plik\n";
     $passed++;
 } catch (Throwable $exception) {
     $failed++;

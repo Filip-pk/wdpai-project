@@ -89,9 +89,7 @@ final class SettingsController extends AppController
 
     private function renderSettings(array $user, array $form, array $errors): void
     {
-        if ($this->privacy instanceof Closure) {
-            $this->privacy = ($this->privacy)();
-        }
+        self::resolveDependency($this->privacy);
         $this->render('settings', [
             'pageTitle' => Translator::current()->translate('settings.page_title'), 'user' => $user,
             'form' => $form, 'errors' => $errors,
@@ -103,17 +101,11 @@ final class SettingsController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function preferences(): PreferencesRepository
     {
-        if ($this->preferences instanceof Closure) {
-            $this->preferences = ($this->preferences)();
-        }
-        return $this->preferences;
+        return self::resolveDependency($this->preferences);
     }
 }

@@ -132,33 +132,21 @@ final class ProfileShowcaseController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function animes(): AnimeRepository
     {
-        if ($this->animes instanceof Closure) {
-            $this->animes = ($this->animes)();
-        }
-        return $this->animes;
+        return self::resolveDependency($this->animes);
     }
 
     private function showcases(): ProfileShowcaseRepository
     {
-        if ($this->showcases instanceof Closure) {
-            $this->showcases = ($this->showcases)();
-        }
-        return $this->showcases;
+        return self::resolveDependency($this->showcases);
     }
 
     private function achievements(): AchievementService
     {
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
-        return $this->achievements;
+        return self::resolveDependency($this->achievements);
     }
 }

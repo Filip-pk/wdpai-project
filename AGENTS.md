@@ -15,8 +15,12 @@ Aplikacja korzysta z PostgreSQL. Ollama obsługuje rekomendacje katalogowe.
 - public/views/partials/ — wspólne fragmenty widoków.
 - public/css/ — arkusze stylów.
 - src/Routing.php — router.
+- src/ControllerFactory.php — tworzenie kontrolerów i ich zależności.
 - src/controllers/ — kontrolery w namespace App\Controller.
-- src/Data/DemoData.php — dane demonstracyjne.
+- src/repositories/ — repozytoria z zapytaniami SQL (App\Repository).
+- src/Service/ — serwisy z logiką aplikacji (App\Service).
+- src/Data/ — stałe dane aplikacji: pytania quizu, zagadki, osiągnięcia.
+- database/ — migracje i dane demonstracyjne (33-demo-data.sql).
 - docker/ — konfiguracja kontenerów.
 - docker-compose.yaml — definicje usług.
 

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use App\Service\CommunityService;
 use InvalidArgumentException;
 use PDO;
 use RuntimeException;
-use Throwable;
 
 final class AdminRepository
 {
@@ -30,7 +30,7 @@ final class AdminRepository
         ) FROM users u WHERE u.id = :id');
         $statement->execute(['id' => $userId]);
 
-        return $this->boolean($statement->fetchColumn());
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     public function overview(): array
@@ -53,7 +53,7 @@ final class AdminRepository
     {
         $total = (int) $this->database->query("SELECT COUNT(*) FROM community_reports
             WHERE target_type = 'message' AND status = 'open'")->fetchColumn();
-        $pagination = $this->pagination($total, $page);
+        $pagination = Pagination::of($total, $page, self::PAGE_SIZE);
         $statement = $this->database->prepare("SELECT r.id, r.snapshot, r.reason, r.created_at,
                 reporter.name AS reporter_name, reported.id AS reported_id, reported.name AS reported_name,
                 COALESCE(reported.is_admin, false) AS reported_is_admin,
@@ -71,8 +71,8 @@ final class AdminRepository
             'createdAt' => $row['created_at'], 'reporterName' => $row['reporter_name'],
             'reportedId' => $row['reported_id'] === null ? null : (int) $row['reported_id'],
             'reportedName' => $row['reported_name'],
-            'reportedIsAdmin' => $this->boolean($row['reported_is_admin']),
-            'canHide' => !$this->boolean($row['reported_is_admin']) && $this->boolean($row['message_visible']),
+            'reportedIsAdmin' => DatabaseValue::toBool($row['reported_is_admin']),
+            'canHide' => !DatabaseValue::toBool($row['reported_is_admin']) && DatabaseValue::toBool($row['message_visible']),
         ], $statement->fetchAll(PDO::FETCH_ASSOC)), 'pagination' => $pagination];
     }
 
@@ -95,7 +95,7 @@ final class AdminRepository
         $parameters = $query === '' ? [] : ['name' => $this->pattern($query), 'email' => $this->pattern($query), 'id' => $query];
         $count = $this->database->prepare('SELECT COUNT(*) FROM users u ' . $where);
         $count->execute($parameters);
-        $pagination = $this->pagination((int) $count->fetchColumn(), $page);
+        $pagination = Pagination::of((int) $count->fetchColumn(), $page, self::PAGE_SIZE);
         $statement = $this->database->prepare('SELECT u.id, u.name, u.email, u.is_admin, u.is_moderator,
             (SELECT MAX(b.ends_at) FROM user_bans b WHERE b.user_id = u.id AND b.revoked_at IS NULL
                 AND b.starts_at <= clock_timestamp() AND b.ends_at > clock_timestamp()) AS ban_ends_at
@@ -104,7 +104,7 @@ final class AdminRepository
 
         return ['items' => array_map(fn (array $row): array => [
             'id' => (int) $row['id'], 'name' => $row['name'], 'email' => $row['email'],
-            'isAdmin' => $this->boolean($row['is_admin']), 'isModerator' => $this->boolean($row['is_moderator']),
+            'isAdmin' => DatabaseValue::toBool($row['is_admin']), 'isModerator' => DatabaseValue::toBool($row['is_moderator']),
             'banEndsAt' => $row['ban_ends_at'],
         ], $statement->fetchAll(PDO::FETCH_ASSOC)), 'pagination' => $pagination];
     }
@@ -121,17 +121,17 @@ final class AdminRepository
         $target = $this->database->prepare('SELECT is_admin FROM users WHERE id = :id');
         $target->execute(['id' => $targetId]);
         $row = $target->fetch(PDO::FETCH_ASSOC);
-        if (!$this->isAdmin($actorId) || $row === false || $this->boolean($row['is_admin'])) {
+        if (!$this->isAdmin($actorId) || $row === false || DatabaseValue::toBool($row['is_admin'])) {
             return false;
         }
 
-        return $this->transaction(function () use ($actorId, $targetId, $enabled, $reason): bool {
+        return Transaction::run($this->database, function () use ($actorId, $targetId, $enabled, $reason): bool {
             $this->accountLock($actorId, true);
             $this->accountLock($targetId, false);
             $users = $this->lockUsers([$actorId, $targetId]);
             $target = $users[$targetId] ?? null;
-            if (!$this->isAdmin($actorId) || $target === null || $this->boolean($target['is_admin'])
-                || $this->hasActiveBan($targetId) || $this->boolean($target['is_moderator']) === $enabled) {
+            if (!$this->isAdmin($actorId) || $target === null || DatabaseValue::toBool($target['is_admin'])
+                || $this->hasActiveBan($targetId) || DatabaseValue::toBool($target['is_moderator']) === $enabled) {
                 return false;
             }
             $statement = $this->database->prepare('UPDATE users SET is_moderator = :enabled WHERE id = :id');
@@ -155,7 +155,7 @@ final class AdminRepository
             return false;
         }
 
-        return $this->transaction(function () use ($userId, $enabled): bool {
+        return Transaction::run($this->database, function () use ($userId, $enabled): bool {
             // Serialize grants/revocations so two revocations cannot remove the last two administrators.
             $this->database->query('SELECT pg_advisory_xact_lock(746562, 29)')->fetchColumn();
             $this->accountLock($userId, false);
@@ -164,7 +164,7 @@ final class AdminRepository
             if ($user === null || ($enabled && $this->hasActiveBan($userId))) {
                 return false;
             }
-            if ($this->boolean($user['is_admin']) === $enabled) {
+            if (DatabaseValue::toBool($user['is_admin']) === $enabled) {
                 return true;
             }
             if (!$enabled) {
@@ -192,7 +192,7 @@ final class AdminRepository
         if ($actorId <= 0 || ($targetId !== null && $targetId <= 0)) {
             throw new InvalidArgumentException('Nieprawidłowy użytkownik historii administracji.');
         }
-        $this->transaction(function () use ($actorId, $action, $targetId, $details): void {
+        Transaction::run($this->database, function () use ($actorId, $action, $targetId, $details): void {
             $this->accountLock($actorId, true);
             $users = $this->lockUsers($targetId === null ? [$actorId] : [$actorId, $targetId]);
             if (!$this->isAdmin($actorId)) {
@@ -207,7 +207,7 @@ final class AdminRepository
 
     public function history(int $page = 1): array
     {
-        $pagination = $this->pagination((int) $this->database->query('SELECT COUNT(*) FROM admin_actions')->fetchColumn(), $page);
+        $pagination = Pagination::of((int) $this->database->query('SELECT COUNT(*) FROM admin_actions')->fetchColumn(), $page, self::PAGE_SIZE);
         $statement = $this->database->prepare('SELECT id, actor_id, actor_name, target_id, target_name, action, details, created_at
             FROM admin_actions ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset');
         $this->executePage($statement, [], $pagination);
@@ -245,15 +245,15 @@ final class AdminRepository
             MAX(source_updated_at) AS last_updated_at FROM anime")->fetch(PDO::FETCH_ASSOC);
         $count = $this->database->prepare('SELECT COUNT(*) FROM anime ' . $where);
         $count->execute($parameters);
-        $pagination = $this->pagination((int) $count->fetchColumn(), $page);
+        $pagination = Pagination::of((int) $count->fetchColumn(), $page, self::PAGE_SIZE);
         $statement = $this->database->prepare("SELECT id, title, btrim(description) <> '' AS has_description,
             cover_url IS NOT NULL AND btrim(cover_url) <> '' AS has_image, source_updated_at
             FROM anime " . $where . ' ORDER BY id DESC LIMIT :limit OFFSET :offset');
         $this->executePage($statement, $parameters, $pagination);
 
         return ['items' => array_map(fn (array $row): array => [
-            'id' => (int) $row['id'], 'title' => $row['title'], 'hasDescription' => $this->boolean($row['has_description']),
-            'hasImage' => $this->boolean($row['has_image']), 'sourceUpdatedAt' => $row['source_updated_at'],
+            'id' => (int) $row['id'], 'title' => $row['title'], 'hasDescription' => DatabaseValue::toBool($row['has_description']),
+            'hasImage' => DatabaseValue::toBool($row['has_image']), 'sourceUpdatedAt' => $row['source_updated_at'],
         ], $statement->fetchAll(PDO::FETCH_ASSOC)), 'pagination' => $pagination, 'summary' => [
             'total' => (int) $summary['total'], 'missingDescription' => (int) $summary['missing_description'],
             'missingImage' => (int) $summary['missing_image'], 'lastUpdatedAt' => $summary['last_updated_at'],
@@ -276,7 +276,7 @@ final class AdminRepository
         }
         $reportedId = $reported === null ? null : (int) $reported;
 
-        return $this->transaction(function () use ($actorId, $reportId, $reason, $hide, $reportedId): bool {
+        return Transaction::run($this->database, function () use ($actorId, $reportId, $reason, $hide, $reportedId): bool {
             $this->accountLock($actorId, true);
             // Lock both accounts first, as report creation does, then re-check every condition.
             $users = $this->lockUsers($reportedId === null ? [$actorId] : [$actorId, $reportedId]);
@@ -294,7 +294,7 @@ final class AdminRepository
             $sender = $reportedId === null ? null : ($users[$reportedId] ?? null);
             if ($hide) {
                 // An administrator's messages are never moderated; such an old report can only be dismissed.
-                if ($sender === null || $this->boolean($sender['is_admin'])) {
+                if ($sender === null || DatabaseValue::toBool($sender['is_admin'])) {
                     return false;
                 }
                 $message = $this->database->prepare('UPDATE private_messages SET moderated_at = clock_timestamp()
@@ -357,7 +357,7 @@ final class AdminRepository
             AND revoked_at IS NULL AND starts_at <= clock_timestamp() AND ends_at > clock_timestamp())');
         $statement->execute(['id' => $userId]);
 
-        return $this->boolean($statement->fetchColumn());
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     private function accountLock(int $userId, bool $shared): void
@@ -384,35 +384,6 @@ final class AdminRepository
         return $users;
     }
 
-    private function transaction(callable $callback): mixed
-    {
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'admin_' . bin2hex(random_bytes(6));
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        try {
-            $result = $callback();
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            throw $exception;
-        }
-    }
-
     private function executePage(\PDOStatement $statement, array $parameters, array $pagination): void
     {
         foreach ($parameters as $key => $value) {
@@ -421,14 +392,6 @@ final class AdminRepository
         $statement->bindValue(':limit', $pagination['perPage'], PDO::PARAM_INT);
         $statement->bindValue(':offset', ($pagination['page'] - 1) * $pagination['perPage'], PDO::PARAM_INT);
         $statement->execute();
-    }
-
-    private function pagination(int $total, int $page): array
-    {
-        $totalPages = max(1, (int) ceil($total / self::PAGE_SIZE));
-
-        return ['page' => max(1, min($page, $totalPages)), 'perPage' => self::PAGE_SIZE,
-            'total' => $total, 'totalPages' => $totalPages];
     }
 
     private function searchTerm(string $query): string
@@ -444,10 +407,5 @@ final class AdminRepository
     private function pattern(string $query): string
     {
         return '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query) . '%';
-    }
-
-    private function boolean(mixed $value): bool
-    {
-        return in_array($value, [true, 1, '1', 't'], true);
     }
 }

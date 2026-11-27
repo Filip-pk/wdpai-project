@@ -45,11 +45,11 @@ final class Routing
         ];
     }
 
-	/* 
-	Funkcja dzieli ścieżkę na fragmenty. Zwykłe fragmenty pozostawia bez zmian, 
-	a fragment zapisany w klamrach, na przykład {id}, zamienia na nazwany 
-	parametr przyjmujący cyfry. Następnie ponownie składa ścieżkę w wyrażenie regularne.
-	*/
+    /**
+     * Turns a route such as /anime/{id} into a regular expression. Plain segments are matched
+     * literally; a segment in braces becomes a named group that accepts digits only, so an
+     * identifier that is not a number never reaches a controller and the request gets a 404.
+     */
     private function createPattern(string $path): string
     {
         $parts = explode('/', $path);

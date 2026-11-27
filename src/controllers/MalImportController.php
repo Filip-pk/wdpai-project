@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\Translator;
-
+use App\Model\Pagination;
 use App\Repository\UserRepository;
 use App\Service\AchievementService;
 use App\Service\MalImportChangedException;
 use App\Service\MalImportService;
 use App\Service\MalXmlParser;
+use App\Service\Translator;
 use Closure;
 use InvalidArgumentException;
 
@@ -93,9 +93,7 @@ final class MalImportController extends AppController
             return;
         }
 
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
+        self::resolveDependency($this->achievements);
         $this->achievements?->synchronize($user['id']);
         unset($_SESSION['mal_import_pending']);
         $_SESSION['mal_import_report'] = ['userId' => $user['id'], 'report' => $report];
@@ -181,9 +179,8 @@ final class MalImportController extends AppController
             ? $storedReport['report'] : null;
         $preview = $pending['preview'] ?? null;
         $rows = $preview['rows'] ?? $report['rows'] ?? [];
-        $totalPages = max(1, (int) ceil(count($rows) / self::PAGE_SIZE));
-        $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        $page = min($totalPages, $page === false ? 1 : $page);
+        $requested = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        ['page' => $page, 'totalPages' => $totalPages] = Pagination::of(count($rows), $requested === false ? 1 : $requested, self::PAGE_SIZE);
         $visibleRows = array_slice($rows, ($page - 1) * self::PAGE_SIZE, self::PAGE_SIZE);
 
         $this->render('mal-import', [
@@ -203,17 +200,11 @@ final class MalImportController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function imports(): MalImportService
     {
-        if ($this->imports instanceof Closure) {
-            $this->imports = ($this->imports)();
-        }
-        return $this->imports;
+        return self::resolveDependency($this->imports);
     }
 }

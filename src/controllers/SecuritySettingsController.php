@@ -7,7 +7,7 @@ namespace App\Controller;
 use App\Repository\SecuritySettingsRepository;
 use App\Repository\UserRepository;
 use App\Service\AccountSecurityService;
-use App\Service\MailService;
+use App\Service\Mailer;
 use App\Service\Translator;
 use Closure;
 use PDOException;
@@ -18,7 +18,7 @@ final class SecuritySettingsController extends AppController
     public function __construct(
         private UserRepository|Closure $users,
         private SecuritySettingsRepository|Closure $security,
-        private readonly MailService $mailer,
+        private readonly Mailer $mailer,
     ) {
     }
 
@@ -165,17 +165,11 @@ final class SecuritySettingsController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function security(): SecuritySettingsRepository
     {
-        if ($this->security instanceof Closure) {
-            $this->security = ($this->security)();
-        }
-        return $this->security;
+        return self::resolveDependency($this->security);
     }
 }

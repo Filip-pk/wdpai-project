@@ -19,13 +19,16 @@ final class LegacyAvatarMigration
     }
 
     /**
-     * Copies every photo to a file and records its path; the database copy stays, so older
-     * application versions keep working. Returns how many photos were copied or skipped.
+     * Copies every photo to a file and records its path. The database copy disappears with the
+     * avatar_data column in migration 35, which refuses to run while a photo still has no file.
      *
      * @return array{copied: int, skipped: int}
      */
     public function copyToFiles(): array
     {
+        if (!$this->avatars->hasLegacyColumn()) {
+            return ['copied' => 0, 'skipped' => 0];
+        }
         $copied = 0;
         $skipped = 0;
         $afterId = 0;
@@ -44,23 +47,5 @@ final class LegacyAvatarMigration
         }
 
         return ['copied' => $copied, 'skipped' => $skipped];
-    }
-
-    /** Removes the database copy of each photo whose file holds exactly the same bytes. */
-    public function clearDatabaseCopies(): int
-    {
-        $cleared = 0;
-        $afterId = 0;
-        while (($rows = $this->avatars->withFile($afterId, self::BATCH)) !== []) {
-            foreach ($rows as $row) {
-                $afterId = $row['id'];
-                if ($this->storage->read($row['path']) === $row['contents']
-                    && $this->avatars->clearDatabaseCopy($row['id'], $row['path'])) {
-                    $cleared++;
-                }
-            }
-        }
-
-        return $cleared;
     }
 }

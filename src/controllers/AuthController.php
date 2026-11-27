@@ -9,7 +9,7 @@ use App\Repository\UserRepository;
 use App\Service\AccountSecurityService;
 use App\Service\ApplicationLogger;
 use App\Service\LoginThrottle;
-use App\Service\MailService;
+use App\Service\Mailer;
 use App\Service\Translator;
 use Closure;
 use PDOException;
@@ -19,7 +19,7 @@ final class AuthController extends AppController
 {
     public function __construct(
         private UserRepository|Closure $users,
-        private readonly MailService $mailer,
+        private readonly Mailer $mailer,
         private LoginThrottle|Closure|null $throttle = null,
         private readonly ?ApplicationLogger $logger = null,
     ) {
@@ -44,7 +44,7 @@ final class AuthController extends AppController
                 $errors[] = Translator::message('Formularz wygasł. Odśwież stronę i spróbuj ponownie.');
             } else {
                 $retryAfter = $this->throttle()?->retryAfter($email, $this->clientAddress()) ?? 0;
-                $user = $retryAfter === 0 && $this->isEmailValid($email) ? $this->users()->findByEmail($email) : null;
+                $user = $retryAfter === 0 && AccountSecurityService::isEmailValid($email) ? $this->users()->findByEmail($email) : null;
 
                 if ($retryAfter > 0) {
                     // The limit applies before the password check, so a correct password does not reveal itself.
@@ -125,7 +125,7 @@ final class AuthController extends AppController
                     || str_contains($name, "\0")) {
                     $errors[] = Translator::message('Podaj nazwę użytkownika o długości od 1 do 120 znaków.');
                 }
-                if (!$this->isEmailValid($email)) {
+                if (!AccountSecurityService::isEmailValid($email)) {
                     $errors[] = Translator::message('Podaj poprawny adres e-mail (maksymalnie 255 znaków).');
                 }
                 if (!AccountSecurityService::isPasswordStrong($password, $email)) {
@@ -213,20 +213,12 @@ final class AuthController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function throttle(): ?LoginThrottle
     {
-        if ($this->throttle instanceof Closure) {
-            $this->throttle = ($this->throttle)();
-        }
-
-        return $this->throttle;
+        return self::resolveDependency($this->throttle);
     }
 
     private function logger(): ApplicationLogger
@@ -247,10 +239,5 @@ final class AuthController extends AppController
             'account' => substr(LoginThrottle::fingerprint($email), 0, 16),
             'client' => substr(LoginThrottle::fingerprint($this->clientAddress()), 0, 16),
         ]);
-    }
-
-    private function isEmailValid(string $email): bool
-    {
-        return strlen($email) <= 255 && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 }

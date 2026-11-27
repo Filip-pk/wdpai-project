@@ -19,7 +19,7 @@ final class PrivacySettingsController extends AppController
     public function save(): void
     {
         $this->requireLogin();
-        $users = $this->users instanceof Closure ? ($this->users)() : $this->users;
+        $users = self::resolveDependency($this->users);
         $user = $this->currentUser($users);
         $errors = [];
 
@@ -37,7 +37,7 @@ final class PrivacySettingsController extends AppController
                 }
             }
             if ($errors === []) {
-                $privacy = $this->privacy instanceof Closure ? ($this->privacy)() : $this->privacy;
+                $privacy = self::resolveDependency($this->privacy);
                 $privacy->saveForUser($user['id'], $policy,
                     $this->postString('publicRatings') === '1', $this->postString('publicStatistics') === '1');
             }

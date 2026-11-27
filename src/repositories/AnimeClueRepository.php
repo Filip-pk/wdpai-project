@@ -8,7 +8,6 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use PDO;
 use RuntimeException;
-use Throwable;
 
 final class AnimeClueRepository
 {
@@ -18,32 +17,7 @@ final class AnimeClueRepository
 
     public function transaction(callable $operation): mixed
     {
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'anime_clues_' . bin2hex(random_bytes(6));
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        try {
-            $result = $operation();
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            return $result;
-        } catch (Throwable $exception) {
-            if ($this->database->inTransaction()) {
-                if ($ownsTransaction) {
-                    $this->database->rollBack();
-                } else {
-                    $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                    $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-                }
-            }
-            throw $exception;
-        }
+        return Transaction::run($this->database, $operation);
     }
 
     public function findForDate(string $date): ?array
@@ -203,8 +177,8 @@ final class AnimeClueRepository
         $statement->execute(['user_id' => $userId, 'game_id' => $gameId]);
         return array_map(static fn (array $row): array => [
             'roundIndex' => (int) $row['round_index'], 'answer' => (string) $row['answer'],
-            'correct' => in_array($row['correct'], [true, 1, '1', 't'], true), 'points' => (int) $row['points'],
-            'hintsUsed' => (int) $row['hints_used'], 'skipped' => in_array($row['skipped'], [true, 1, '1', 't'], true),
+            'correct' => DatabaseValue::toBool($row['correct']), 'points' => (int) $row['points'],
+            'hintsUsed' => (int) $row['hints_used'], 'skipped' => DatabaseValue::toBool($row['skipped']),
         ], $statement->fetchAll());
     }
 

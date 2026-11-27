@@ -110,7 +110,8 @@ function upload(token, bytes = png(480, 320, [70, 110, 180]), options = {}) {
 function storedAvatar(email) {
     const stored = php(String.raw`
 $input = json_decode($argv[1], true, 512, JSON_THROW_ON_ERROR);
-$statement = (new App\Database())->connect()->prepare('SELECT avatar_path, avatar_data IS NULL AS no_database_copy FROM users WHERE email = :email');
+$statement = (new App\Database())->connect()->prepare("SELECT avatar_path, NOT EXISTS (SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'users' AND data_type = 'bytea') AS no_database_copy FROM users WHERE email = :email");
 $statement->execute(['email' => $input['email']]);
 echo json_encode($statement->fetch(PDO::FETCH_ASSOC), JSON_THROW_ON_ERROR);
 `, { email });
@@ -202,7 +203,7 @@ test('avatar uploads are validated, persistent and assigned to the signed-in acc
         assert.deepEqual(avatarUrls(await second.client.request('/profile')), []);
         const stored = storedAvatar(first.email);
         assert.match(stored.avatar_path, /^avatars\/[a-f0-9]{32}\.png$/, 'A random safe file name');
-        assert.equal(stored.no_database_copy, true, 'The database holds the path, not the image');
+        assert.equal(stored.no_database_copy, true, 'The database holds the path and has no column for image bytes');
         assert.deepEqual(fs.readFileSync(stored.file), image.bytes, 'The served image is the stored file');
         first.stored = stored;
     });

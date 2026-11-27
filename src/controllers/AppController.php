@@ -19,6 +19,20 @@ abstract class AppController
     private ?array $loadedPreferences = null;
     private ModerationRepository|Closure|null $moderationRepository = null;
 
+    /**
+     * Controllers receive repositories and services as closures (see ControllerFactory), so a request
+     * only connects to the database when an action needs it. This replaces the closure in the given
+     * property with the object it creates, once, and returns that object.
+     */
+    protected static function resolveDependency(mixed &$dependency): mixed
+    {
+        if ($dependency instanceof Closure) {
+            $dependency = $dependency();
+        }
+
+        return $dependency;
+    }
+
     public function setModerationRepository(ModerationRepository|Closure $repository): void
     {
         $this->moderationRepository = $repository;
@@ -26,10 +40,7 @@ abstract class AppController
 
     protected function accountModeration(): ?ModerationRepository
     {
-        if ($this->moderationRepository instanceof Closure) {
-            $this->moderationRepository = ($this->moderationRepository)();
-        }
-        return $this->moderationRepository;
+        return self::resolveDependency($this->moderationRepository);
     }
 
     public function setPreferencesRepository(PreferencesRepository|Closure $repository): void
@@ -61,9 +72,7 @@ abstract class AppController
         if (!is_int($_SESSION['user_id'] ?? null) || $this->preferencesRepository === null) {
             return [];
         }
-        if ($this->preferencesRepository instanceof Closure) {
-            $this->preferencesRepository = ($this->preferencesRepository)();
-        }
+        self::resolveDependency($this->preferencesRepository);
         return $this->loadedPreferences = $this->preferencesRepository->forUser($_SESSION['user_id']);
     }
 
@@ -167,9 +176,7 @@ abstract class AppController
             $moderationNotices = $moderation->unreadNoticesForUser($accountId);
         }
         if ($isLoggedIn && !$restrictedAccount && $this->communityRepository !== null) {
-            if ($this->communityRepository instanceof Closure) {
-                $this->communityRepository = ($this->communityRepository)();
-            }
+            self::resolveDependency($this->communityRepository);
             $communityState = $this->communityRepository->navigationStateForUser($accountId);
             $unreadMessageCount = $communityState['unreadCount'];
             $unreadReplyCount = $communityState['unreadReplyCount'];

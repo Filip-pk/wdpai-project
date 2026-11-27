@@ -77,18 +77,18 @@ final class UserRepository
             'interests' => (string) $user['interests'],
             'created_at' => (string) $user['created_at'],
             'avatar_url' => $this->avatarUrl($user),
-            'isAdmin' => in_array($user['is_admin'], [true, 1, '1', 't'], true),
+            'isAdmin' => DatabaseValue::toBool($user['is_admin']),
         ];
     }
 
     /**
      * Points the account at a new avatar file. The version is the public cache key in avatar URLs;
-     * the path stays private. A photo saved in the database by older versions is dropped with it.
+     * the path, relative to storage/uploads, stays private.
      */
     public function updateAvatar(int $userId, string $path, string $version): void
     {
         $statement = $this->database->prepare(
-            'UPDATE users SET avatar_path = :path, avatar_version = :version, avatar_data = NULL WHERE id = :id'
+            'UPDATE users SET avatar_path = :path, avatar_version = :version WHERE id = :id'
         );
         $statement->execute(['path' => $path, 'version' => $version, 'id' => $userId]);
     }

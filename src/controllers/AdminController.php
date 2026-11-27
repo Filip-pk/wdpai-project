@@ -9,7 +9,7 @@ use App\Repository\UserRepository;
 use App\Service\ApplicationLogger;
 use App\Service\CommunityService;
 use App\Service\DiagnosticService;
-use App\Service\MailService;
+use App\Service\Mailer;
 use App\Service\Translator;
 use Closure;
 use Throwable;
@@ -21,7 +21,7 @@ final class AdminController extends AppController
         private AdminRepository|Closure $admins,
         private readonly DiagnosticService $diagnostics,
         private readonly ApplicationLogger $logger,
-        private readonly MailService $mail,
+        private readonly Mailer $mail,
     ) {
     }
 
@@ -227,17 +227,11 @@ final class AdminController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function admins(): AdminRepository
     {
-        if ($this->admins instanceof Closure) {
-            $this->admins = ($this->admins)();
-        }
-        return $this->admins;
+        return self::resolveDependency($this->admins);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use InvalidArgumentException;
 use PDO;
 
@@ -41,9 +42,7 @@ final class WatchlistRepository
         $statement->execute($parameters);
         $counts = $statement->fetch(PDO::FETCH_ASSOC);
         $total = (int) $counts['total'];
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
         $statement = $this->database->prepare(
             'SELECT anime_id, status, watched FROM user_watchlist WHERE user_id = :user_id'
             . ($status === '' ? '' : ' AND status = :status')

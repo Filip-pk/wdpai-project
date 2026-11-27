@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use App\Service\MessageService;
 use InvalidArgumentException;
 use PDO;
@@ -20,8 +21,6 @@ final class MessageRepository
             ON recipient.id = CASE WHEN conversations.first_user_id = :viewer_id
                 THEN conversations.second_user_id ELSE conversations.first_user_id END';
 
-    private int $savepointCounter = 0;
-
     public function __construct(private readonly PDO $database)
     {
     }
@@ -35,7 +34,7 @@ final class MessageRepository
         );
         $statement->execute(['first_participant' => $userId, 'second_participant' => $userId]);
         $total = (int) $statement->fetchColumn();
-        [$page, $perPage, $totalPages] = $this->pagination($total, $page, $perPage);
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
 
         $statement = $this->database->prepare(
             'SELECT conversations.id, recipient.id AS recipient_id, recipient.name AS recipient_name,
@@ -76,7 +75,7 @@ final class MessageRepository
                 'recipientId' => (int) $row['recipient_id'],
                 'recipientName' => (string) $row['recipient_name'],
                 'recipientAvatarUrl' => $this->avatarUrl($row),
-                'recipientIsAdmin' => $this->toBool($row['recipient_is_admin']),
+                'recipientIsAdmin' => DatabaseValue::toBool($row['recipient_is_admin']),
                 'lastMessagePreview' => $row['last_message_preview'] === null ? null : (string) $row['last_message_preview'],
                 'lastMessageSenderId' => $row['last_message_sender_id'] === null ? null : (int) $row['last_message_sender_id'],
                 'lastMessageAt' => $row['last_message_at'] === null ? null : (string) $row['last_message_at'],
@@ -132,69 +131,48 @@ final class MessageRepository
             return null;
         }
 
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'private_message_start_' . ++$this->savepointCounter;
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
-        $completed = false;
-
         try {
-            $this->lockUsers($userId, $recipientId);
-            if (!$this->canReceiveFromUser($userId, $recipientId)) {
-                return null;
-            }
-
-            $statement = $this->database->prepare(
-                'INSERT INTO private_conversations (first_user_id, second_user_id)
-                 SELECT first_user.id, second_user.id FROM users AS first_user
-                 CROSS JOIN users AS second_user
-                 WHERE first_user.id = :first_user_id AND second_user.id = :second_user_id
-                   AND NOT EXISTS (
-                       SELECT 1 FROM user_blocks b JOIN users blocked_user ON blocked_user.id = b.blocked_id
-                       WHERE ((b.blocker_id = first_user.id AND b.blocked_id = second_user.id)
-                          OR (b.blocker_id = second_user.id AND b.blocked_id = first_user.id))
-                         AND NOT COALESCE((to_jsonb(blocked_user)->>\'is_admin\')::boolean, false)
-                   )
-                 ON CONFLICT (first_user_id, second_user_id)
-                 DO UPDATE SET first_user_id = EXCLUDED.first_user_id RETURNING id'
-            );
-            $statement->execute([
-                'first_user_id' => min($userId, $recipientId), 'second_user_id' => max($userId, $recipientId),
-            ]);
-            $conversationId = $statement->fetchColumn();
-            if ($conversationId === false) {
-                return null;
-            }
-            if ($this->sendForUser($userId, (int) $conversationId, $body) === null) {
-                return null;
-            }
-
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            $completed = true;
-
-            return (int) $conversationId;
+            // A conversation without its first message must not remain, so a null result rolls back.
+            return Transaction::run($this->database, fn (): ?int => $this->startConversation($userId, $recipientId, $body),
+                keep: static fn (?int $conversationId): bool => $conversationId !== null);
         } catch (PDOException $exception) {
             if ($exception->getCode() === '23503') {
                 return null;
             }
             throw $exception;
-        } finally {
-            if (!$completed && $this->database->inTransaction()) {
-                if ($ownsTransaction) {
-                    $this->database->rollBack();
-                } else {
-                    $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                    $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-                }
-            }
         }
+    }
+
+    private function startConversation(int $userId, int $recipientId, string $body): ?int
+    {
+        $this->lockUsers($userId, $recipientId);
+        if (!$this->canReceiveFromUser($userId, $recipientId)) {
+            return null;
+        }
+
+        $statement = $this->database->prepare(
+            'INSERT INTO private_conversations (first_user_id, second_user_id)
+             SELECT first_user.id, second_user.id FROM users AS first_user
+             CROSS JOIN users AS second_user
+             WHERE first_user.id = :first_user_id AND second_user.id = :second_user_id
+               AND NOT EXISTS (
+                   SELECT 1 FROM user_blocks b JOIN users blocked_user ON blocked_user.id = b.blocked_id
+                   WHERE ((b.blocker_id = first_user.id AND b.blocked_id = second_user.id)
+                      OR (b.blocker_id = second_user.id AND b.blocked_id = first_user.id))
+                     AND NOT COALESCE((to_jsonb(blocked_user)->>\'is_admin\')::boolean, false)
+               )
+             ON CONFLICT (first_user_id, second_user_id)
+             DO UPDATE SET first_user_id = EXCLUDED.first_user_id RETURNING id'
+        );
+        $statement->execute([
+            'first_user_id' => min($userId, $recipientId), 'second_user_id' => max($userId, $recipientId),
+        ]);
+        $conversationId = $statement->fetchColumn();
+        if ($conversationId === false || $this->sendForUser($userId, (int) $conversationId, $body) === null) {
+            return null;
+        }
+
+        return (int) $conversationId;
     }
 
     public function sendForUser(int $userId, int $conversationId, string $body): ?int
@@ -284,7 +262,8 @@ final class MessageRepository
             'conversation_id' => $conversationId, 'first_participant' => $userId, 'second_participant' => $userId,
         ]);
         $total = (int) $statement->fetchColumn();
-        [$page, $perPage, $totalPages] = $this->pagination($total, $page, $perPage);
+        // Without a page the conversation opens on its newest messages, which are on the last page.
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page ?? PHP_INT_MAX, $perPage);
 
         $statement = $this->database->prepare(
             'SELECT messages.id, messages.sender_id, messages.created_at, messages.moderated_at,
@@ -307,21 +286,12 @@ final class MessageRepository
         return [
             'entries' => array_map(fn (array $row): array => [
                 'id' => (int) $row['id'], 'senderId' => (int) $row['sender_id'],
-                'senderIsAdmin' => $this->toBool($row['sender_is_admin']),
+                'senderIsAdmin' => DatabaseValue::toBool($row['sender_is_admin']),
                 'body' => (string) $row['body'], 'createdAt' => (string) $row['created_at'],
                 'isRemoved' => $row['moderated_at'] !== null,
             ], $statement->fetchAll(PDO::FETCH_ASSOC)),
             'page' => $page, 'total' => $total, 'totalPages' => $totalPages,
         ];
-    }
-
-    /** @return array{0: int, 1: int, 2: int} */
-    private function pagination(int $total, ?int $page, int $perPage): array
-    {
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-
-        return [max(1, min($page ?? $totalPages, $totalPages)), $perPage, $totalPages];
     }
 
     private function validateBody(string $body): void
@@ -337,7 +307,7 @@ final class MessageRepository
         return [
             'id' => (int) $row['id'], 'recipientId' => (int) $row['recipient_id'],
             'recipientName' => (string) $row['recipient_name'], 'recipientAvatarUrl' => $this->avatarUrl($row),
-            'recipientIsAdmin' => $this->toBool($row['recipient_is_admin']),
+            'recipientIsAdmin' => DatabaseValue::toBool($row['recipient_is_admin']),
             'createdAt' => (string) $row['created_at'],
         ];
     }
@@ -348,10 +318,5 @@ final class MessageRepository
 
         return is_string($version) && preg_match('/\A[a-f0-9]{32}\z/', $version) === 1
             ? '/avatars/' . (int) $row['recipient_id'] . '?v=' . $version : null;
-    }
-
-    private function toBool(mixed $value): bool
-    {
-        return in_array($value, [true, 1, '1', 't'], true);
     }
 }

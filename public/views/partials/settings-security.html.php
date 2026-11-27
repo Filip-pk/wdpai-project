@@ -28,12 +28,12 @@
             </div>
             <div class="settings-field">
                 <label for="settings-password-new"><?= $escape($t('view.interface.new_password')) ?></label>
-                <input id="settings-password-new" name="newPassword" type="password" autocomplete="new-password" aria-describedby="settings-password-help" required>
+                <input id="settings-password-new" name="newPassword" type="password" autocomplete="new-password" aria-describedby="settings-password-help" data-password-rules required>
                 <p id="settings-password-help"><?= $escape($t('view.interface.password_help_letter_digit_and_bytes')) ?></p>
             </div>
             <div class="settings-field">
                 <label for="settings-password-confirm"><?= $escape($t('view.interface.confirm_new_password')) ?></label>
-                <input id="settings-password-confirm" name="newPasswordConfirmation" type="password" autocomplete="new-password" required>
+                <input id="settings-password-confirm" name="newPasswordConfirmation" type="password" autocomplete="new-password" data-password-confirm required>
             </div>
             <button type="submit" class="settings-save"><?= $escape($t('view.interface.change_password')) ?></button>
         </fieldset>

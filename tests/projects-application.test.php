@@ -79,7 +79,9 @@ $render = static function (string $uri, callable $action): array {
     }
 };
 
-$runEntryWithUnavailableDatabase = static function (string $uri) use ($assert): array {
+// A signed-in request checks the account for an active ban in the database before routing,
+// so only a guest can be served while the database is unavailable.
+$runEntryWithUnavailableDatabase = static function (string $uri, bool $signedIn = true) use ($assert): array {
     $source = <<<'PHP'
 putenv('POSTGRES_HOST=127.0.0.1');
 putenv('POSTGRES_PORT=1');
@@ -89,11 +91,11 @@ putenv('POSTGRES_PASSWORD=anivibe-test-secret');
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI'] = $argv[1];
 session_start();
-$_SESSION = [
+$_SESSION = $argv[3] === '1' ? [
     'user_id' => 1,
     'user_name' => 'Tester projektów',
     'user_email' => 'projects-test@example.test',
-];
+] : [];
 ob_start();
 require $argv[2];
 $html = ob_get_clean();
@@ -112,6 +114,7 @@ PHP;
             $source,
             $uri,
             dirname(__DIR__) . '/public/index.php',
+            $signedIn ? '1' : '0',
         ],
         [
             0 => ['pipe', 'r'],
@@ -351,10 +354,12 @@ try {
         $runEntryWithUnavailableDatabase,
         $assert,
     ): void {
-        $response = $runEntryWithUnavailableDatabase('/');
+        $response = $runEntryWithUnavailableDatabase('/', false);
 
         $assert($response['status'] === 200);
         $assert(str_contains($response['html'], 'AniVibe'));
+        // A signed-in visitor gets the generic error page instead: the ban check cannot be skipped.
+        $assert($runEntryWithUnavailableDatabase('/')['status'] === 500);
     });
 
     $run('Niedostępna baza daje ogólną odpowiedź 500 na trasach projektów', static function () use (

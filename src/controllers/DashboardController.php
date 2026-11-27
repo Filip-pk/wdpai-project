@@ -26,15 +26,11 @@ final class DashboardController extends AppController
 
     public function index(): void
     {
-        if ($this->animes instanceof Closure) {
-            $this->animes = ($this->animes)();
-        }
+        self::resolveDependency($this->animes);
         $user = null;
 
         if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
-            if ($this->users instanceof Closure) {
-                $this->users = ($this->users)();
-            }
+            self::resolveDependency($this->users);
             $user = $this->currentUser($this->users);
         }
 
@@ -45,9 +41,7 @@ final class DashboardController extends AppController
         if ($user === null) {
             $animes = $this->animes->search(perPage: 6)['animes'];
         } else {
-            if ($this->recommendationService instanceof Closure) {
-                $this->recommendationService = ($this->recommendationService)();
-            }
+            self::resolveDependency($this->recommendationService);
             $result = $this->recommendationService->recommendForUser($user['id']);
             $mode = $result['mode'];
             $sourceCount = $result['sourceCount'];
@@ -84,9 +78,7 @@ final class DashboardController extends AppController
                 }
             }
         }
-        if ($this->ratings instanceof Closure) {
-            $this->ratings = ($this->ratings)();
-        }
+        self::resolveDependency($this->ratings);
 
         $this->render('dashboard', [
             'pageTitle' => Translator::current()->translate('message.page.dashboard'),
@@ -103,9 +95,6 @@ final class DashboardController extends AppController
 
     private function quizService(): QuizService
     {
-        if ($this->quizService instanceof Closure) {
-            $this->quizService = ($this->quizService)();
-        }
-        return $this->quizService;
+        return self::resolveDependency($this->quizService);
     }
 }

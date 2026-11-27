@@ -1326,3 +1326,11 @@ progress {
         transform: none;
     }
 }
+
+/* Message under a form field from client-side checks (public/js/password-form.js). */
+.form-field-problem {
+    margin: var(--space-1) 0 0;
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}

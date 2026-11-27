@@ -52,6 +52,11 @@ final class AccountSecurityService
         return $hash !== null && $matches;
     }
 
+    /**
+     * The one e-mail rule for sign-in, registration, profile, settings and outgoing mail. Besides the
+     * format it refuses spaces, control characters and angle brackets, which PHP accepts in quoted
+     * local parts but which must never reach an SMTP command or a mail header.
+     */
     public static function isEmailValid(string $email): bool
     {
         return strlen($email) <= 255 && filter_var($email, FILTER_VALIDATE_EMAIL) !== false

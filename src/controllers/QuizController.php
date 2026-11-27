@@ -130,25 +130,16 @@ final class QuizController extends AppController
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function service(): QuizService
     {
-        if ($this->quizService instanceof Closure) {
-            $this->quizService = ($this->quizService)();
-        }
-        return $this->quizService;
+        return self::resolveDependency($this->quizService);
     }
 
     private function achievements(): ?AchievementService
     {
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
-        return $this->achievements;
+        return self::resolveDependency($this->achievements);
     }
 }

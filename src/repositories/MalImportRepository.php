@@ -7,7 +7,6 @@ namespace App\Repository;
 use App\Service\MalImportChangedException;
 use PDO;
 use PDOException;
-use Throwable;
 
 final class MalImportRepository
 {
@@ -46,7 +45,7 @@ final class MalImportRepository
                     'rating' => $row['rating'] === null ? null : (int) $row['rating'],
                     'creditedWatched' => $row['credited_watched'] === null ? null : (int) $row['credited_watched'],
                     'creditedCompleted' => $row['credited_watched'] === null ? null
-                        : in_array($row['credited_completed'], [true, 1, '1', 't'], true),
+                        : DatabaseValue::toBool($row['credited_completed']),
                 ];
             }
         }
@@ -67,30 +66,11 @@ final class MalImportRepository
     /** Runs the confirmation against one snapshot and rolls back all entries on failure. */
     public function transaction(callable $operation): mixed
     {
-        $ownsTransaction = !$this->database->inTransaction();
-        $savepoint = 'mal_import_' . bin2hex(random_bytes(6));
-        if ($ownsTransaction) {
-            $this->database->beginTransaction();
-            $this->database->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-        } else {
-            $this->database->exec('SAVEPOINT ' . $savepoint);
-        }
         try {
-            $result = $operation();
-            if ($ownsTransaction) {
-                $this->database->commit();
-            } else {
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->database->inTransaction()) {
-                $this->database->rollBack();
-            } elseif (!$ownsTransaction && $this->database->inTransaction()) {
-                $this->database->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->database->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            if ($exception instanceof PDOException && in_array($exception->getCode(), ['40001', '40P01', '23503'], true)) {
+            return Transaction::run($this->database, $operation, isolation: 'REPEATABLE READ');
+        } catch (PDOException $exception) {
+            // Serialization failures, deadlocks and vanished anime mean the preview is out of date.
+            if (in_array($exception->getCode(), ['40001', '40P01', '23503'], true)) {
                 throw new MalImportChangedException('Dane zmieniły się podczas importu. Sprawdź nowy podgląd i zatwierdź go ponownie.', previous: $exception);
             }
             throw $exception;

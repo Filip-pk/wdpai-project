@@ -32,9 +32,7 @@ final class LanguageController extends AppController
         }
 
         if (is_int($_SESSION['user_id'] ?? null) && $_SESSION['user_id'] > 0) {
-            if ($this->preferences instanceof Closure) {
-                $this->preferences = ($this->preferences)();
-            }
+            self::resolveDependency($this->preferences);
             $this->preferences->saveLanguage($_SESSION['user_id'], $language);
             $_SESSION['user_language'] = $language;
         }

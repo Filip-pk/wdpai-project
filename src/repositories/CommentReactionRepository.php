@@ -78,7 +78,7 @@ final class CommentReactionRepository
         }
         $statement->execute($parameters);
 
-        return in_array($statement->fetchColumn(), [true, 1, '1', 't'], true);
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     /** @return array<int, array{likes: int, dislikes: int, userReaction: int}> */

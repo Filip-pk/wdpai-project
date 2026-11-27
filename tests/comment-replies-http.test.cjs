@@ -135,7 +135,10 @@ test('comment threads preserve author controls, pagination, moderation and priva
             const queue = await third.http.request('/moderation');
             const entry = [...queue.html.matchAll(/<article\b[^>]*data-report-id="(\d+)"[^>]*>[\s\S]*?<\/article>/g)].find(item => item[0].includes(marker));
             assert.ok(entry);
-            redirected(await third.http.request('/moderation/reports/' + entry[1] + '/resolve', { action: 'remove', csrfToken: third.token }));
+            // Moderator decisions need a reason and a one-time request key, like the panel form sends.
+            redirected(await third.http.request('/moderation/reports/' + entry[1] + '/resolve', {
+                action: 'remove', reason: marker + ' spam', requestKey: randomUUID().replaceAll('-', ''), csrfToken: third.token,
+            }));
             const hidden = items(await guest.request(thread + '?repliesPage=2')).find(item => item.id === lastReply);
             assert.ok(hidden.html.includes('ukryty przez moderację')); assert.ok(!hidden.html.includes(marker + ' późniejsza'));
         });

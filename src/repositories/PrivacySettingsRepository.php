@@ -28,8 +28,8 @@ final class PrivacySettingsRepository
             ? ['messagePolicy' => 'nobody', 'publicRatings' => false, 'publicStatistics' => false]
             : [
                 'messagePolicy' => (string) $row['message_policy'],
-                'publicRatings' => in_array($row['public_ratings'], [true, 1, '1', 't'], true),
-                'publicStatistics' => in_array($row['public_statistics'], [true, 1, '1', 't'], true),
+                'publicRatings' => DatabaseValue::toBool($row['public_ratings']),
+                'publicStatistics' => DatabaseValue::toBool($row['public_statistics']),
             ];
     }
 

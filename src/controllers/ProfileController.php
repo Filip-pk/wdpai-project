@@ -348,9 +348,7 @@ final class ProfileController extends AppController
 
     private function showcaseData(int $userId, array $earnedBadges, bool $canEdit): array
     {
-        if ($this->showcases instanceof Closure) {
-            $this->showcases = ($this->showcases)();
-        }
+        self::resolveDependency($this->showcases);
         $selection = $this->showcases?->findForUser($userId) ?? ['animeIds' => [], 'badgeCodes' => []];
         $animes = $this->animes()->findByIds($selection['animeIds']);
         $showcaseAnimes = [];
@@ -390,68 +388,41 @@ final class ProfileController extends AppController
 
     private function community(): ?CommunityRepository
     {
-        if ($this->community instanceof Closure) {
-            $this->community = ($this->community)();
-        }
-        return $this->community;
+        return self::resolveDependency($this->community);
     }
 
     private function privacy(): ?PrivacySettingsRepository
     {
-        if ($this->privacy instanceof Closure) {
-            $this->privacy = ($this->privacy)();
-        }
-        return $this->privacy;
+        return self::resolveDependency($this->privacy);
     }
 
     private function achievements(): ?AchievementService
     {
-        if ($this->achievements instanceof Closure) {
-            $this->achievements = ($this->achievements)();
-        }
-        return $this->achievements;
+        return self::resolveDependency($this->achievements);
     }
 
     private function users(): UserRepository
     {
-        if ($this->users instanceof Closure) {
-            $this->users = ($this->users)();
-        }
-
-        return $this->users;
+        return self::resolveDependency($this->users);
     }
 
     private function animes(): AnimeRepository
     {
-        if ($this->animes instanceof Closure) {
-            $this->animes = ($this->animes)();
-        }
-
-        return $this->animes;
+        return self::resolveDependency($this->animes);
     }
 
     private function watchlists(): WatchlistRepository
     {
-        if ($this->watchlists instanceof Closure) {
-            $this->watchlists = ($this->watchlists)();
-        }
-
-        return $this->watchlists;
+        return self::resolveDependency($this->watchlists);
     }
 
     private function ratings(): RatingRepository
     {
-        if ($this->ratings instanceof Closure) {
-            $this->ratings = ($this->ratings)();
-        }
-        return $this->ratings;
+        return self::resolveDependency($this->ratings);
     }
 
     private function experience(): ExperienceRepository
     {
-        if ($this->experience instanceof Closure) {
-            $this->experience = ($this->experience)();
-        }
-        return $this->experience;
+        return self::resolveDependency($this->experience);
     }
 }
