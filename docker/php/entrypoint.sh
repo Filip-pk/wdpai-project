@@ -22,4 +22,9 @@ fi
 php scripts/prepare-admin-logs.php \
     || echo "AniVibe: storage/logs is not writable; application logs are disabled." >&2
 
+# Uploaded profile photos are written and read by the same workers.
+mkdir -p storage/uploads/avatars
+chown -R www-data:www-data storage/uploads 2>/dev/null || true
+chmod 0770 storage/uploads storage/uploads/avatars 2>/dev/null || true
+
 exec docker-php-entrypoint "$@"

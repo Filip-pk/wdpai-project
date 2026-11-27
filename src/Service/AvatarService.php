@@ -12,9 +12,13 @@ final class AvatarService
     private const MAX_BYTES = 4 * 1024 * 1024;
     private const MAX_DIMENSION = 4096;
     private const SIZE = 256;
+    private const EXTENSIONS = ['jpg', 'jpeg', 'png'];
+    private const MIME_TYPES = ['image/jpeg', 'image/png'];
 
-    public function __construct(private readonly UserRepository $users)
-    {
+    public function __construct(
+        private readonly UserRepository $users,
+        private readonly AvatarStorage $storage,
+    ) {
     }
 
     /** @return list<string> */
@@ -40,6 +44,13 @@ final class AvatarService
         $bytes = filesize($path);
         if ($bytes === false || $bytes === 0 || $bytes > self::MAX_BYTES) {
             return [Translator::current()->translate('message.avatar.nonempty')];
+        }
+
+        // The file name and the browser's type are untrusted: check the extension and the real content type.
+        $extension = strtolower(pathinfo(is_string($upload['name'] ?? null) ? $upload['name'] : '', PATHINFO_EXTENSION));
+        $mimeType = (new \finfo(FILEINFO_MIME_TYPE))->file($path);
+        if (!in_array($extension, self::EXTENSIONS, true) || !in_array($mimeType, self::MIME_TYPES, true)) {
+            return [Translator::current()->translate('message.avatar.format')];
         }
 
         $info = @getimagesize($path);
@@ -98,7 +109,9 @@ final class AvatarService
                 throw new RuntimeException(Translator::current()->translate('message.avatar.save'));
             }
 
-            $this->users->updateAvatar($userId, $contents, bin2hex(random_bytes(16)));
+            // The previous file is not deleted here: the request transaction may still roll back.
+            // The cleanup task removes files that no account refers to (docs/maintenance.md).
+            $this->users->updateAvatar($userId, $this->storage->save($contents), bin2hex(random_bytes(16)));
         } finally {
             imagedestroy($source);
             if ($thumbnail instanceof \GdImage) {

@@ -9,3 +9,4 @@ storage/logs/
 docker/data/
 docker/nginx/certs/
 /vendor/
+storage/uploads/

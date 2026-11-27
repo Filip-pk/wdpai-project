@@ -15,6 +15,7 @@ use App\Repository\RatingRepository;
 use App\Repository\UserRepository;
 use App\Repository\WatchlistRepository;
 use App\Service\AvatarService;
+use App\Service\AvatarStorage;
 use App\Service\AchievementService;
 use App\Service\ExperienceService;
 use App\Service\ProfileService;
@@ -195,7 +196,7 @@ final class ProfileController extends AppController
             $errors = [Translator::current()->translate('message.csrf_expired')];
         } else {
             $upload = is_array($_FILES['avatar'] ?? null) ? $_FILES['avatar'] : [];
-            $errors = (new AvatarService($this->users()))->upload($user['id'], $upload);
+            $errors = (new AvatarService($this->users(), AvatarStorage::forApplication()))->upload($user['id'], $upload);
 
             if ($errors === []) {
                 $this->currentUser($this->users());
@@ -211,9 +212,10 @@ final class ProfileController extends AppController
     public function avatar(int $id): void
     {
         $version = is_string($_GET['v'] ?? null) ? $_GET['v'] : '';
-        $contents = $id > 0 && preg_match('/\A[a-f0-9]{32}\z/', $version) === 1
-            ? $this->users()->findAvatar($id, $version)
+        $path = $id > 0 && preg_match('/\A[a-f0-9]{32}\z/', $version) === 1
+            ? $this->users()->findAvatarPath($id, $version)
             : null;
+        $contents = $path === null ? null : AvatarStorage::forApplication()->read($path);
 
         if ($contents === null) {
             http_response_code(404);
