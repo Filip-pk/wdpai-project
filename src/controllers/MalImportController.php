@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\Translator;
-
+use App\Model\Pagination;
 use App\Repository\UserRepository;
 use App\Service\AchievementService;
 use App\Service\MalImportChangedException;
 use App\Service\MalImportService;
 use App\Service\MalXmlParser;
+use App\Service\Translator;
 use Closure;
 use InvalidArgumentException;
 
@@ -181,9 +181,8 @@ final class MalImportController extends AppController
             ? $storedReport['report'] : null;
         $preview = $pending['preview'] ?? null;
         $rows = $preview['rows'] ?? $report['rows'] ?? [];
-        $totalPages = max(1, (int) ceil(count($rows) / self::PAGE_SIZE));
-        $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        $page = min($totalPages, $page === false ? 1 : $page);
+        $requested = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        ['page' => $page, 'totalPages' => $totalPages] = Pagination::of(count($rows), $requested === false ? 1 : $requested, self::PAGE_SIZE);
         $visibleRows = array_slice($rows, ($page - 1) * self::PAGE_SIZE, self::PAGE_SIZE);
 
         $this->render('mal-import', [

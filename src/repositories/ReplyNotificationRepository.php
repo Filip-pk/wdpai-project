@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use PDO;
 
 final class ReplyNotificationRepository
@@ -71,9 +72,7 @@ final class ReplyNotificationRepository
         $count->execute(['user_id' => $userId]);
         $state = $count->fetch(PDO::FETCH_ASSOC);
         $total = (int) $state['count'];
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
         $statement = $this->database->prepare(
             self::SELECT_NOTIFICATIONS . '
              ORDER BY notifications.created_at DESC, notifications.id DESC LIMIT :limit OFFSET :offset'
@@ -127,7 +126,7 @@ final class ReplyNotificationRepository
         );
         $statement->execute(['snapshot_user' => $userId, 'snapshot_id' => $lastNotificationId, 'reader' => $userId, 'last_id' => $lastNotificationId]);
 
-        return in_array($statement->fetchColumn(), [true, 1, '1', 't'], true);
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     private function mapNotification(array $row): array

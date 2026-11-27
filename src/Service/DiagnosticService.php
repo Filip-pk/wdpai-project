@@ -8,6 +8,7 @@ use Closure;
 use PDO;
 use RuntimeException;
 use Throwable;
+use App\Repository\DatabaseValue;
 
 final class DiagnosticService
 {
@@ -88,7 +89,7 @@ final class DiagnosticService
                 $missing = [];
                 foreach (self::REQUIRED_TABLES as $table) {
                     $statement->execute(['table_name' => 'public.' . $table]);
-                    if (!in_array($statement->fetchColumn(), [true, 1, '1', 't'], true)) {
+                    if (!DatabaseValue::toBool($statement->fetchColumn())) {
                         $missing[] = $table;
                     }
                 }
@@ -100,7 +101,7 @@ final class DiagnosticService
                         continue;
                     }
                     $column->execute(['table_name' => $table, 'column_name' => $name]);
-                    if (!in_array($column->fetchColumn(), [true, 1, '1', 't'], true)) {
+                    if (!DatabaseValue::toBool($column->fetchColumn())) {
                         $missing[] = $qualifiedName;
                     }
                 }

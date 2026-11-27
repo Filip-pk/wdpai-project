@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Model\AnimeAiringStatus;
 use App\Model\AnimeSearchCriteria;
+use App\Model\Pagination;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
@@ -166,9 +167,7 @@ final class AnimeRepository
         $count = $this->database->prepare('SELECT COUNT(*) FROM anime a' . $where);
         $count->execute($parameters);
         $total = (int) $count->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
         $relevance = $sort === 'relevance' && $query !== '';
         $order = match ($sort) {
             'score_asc' => 'a.score ASC NULLS LAST, LOWER(a.title), a.id',

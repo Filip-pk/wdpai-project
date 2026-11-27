@@ -77,7 +77,7 @@ final class UserRepository
             'interests' => (string) $user['interests'],
             'created_at' => (string) $user['created_at'],
             'avatar_url' => $this->avatarUrl($user),
-            'isAdmin' => in_array($user['is_admin'], [true, 1, '1', 't'], true),
+            'isAdmin' => DatabaseValue::toBool($user['is_admin']),
         ];
     }
 

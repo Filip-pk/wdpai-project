@@ -22,7 +22,7 @@ final class MaintenanceRepository
         $statement = $this->database->prepare('SELECT pg_try_advisory_lock(:namespace, :task)');
         $statement->execute(['namespace' => self::LOCK[0], 'task' => self::LOCK[1]]);
 
-        return in_array($statement->fetchColumn(), [true, 1, '1', 't'], true);
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     public function unlock(): void

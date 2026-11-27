@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Model\Pagination;
 use Throwable;
 
 /** Stores bounded, deliberately limited diagnostic metadata outside the public directory. */
@@ -282,13 +283,11 @@ final class ApplicationLogger
 
     private function page(array $items, int $page): array
     {
-        $total = count($items);
-        $totalPages = max(1, (int) ceil($total / 20));
-        $page = max(1, min($page, $totalPages));
+        $pagination = Pagination::of(count($items), $page, 20);
 
         return [
-            'items' => array_slice($items, ($page - 1) * 20, 20),
-            'pagination' => ['page' => $page, 'perPage' => 20, 'total' => $total, 'totalPages' => $totalPages],
+            'items' => array_slice($items, ($pagination['page'] - 1) * 20, 20),
+            'pagination' => $pagination,
             'bounded' => true,
         ];
     }

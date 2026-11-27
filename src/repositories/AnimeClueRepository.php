@@ -177,8 +177,8 @@ final class AnimeClueRepository
         $statement->execute(['user_id' => $userId, 'game_id' => $gameId]);
         return array_map(static fn (array $row): array => [
             'roundIndex' => (int) $row['round_index'], 'answer' => (string) $row['answer'],
-            'correct' => in_array($row['correct'], [true, 1, '1', 't'], true), 'points' => (int) $row['points'],
-            'hintsUsed' => (int) $row['hints_used'], 'skipped' => in_array($row['skipped'], [true, 1, '1', 't'], true),
+            'correct' => DatabaseValue::toBool($row['correct']), 'points' => (int) $row['points'],
+            'hintsUsed' => (int) $row['hints_used'], 'skipped' => DatabaseValue::toBool($row['skipped']),
         ], $statement->fetchAll());
     }
 

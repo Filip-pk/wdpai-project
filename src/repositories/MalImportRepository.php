@@ -45,7 +45,7 @@ final class MalImportRepository
                     'rating' => $row['rating'] === null ? null : (int) $row['rating'],
                     'creditedWatched' => $row['credited_watched'] === null ? null : (int) $row['credited_watched'],
                     'creditedCompleted' => $row['credited_watched'] === null ? null
-                        : in_array($row['credited_completed'], [true, 1, '1', 't'], true),
+                        : DatabaseValue::toBool($row['credited_completed']),
                 ];
             }
         }

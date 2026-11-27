@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use App\Service\CommunityService;
 use App\Service\RateLimitException;
 use Closure;
@@ -30,8 +31,8 @@ final class CommunityRepository
         return [
             'unreadCount' => $this->unreadCountForUser($userId),
             'unreadReplyCount' => (new ReplyNotificationRepository($this->connection))->unreadCountForUser($userId),
-            'isModerator' => $this->toBool($roles['is_moderator'] ?? false),
-            'isAdmin' => $this->toBool($roles['is_admin'] ?? false),
+            'isModerator' => DatabaseValue::toBool($roles['is_moderator'] ?? false),
+            'isAdmin' => DatabaseValue::toBool($roles['is_admin'] ?? false),
         ];
     }
 
@@ -118,7 +119,7 @@ final class CommunityRepository
              WHERE b.blocker_id = :id AND NOT COALESCE((to_jsonb(u)->>'is_admin')::boolean, false)"
         );
         $count->execute(['id' => $userId]);
-        $paging = $this->pagination((int) $count->fetchColumn(), $page, $perPage);
+        $paging = Pagination::of((int) $count->fetchColumn(), $page, $perPage);
         $statement = $this->connection->prepare(
             "SELECT u.id, u.name, u.avatar_version, b.created_at FROM user_blocks b
              JOIN users u ON u.id = b.blocked_id WHERE b.blocker_id = :id
@@ -205,7 +206,7 @@ final class CommunityRepository
         }
 
         $total = (int) $this->connection->query("SELECT COUNT(*) FROM community_reports WHERE status = 'open' AND target_type = 'comment'")->fetchColumn();
-        $paging = $this->pagination($total, $page, $perPage);
+        $paging = Pagination::of($total, $page, $perPage);
         $statement = $this->connection->prepare(
             "SELECT r.id, r.target_type, r.target_id, r.snapshot, r.reason, r.status,
                     r.created_at, reporter.name AS reporter_name, author.name AS author_name
@@ -330,7 +331,7 @@ final class CommunityRepository
                     "SELECT COALESCE((to_jsonb(u)->>'is_admin')::boolean, false) FROM users u WHERE u.id = :id"
                 );
                 $target->execute(['id' => $otherId]);
-                if ($this->toBool($target->fetchColumn())) {
+                if (DatabaseValue::toBool($target->fetchColumn())) {
                     return false;
                 }
             }
@@ -404,20 +405,7 @@ final class CommunityRepository
         $statement = $this->connection->prepare('SELECT is_moderator FROM users WHERE id = :id');
         $statement->execute(['id' => $userId]);
 
-        return $this->toBool($statement->fetchColumn());
-    }
-
-    private function toBool(mixed $value): bool
-    {
-        return in_array($value, [true, 1, '1', 't'], true);
-    }
-
-    private function pagination(int $total, int $page, int $perPage): array
-    {
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-
-        return ['page' => max(1, min($page, $totalPages)), 'perPage' => $perPage, 'total' => $total, 'totalPages' => $totalPages];
+        return DatabaseValue::toBool($statement->fetchColumn());
     }
 
     /** @return array{int, int} */

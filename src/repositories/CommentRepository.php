@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Model\Pagination;
 use App\Service\CommentService;
 use InvalidArgumentException;
 use PDO;
@@ -34,9 +35,7 @@ final class CommentRepository
         $statement = $this->database->prepare('SELECT count(*) FROM anime_comments comments WHERE comments.anime_id = :anime_id AND ' . self::ROOT_CONDITION);
         $statement->execute(['anime_id' => $animeId]);
         $total = (int) $statement->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
 
         $statement = $this->database->prepare(
             self::SELECT_COMMENTS . '
@@ -79,9 +78,7 @@ final class CommentRepository
         $count = $this->database->prepare('SELECT count(*) FROM anime_comments WHERE anime_id = :anime_id AND parent_id = :parent_id');
         $count->execute(['anime_id' => $animeId, 'parent_id' => $parentId]);
         $total = (int) $count->fetchColumn();
-        $perPage = max(1, min(100, $perPage));
-        $totalPages = max(1, (int) ceil($total / $perPage));
-        $page = max(1, min($page, $totalPages));
+        ['page' => $page, 'perPage' => $perPage, 'totalPages' => $totalPages] = Pagination::of($total, $page, $perPage);
         $statement = $this->database->prepare(
             self::SELECT_COMMENTS . '
              WHERE comments.anime_id = :anime_id AND comments.parent_id = :parent_id
@@ -152,7 +149,7 @@ final class CommentRepository
             if ($target['parentId'] === null) {
                 $children = $this->database->prepare('SELECT EXISTS (SELECT 1 FROM anime_comments WHERE parent_id = :id)');
                 $children->execute(['id' => $commentId]);
-                if (in_array($children->fetchColumn(), [true, 1, '1', 't'], true)) {
+                if (DatabaseValue::toBool($children->fetchColumn())) {
                     $delete = $this->database->prepare('UPDATE anime_comments SET deleted_at = clock_timestamp() WHERE id = :id AND user_id = :user_id AND anime_id = :anime_id AND deleted_at IS NULL');
                     $delete->execute(['id' => $commentId, 'user_id' => $userId, 'anime_id' => $animeId]);
 
@@ -216,11 +213,11 @@ final class CommentRepository
             'body' => (string) $row['body'],
             'createdAt' => (string) $row['created_at'],
             'updatedAt' => $row['updated_at'] === null ? null : (string) $row['updated_at'],
-            'isRemoved' => in_array($row['is_removed'], [true, 1, '1', 't'], true),
+            'isRemoved' => DatabaseValue::toBool($row['is_removed']),
             'parentId' => $row['parent_id'] === null ? null : (int) $row['parent_id'],
-            'isDeleted' => in_array($row['is_deleted'], [true, 1, '1', 't'], true),
+            'isDeleted' => DatabaseValue::toBool($row['is_deleted']),
             'replyCount' => (int) $row['reply_count'],
-            'authorIsAdmin' => in_array($row['author_is_admin'], [true, 1, '1', 't'], true),
+            'authorIsAdmin' => DatabaseValue::toBool($row['author_is_admin']),
         ];
     }
 }
