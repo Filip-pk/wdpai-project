@@ -43,8 +43,12 @@ RUN { \
     } > /usr/local/etc/php/conf.d/anivibe-errors.ini
 
 COPY docker/php/entrypoint.sh /usr/local/bin/anivibe-entrypoint
-RUN sed -i 's/\r$//' /usr/local/bin/anivibe-entrypoint \
-    && chmod +x /usr/local/bin/anivibe-entrypoint
+# The same image runs the scheduled tasks in the cron service (docs/maintenance.md).
+COPY docker/cron/start.sh /usr/local/bin/anivibe-cron
+COPY docker/cron/crontab /etc/crontabs/root
+RUN sed -i 's/\r$//' /usr/local/bin/anivibe-entrypoint /usr/local/bin/anivibe-cron /etc/crontabs/root \
+    && chmod +x /usr/local/bin/anivibe-entrypoint /usr/local/bin/anivibe-cron \
+    && chmod 600 /etc/crontabs/root
 
 COPY . .
 

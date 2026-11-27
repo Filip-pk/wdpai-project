@@ -8,9 +8,10 @@ cd /app
 export COMPOSER_ALLOW_SUPERUSER=1
 
 # Composer leaves unchanged files untouched, so a stamp records the last successful install.
+# Only the php service installs; the cron service shares the mounted vendor directory.
 stamp=vendor/.anivibe-installed
-if [ ! -f vendor/autoload.php ] || [ ! -f "$stamp" ] || [ composer.json -nt "$stamp" ] \
-    || { [ -f composer.lock ] && [ composer.lock -nt "$stamp" ]; }; then
+if [ "${ANIVIBE_INSTALL_DEPENDENCIES:-1}" = "1" ] && { [ ! -f vendor/autoload.php ] || [ ! -f "$stamp" ] \
+    || [ composer.json -nt "$stamp" ] || { [ -f composer.lock ] && [ composer.lock -nt "$stamp" ]; }; }; then
     composer install --no-interaction --prefer-dist --optimize-autoloader --no-progress
     touch "$stamp"
     # On Linux hosts, give the generated files to the owner of the project directory.

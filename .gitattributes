@@ -2,3 +2,5 @@
 *.sh text eol=lf
 # The database export is a pg_dump file; keep it byte-identical to what pg_dump wrote.
 database/export/*.sql text eol=lf
+# The crontab is read by busybox crond inside Linux.
+docker/cron/crontab text eol=lf
