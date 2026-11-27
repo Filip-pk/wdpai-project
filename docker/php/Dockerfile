@@ -42,9 +42,16 @@ RUN { \
       echo 'expose_php = Off'; \
     } > /usr/local/etc/php/conf.d/anivibe-errors.ini
 
+COPY docker/php/entrypoint.sh /usr/local/bin/anivibe-entrypoint
+RUN sed -i 's/\r$//' /usr/local/bin/anivibe-entrypoint \
+    && chmod +x /usr/local/bin/anivibe-entrypoint
+
 COPY . .
 
 RUN composer install \
     --no-interaction \
     --prefer-dist \
     --optimize-autoloader
+
+ENTRYPOINT ["anivibe-entrypoint"]
+CMD ["php-fpm"]
