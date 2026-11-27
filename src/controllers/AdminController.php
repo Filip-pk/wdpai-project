@@ -32,7 +32,7 @@ final class AdminController extends AppController
             return;
         }
         $tab = $this->queryString('tab');
-        $tab = in_array($tab, ['overview', 'diagnostics', 'errors', 'users', 'catalog', 'history'], true)
+        $tab = in_array($tab, ['overview', 'diagnostics', 'errors', 'users', 'reports', 'catalog', 'history'], true)
             ? $tab : 'overview';
         $query = $this->queryString('query');
         if (preg_match('//u', $query) !== 1 || preg_match('/[\x00-\x1F\x7F]/', $query) === 1) {
@@ -45,7 +45,8 @@ final class AdminController extends AppController
                 ? $this->queryString('missing') : 'all',
             'level' => in_array($this->queryString('level'), ['error', 'warning', 'info'], true)
                 ? $this->queryString('level') : '',
-            'module' => mb_substr(trim($this->queryString('module')), 0, 40),
+            'module' => in_array($this->queryString('module'), ApplicationLogger::MODULES, true)
+                ? $this->queryString('module') : '',
         ];
         $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
         $notice = $_SESSION['admin_notice'] ?? null;
@@ -61,7 +62,9 @@ final class AdminController extends AppController
             'overview' => $tab === 'overview' ? $this->admins()->overview() : [],
             'diagnostics' => $_SESSION['admin_diagnostics'] ?? [],
             'logEntries' => $tab === 'errors' ? $this->logger->recent($filters['level'], $filters['module'], $page) : [],
+            'logModules' => ApplicationLogger::MODULES,
             'userList' => $tab === 'users' ? $this->admins()->users($filters['query'], $page) : [],
+            'messageReports' => $tab === 'reports' ? $this->admins()->messageReports($page) : [],
             'catalog' => $tab === 'catalog' ? $this->admins()->catalog($filters['query'], $filters['missing'], $page) : [],
             'history' => $tab === 'history' ? $this->admins()->history($page) : [],
         ]);
@@ -77,8 +80,14 @@ final class AdminController extends AppController
             return;
         }
         $_SESSION['admin_diagnostics'] = $this->diagnostics->checkAll();
-        $this->admins()->audit($user['id'], 'diagnostics_checked');
         $_SESSION['admin_notice'] = 'admin.notice.diagnostics_saved';
+        // As with the mail test, an audit outage must not hide results that were already collected.
+        try {
+            $this->admins()->audit($user['id'], 'diagnostics_checked');
+        } catch (Throwable $exception) {
+            $this->logger->recordException($exception, 'admin', '/admin/diagnostics');
+            $_SESSION['admin_errors'] = ['admin.error.audit'];
+        }
         $this->redirect('/admin?tab=diagnostics');
     }
 
@@ -131,11 +140,45 @@ final class AdminController extends AppController
         $this->redirect('/admin?tab=users');
     }
 
+    public function dismissMessageReport(int $id): void
+    {
+        $this->decideMessageReport($id, false);
+    }
+
+    public function hideReportedMessage(int $id): void
+    {
+        $this->decideMessageReport($id, true);
+    }
+
+    /** Message reports are decided only here: moderators never see private messages. */
+    private function decideMessageReport(int $reportId, bool $hide): void
+    {
+        $user = $this->authorizedUser();
+        if ($user === null || !$this->validCsrf()) {
+            return;
+        }
+        $reason = CommunityService::normalizeReason($this->postString('reason'));
+        if (CommunityService::validateReason($reason) !== []) {
+            $this->fail(422, 'admin.error.reason');
+            return;
+        }
+        $decided = $hide
+            ? $this->admins()->hideReportedMessage($user['id'], $reportId, $reason)
+            : $this->admins()->dismissMessageReport($user['id'], $reportId, $reason);
+        if (!$decided) {
+            $this->fail(409, 'admin.error.report');
+            return;
+        }
+        $_SESSION['admin_notice'] = $hide ? 'admin.notice.message_hidden' : 'admin.notice.report_dismissed';
+        $this->redirect('/admin?tab=reports');
+    }
+
     private function authorizedUser(): ?array
     {
         $user = $this->currentUser($this->users());
         if (!$this->admins()->isAdmin($user['id'])) {
-            $this->fail(403, 'admin.error.access');
+            // A link back to /admin would only lead to this page again.
+            $this->fail(403, 'admin.error.access', false);
             return null;
         }
         return $user;
@@ -163,13 +206,16 @@ final class AdminController extends AppController
         return true;
     }
 
-    private function fail(int $status, string $key): void
+    private function fail(int $status, string $key, bool $panelLink = true): void
     {
+        $translator = Translator::current();
         http_response_code($status);
         $this->render('community-error', [
-            'pageTitle' => Translator::current()->translate('admin.title'),
-            'message' => Translator::current()->translate($key),
-            'backUrl' => '/admin',
+            'pageTitle' => $translator->translate('admin.title'),
+            'message' => $translator->translate($key),
+            'backUrl' => $panelLink ? '/admin' : '/',
+            'backLabel' => $translator->translate($panelLink ? 'admin.back_to_panel' : 'view.interface.home'),
+            'errorHint' => $translator->translate($panelLink ? 'admin.error.hint' : 'admin.error.access_hint'),
         ]);
     }
 

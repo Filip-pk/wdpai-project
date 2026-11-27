@@ -10,7 +10,8 @@ use Throwable;
 final class ApplicationLogger
 {
     private const LEVELS = ['error', 'warning', 'info'];
-    private const MODULES = ['application', 'database', 'mail', 'smtp', 'ollama', 'environment', 'admin', 'auth', 'diagnostics'];
+    /** Fixed module names; the admin error filter offers exactly these. */
+    public const MODULES = ['application', 'database', 'mail', 'smtp', 'ollama', 'environment', 'admin', 'auth', 'diagnostics'];
     private const MESSAGES = [
         'admin.log.exception', 'admin.log.diagnostic_failed', 'admin.log.event',
         'admin.log.mail_failed', 'admin.log.runtime_error', 'admin.log.fatal_error',

@@ -94,8 +94,10 @@ Prywatne wiadomości są wykluczone z zapytań, liczników i decyzji moderatora.
 Podanie ID zgłoszenia wiadomości bezpośrednio w żądaniu również nie pozwala
 go rozpatrzyć. Rola moderatora nie daje dostępu do cudzej rozmowy ani do
 zgłoszonego fragmentu. Moderator korzysta ze swoich rozmów na takich samych
-zasadach jak inni użytkownicy. Historyczne zgłoszenia wiadomości pozostają
-w bazie, ale nie są ujawniane moderatorom ani obsługiwane przez ich panel.
+zasadach jak inni użytkownicy. Zgłoszenia wiadomości nie są ujawniane
+moderatorom ani obsługiwane przez ich panel; rozpatruje je administrator
+w panelu `/admin`, widząc tylko zapisaną kopię zgłoszonej wiadomości
+(zob. [admin-panel.md](admin-panel.md#zgłoszenia-prywatnych-wiadomości)).
 
 Panel ma zakładki „Zgłoszenia komentarzy”, „Najnowsze komentarze”,
 „Użytkownicy” i „Historia decyzji”. Listy zawierają po 20 pozycji; filtry

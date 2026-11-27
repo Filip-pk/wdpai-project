@@ -11,19 +11,24 @@ use stdClass;
 final class OllamaClient
 {
     private const MAX_RESPONSE_BYTES = 65536;
+    public const DEFAULT_URL = 'http://ollama:11434';
+    public const DEFAULT_MODEL = 'qwen3:4b';
 
     public function __construct(
-        private readonly string $url = 'http://ollama:11434',
-        private readonly string $model = 'qwen3:4b',
+        private readonly string $url = self::DEFAULT_URL,
+        private readonly string $model = self::DEFAULT_MODEL,
     ) {
     }
 
     public static function fromEnvironment(): self
     {
-        return new self(
-            getenv('OLLAMA_URL') ?: 'http://ollama:11434',
-            getenv('OLLAMA_CHAT_MODEL') ?: 'qwen3:4b',
-        );
+        return new self(getenv('OLLAMA_URL') ?: self::DEFAULT_URL, self::configuredModel());
+    }
+
+    /** The model the catalogue chat asks for; the admin diagnostics check that it is downloaded. */
+    public static function configuredModel(): string
+    {
+        return getenv('OLLAMA_CHAT_MODEL') ?: self::DEFAULT_MODEL;
     }
 
     /**

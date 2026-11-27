@@ -98,7 +98,7 @@ final class DiagnosticFakePdo extends PDO
 {
     public bool $transaction = false;
 
-    public function __construct(private readonly bool $schemaPresent = true)
+    public function __construct(private readonly bool $schemaPresent = true, private readonly bool $columnsPresent = true)
     {
     }
 
@@ -131,7 +131,8 @@ final class DiagnosticFakePdo extends PDO
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        return new DiagnosticFakeStatement($this->schemaPresent);
+        return new DiagnosticFakeStatement(str_contains($query, 'information_schema.columns')
+            ? $this->columnsPresent : $this->schemaPresent);
     }
 }
 
@@ -170,8 +171,8 @@ function withDiagnosticServer(string $scenario, callable $action): array
 $root = dirname(__DIR__);
 $directory = sys_get_temp_dir() . '/anivibe-diagnostics-' . bin2hex(random_bytes(8));
 $logger = new ApplicationLogger($directory);
-$service = static fn (Closure $connect, array $mail = [], string $ollama = ''): DiagnosticService =>
-    new DiagnosticService($connect, $mail, $logger, $root, $ollama);
+$service = static fn (Closure $connect, array $mail = [], string $ollama = '', string $model = 'llama3.2'): DiagnosticService =>
+    new DiagnosticService($connect, $mail, $logger, $root, $ollama, $model);
 $cards = static fn (DiagnosticService $diagnostics): array => array_column($diagnostics->checkAll(), null, 'service');
 
 try {
@@ -193,6 +194,39 @@ try {
         'A database outage must not prevent independent checks.');
     diagnosticAssert(!str_contains(json_encode($failed), 'SECRET'), 'Probe errors must not expose exception messages.');
     echo "[OK] Independent checks, schema validation and timing metadata\n";
+
+    // The schema check must follow the migrations, so a migration left unapplied is reported by name.
+    $declared = ['tables' => [], 'columns' => []];
+    foreach (glob($root . '/database/*.sql') ?: [] as $file) {
+        $sql = (string) preg_replace(['/\$\$.*?\$\$/s', '/--[^\n]*/'], '', (string) file_get_contents($file));
+        foreach (explode(';', $sql) as $statement) {
+            if (preg_match('/\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?([a-z_]+)/i', $statement, $match) === 1) {
+                $declared['tables'][] = strtolower($match[1]);
+            }
+            if (preg_match('/\bALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:public\.)?([a-z_]+)/i', $statement, $match) === 1
+                && preg_match_all('/\bADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_]+)/i', $statement, $added) > 0) {
+                foreach ($added[1] as $column) {
+                    $declared['columns'][] = strtolower($match[1]) . '.' . strtolower($column);
+                }
+            }
+        }
+    }
+    $sorted = static function (array $values): array {
+        $values = array_values(array_unique($values));
+        sort($values);
+        return $values;
+    };
+    diagnosticAssert(count($declared['tables']) > 30 && $sorted($declared['tables']) === $sorted(DiagnosticService::REQUIRED_TABLES),
+        'Diagnostics must check exactly the tables created by the migrations.');
+    diagnosticAssert($declared['columns'] !== [] && $sorted($declared['columns']) === $sorted(DiagnosticService::REQUIRED_COLUMNS),
+        'Diagnostics must check exactly the columns added by the migrations.');
+    diagnosticAssert($missing['database']['details'] === DiagnosticService::REQUIRED_TABLES,
+        'Every missing table is listed once, without repeating its columns.');
+    $columns = $cards($service(static fn (): PDO => new DiagnosticFakePdo(true, false)));
+    diagnosticAssert($columns['database']['status'] === 'warning'
+        && $columns['database']['details'] === DiagnosticService::REQUIRED_COLUMNS,
+        'Columns from later migrations are checked when their table exists.');
+    echo "[OK] Database diagnostics cover every migrated table and column\n";
 
     $smtp = withDiagnosticServer('smtp-probe', static function (int $port) use ($cards, $service): void {
         $result = $cards($service(static fn (): PDO => new DiagnosticFakePdo(), ['host' => '127.0.0.1', 'port' => $port]));
@@ -224,6 +258,21 @@ try {
             'Unsafe server-side URL configuration must be rejected.');
     }
     echo "[OK] Ollama models, empty list, malformed/oversized responses and redirect rejection\n";
+
+    // The catalogue chat needs its configured model, not just any model.
+    foreach (['llama3.2' => 'ok', 'llama3.2:latest' => 'ok', 'qwen3:4b' => 'warning', 'llama3.2:1b' => 'warning'] as $model => $expected) {
+        withDiagnosticServer('http-models', static function (int $port) use ($cards, $service, $model, $expected): void {
+            $ollama = $cards($service(static fn (): PDO => new DiagnosticFakePdo(), [], 'http://127.0.0.1:' . $port, $model))['ollama'];
+            diagnosticAssert($ollama['status'] === $expected, 'Unexpected status for chat model ' . $model . '.');
+            diagnosticAssert($ollama['parameters']['model'] === $model, 'The card names the configured chat model.');
+            diagnosticAssert($ollama['messageKey'] === ($expected === 'ok' ? 'admin.diag.ollama_ok' : 'admin.diag.ollama_model_missing'),
+                'A missing chat model has its own explanation.');
+            diagnosticAssert($ollama['details'] === ['llama3.2:latest'], 'Downloaded models stay listed.');
+        });
+    }
+    diagnosticAssert($cards($service(static fn (): PDO => new DiagnosticFakePdo(), [], 'http://127.0.0.1:1', '<script>'))['ollama']['status']
+        === 'not_configured', 'An invalid chat model name is a configuration problem.');
+    echo "[OK] Ollama diagnostics check the catalogue chat model\n";
 
     $sent = withDiagnosticServer('smtp-send', static function (int $port): void {
         (new MailService('127.0.0.1', $port, 'noreply@anivibe.local', 'AniVibe', 2))->sendDiagnosticEmail('admin@example.test');

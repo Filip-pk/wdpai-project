@@ -1,8 +1,9 @@
 # Panel administratora
 
 Panel `/admin` obejmuje przegląd aplikacji, ręczną diagnostykę usług,
-ostatnie błędy, użytkowników i uprawnienia moderatorów, braki danych
-w katalogu oraz historię operacji administracyjnych.
+ostatnie błędy, użytkowników i uprawnienia moderatorów, zgłoszenia
+prywatnych wiadomości, braki danych w katalogu oraz historię operacji
+administracyjnych.
 
 ## Przygotowanie
 
@@ -66,19 +67,53 @@ pomijana w liście blokad i przy wysyłaniu wiadomości; po odebraniu roli
 znów obowiązuje. Blokady nałożone przez administratora na zwykłe konta
 działają nadal. Administrator zachowuje możliwość edycji i usuwania
 własnych komentarzy, a zwykłe reakcje i odpowiedzi na jego wpisy pozostają
-dostępne. Rola admina nadal nie daje wglądu w cudze prywatne rozmowy.
+dostępne. Rola admina nadal nie daje wglądu w cudze prywatne rozmowy;
+widzi wyłącznie kopie wiadomości, które odbiorca sam zgłosił (niżej).
+
+## Zgłoszenia prywatnych wiadomości
+
+Odbiorca może zgłosić otrzymaną wiadomość. Moderatorzy nie mają dostępu
+do prywatnych wiadomości, dlatego takie zgłoszenia rozpatruje wyłącznie
+administrator w zakładce „Zgłoszenia wiadomości” (`/admin?tab=reports`).
+Formularz zgłoszenia informuje o tym zgłaszającego.
+
+Karta zgłoszenia pokazuje zgłaszającego, autora, datę, powód oraz kopię
+wiadomości zapisaną w chwili zgłoszenia. Panel nie pokazuje rozmowy ani
+innych wiadomości jej uczestników. Decyzja wymaga uzasadnienia od 1 do 1000
+znaków:
+
+- „Oddal zgłoszenie” zamyka zgłoszenie i zostawia wiadomość bez zmian.
+- „Ukryj wiadomość” ukrywa ją w rozmowie obu uczestników (jak dotąd:
+  „Wiadomość ukryta przez moderację”) i zamyka jej otwarte zgłoszenia.
+
+Wiadomości administratora nie są moderowane: dawne zgłoszenie z czasu
+przed nadaniem roli można tylko oddalić, a rola autora jest sprawdzana
+ponownie pod blokadą konta w transakcji. Zamknięte zgłoszenia pozostają
+w bazie. Decyzja trafia do historii działań z uzasadnieniem i numerem
+zgłoszenia, bez treści wiadomości. Autor ukrytej wiadomości nie dostaje
+osobnego powiadomienia. Przegląd pokazuje liczbę otwartych zgłoszeń wiadomości.
 
 ## Diagnostyka
 
 Wejście do panelu nie uruchamia testów ani wysyłki. „Sprawdź usługi”
 wykonuje cztery niezależne próby i zapisuje wyniki w bieżącej sesji:
 
-- PostgreSQL: połączenie, `SELECT 1`, wymagane tabele i flaga roli admina.
-  Zapytania kontrolne mają limit czasu i nie zapisują danych.
+- PostgreSQL: połączenie, `SELECT 1`, wszystkie tabele tworzone przez
+  migracje z katalogu `database` oraz kolumny dodane do istniejących tabel.
+  Brakujący element pojawia się z nazwą w szczegółach karty, np.
+  `login_attempts`, gdy na istniejącej bazie nie zastosowano migracji `32`.
+  Listy są w `DiagnosticService::REQUIRED_TABLES` i `REQUIRED_COLUMNS`;
+  test diagnostyki porównuje je z plikami migracji, więc nowa migracja
+  bez aktualizacji listy nie przejdzie testu. Zapytania kontrolne mają limit
+  czasu i nie zapisują danych.
 - Poczta: połączenie SMTP, powitanie serwera i `EHLO`, bez wysyłki wiadomości.
 - Ollama: żądanie `/api/tags`, ograniczony rozmiar odpowiedzi, brak
-  przekierowań i limit czasu. Brak modeli lub niedostępność są ostrzeżeniem,
-  ponieważ funkcje AI aplikacji nadal nie są podłączone.
+  przekierowań i limit czasu. Karta sprawdza, czy pobrany jest model czatu
+  katalogu z `OLLAMA_CHAT_MODEL` (domyślnie `qwen3:4b`); nazwa bez tagu
+  oznacza `:latest`, tak jak w Ollamie. Niedostępna usługa, pusta lista
+  modeli albo brak modelu czatu są ostrzeżeniem: nie działa wtedy tylko
+  czat `/chat`, pozostała część aplikacji działa normalnie. Brakujący model
+  pobierzesz poleceniem z [catalog-chat.md](catalog-chat.md).
 - Środowisko: PHP, wymagane rozszerzenia, autoloader i zapis logów.
 
 Każda karta pokazuje status tekstowy, czas odpowiedzi, czas sprawdzenia
@@ -117,15 +152,18 @@ jest pokazywany również na ekranie 500, jeśli obsługa żądania mogła go za
 Domyślnie zachowujemy maksymalnie 8 plików po około 1 MB przez 7 dni.
 Rotacja i usuwanie starych plików następują przy kolejnym zapisie;
 odczyt pomija przeterminowane pliki i ma ograniczony rozmiar.
-Listy mają filtrowanie i paginację po 20 pozycji. Brak prawa zapisu lub
+Listy mają filtrowanie i paginację po 20 pozycji. Moduł wybierasz z listy
+stałych modułów loggera (`ApplicationLogger::MODULES`, np. `auth`, `mail`,
+`database`); nieznana wartość w adresie oznacza wszystkie moduły. Brak prawa zapisu lub
 chwilowo zajęta blokada nie zastępuje pierwotnej odpowiedzi aplikacji
 innym błędem; w takiej sytuacji wpis może nie powstać.
 
 Historia administracyjna w bazie jest oddzielna od technicznych logów.
-Zawiera zmiany ról, wykonanie diagnostyki i wynik testu poczty, z autorem,
-czasem i uzasadnieniem zmiany. CLI jest oznaczone jako osobny wykonawca.
-Awaria audytu po przyjęciu wiadomości przez SMTP nie zmienia wyniku
-wysyłki; panel pokazuje dodatkowy komunikat, a aplikacja próbuje zapisać log.
+Zawiera zmiany ról, wykonanie diagnostyki, wynik testu poczty i decyzje
+w sprawie zgłoszeń wiadomości, z autorem, czasem i uzasadnieniem.
+CLI jest oznaczone jako osobny wykonawca. Awaria zapisu historii po teście
+poczty lub po sprawdzeniu usług nie zmienia ich wyniku; panel pokazuje
+dodatkowy komunikat, a aplikacja próbuje zapisać log.
 
 ## Katalog
 
@@ -137,7 +175,11 @@ bez zmian.
 
 ## Weryfikacja
 
+Testy HTTP łączą się przez HTTPS, więc najpierw wskaż Node lokalne CA
+(zob. [authentication.md](authentication.md)):
+
 ```cmd
+set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
 docker compose exec -T php php tests/admin-repository.test.php
 docker compose exec -T php php tests/admin-diagnostics.test.php
 docker compose exec -T php php tests/application-logger.test.php
@@ -150,7 +192,7 @@ node --test tests/admin-responsive.test.cjs
 
 Test repozytorium używa tabel tymczasowych; testy usług tworzą własne
 lokalne serwery i tymczasowe pliki. Testy HTTP i przeglądarkowe tworzą
-własne konta i anime oraz usuwają je wraz z własnymi wpisami audytu
-w sekcji kończącej. Test HTTP wysyła jedną wiadomość do lokalnego Mailpit;
+własne konta, anime, rozmowy i zgłoszenia wiadomości oraz usuwają je wraz
+z własnymi wpisami audytu w sekcji kończącej. Test HTTP wysyła jedną wiadomość do lokalnego Mailpit;
 wiadomość pozostaje w jego skrzynce. Nie nadają uprawnień istniejącym kontom.
 Testy wymagające bazy uruchamiaj po migracji `29`.
