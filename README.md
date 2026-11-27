@@ -113,30 +113,38 @@ a `PGADMIN_DEFAULT_EMAIL` na adres do logowania do pgAdmin. Zapisz plik
 pod nazwą `.env`, bez końcówki `.txt`. Pozostałe wartości możesz pozostawić
 zgodne z szablonem.
 
-Hasła te dotyczą lokalnej bazy i pgAdmin. Konto w AniVibe utworzysz później
-przez formularz rejestracji. Plik `.env` jest ignorowany przez Git.
+Hasła te dotyczą lokalnej bazy i pgAdmin, a nie kont w AniVibe.
+Plik `.env` jest ignorowany przez Git i nie trafia do obrazów Dockera.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `APP_PORT`, `APP_HTTPS_PORT` | `8080`, `8443` | Porty aplikacji na komputerze; HTTP przekierowuje na HTTPS. |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | — | Baza i jej konto; PHP łączy się z usługą `db` po nazwie. |
+| `POSTGRES_PORT` | `5433` | Port bazy na komputerze (np. dla pgAdmin zainstalowanego w Windows). |
+| `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`, `PGADMIN_PORT`, `PGADMIN_CONTAINER_NAME` | `5050` | Logowanie i port pgAdmin. |
+| `MAILPIT_PORT` | `8025` | Panel Mailpit. |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM`, `MAIL_FROM_NAME` | `mailpit`, `1025` | Serwer SMTP i nadawca wiadomości aplikacji. |
+| `OLLAMA_URL`, `OLLAMA_CHAT_MODEL` | `http://ollama:11434`, `qwen3:4b` | Usługa i model czatu `/chat`. |
 
 ### 4. Zbuduj i uruchom usługi
 
 ```cmd
-docker compose up -d --build db php server mailpit pgadmin-wdpai
-docker compose exec php composer install --no-interaction --prefer-dist --optimize-autoloader
+docker compose up -d --build
 docker compose ps
 docker compose exec php php scripts/check-postgres.php
 ```
 
-Poczekaj na zakończenie każdego polecenia. Pierwsza budowa pobiera obrazy
-i przygotowuje PHP, więc może potrwać kilka minut. Usługa `db` powinna być
-`healthy`, a pozostałe wymienione usługi uruchomione.
-
-**Nie pomijaj polecenia `composer install`**: tworzy ono lokalny katalog
-`vendor`, którego nie ma w ZIP-ie. Wykonaj je również wtedy, gdy Composer
-uruchomił się już podczas budowania obrazu.
+Pierwsza budowa pobiera obrazy i przygotowuje PHP, więc może potrwać kilka
+minut. Usługa `db` powinna być `healthy`, a pozostałe uruchomione. Kontener
+`php` przy starcie sam instaluje autoloader Composera i przygotowuje katalog
+logów, więc nie trzeba wykonywać `composer install`. Polecenie uruchamia też
+Ollamę; samą aplikację bez czatu AI uruchomisz poleceniem
+`docker compose up -d --build db php server mailpit`.
 
 Przy pierwszym starcie pustej bazy PostgreSQL automatycznie wykonuje skrypty
-z katalogu `database/` i zapisuje **6 początkowych anime**. Nie trzeba
-ręcznie wykonywać migracji na nowej bazie. Konta użytkowników nie są
-dołączane do repozytorium.
+z katalogu `database/`: tworzy schemat, zapisuje **6 początkowych anime**
+i [konta demonstracyjne](#konta-demonstracyjne) z przykładową aktywnością.
+Nie trzeba ręcznie wykonywać migracji na nowej bazie.
 
 Ollamę uruchom zgodnie z [instrukcją czatu katalogowego](docs/catalog-chat.md),
 jeśli chcesz korzystać z rekomendacji na stronie `/chat`.
@@ -197,10 +205,11 @@ udostępniaj pliku `anivibe-ca.key`. Usunięcie zaufania:
 Własny certyfikat (np. z `mkcert`) zapisz jako `localhost.crt` i
 `localhost.key` w tym katalogu, a następnie wykonaj `docker compose restart server`.
 
-Wejdź w **Zarejestruj się**, utwórz konto i zaloguj się. Następnie otwórz
-**Odkrywaj**, wybierz anime i dodaj je do watchlisty. W **Ulubionych** możesz
-zmienić status i postęp oglądania, a w **Profilu** ustawić dane i zdjęcie.
-Katalog można przeglądać również bez logowania.
+Zaloguj się [kontem demonstracyjnym](#konta-demonstracyjne) albo wejdź
+w **Zarejestruj się** i utwórz własne konto. Następnie otwórz **Odkrywaj**,
+wybierz anime i dodaj je do watchlisty. W **Ulubionych** możesz zmienić status
+i postęp oglądania, a w **Profilu** ustawić dane i zdjęcie. Katalog można
+przeglądać również bez logowania.
 
 Mailpit przechwytuje pocztę lokalnie — wiadomość powitalna będzie widoczna
 w jego panelu, zamiast na zewnętrznej skrzynce e-mail.
@@ -211,6 +220,52 @@ Dodaj serwer o dowolnej nazwie, z hostem **`db`**, portem **`5432`** oraz
 nazwą bazy, użytkownikiem i hasłem z `POSTGRES_DB`, `POSTGRES_USER`
 i `POSTGRES_PASSWORD`. Program zainstalowany bezpośrednio na Windows łączy
 się natomiast przez `localhost:5433` przy domyślnej konfiguracji.
+
+## Konta demonstracyjne
+
+Nowa baza zawiera cztery konta z migracji
+[33-demo-data.sql](database/33-demo-data.sql). Służą do lokalnego
+uruchomienia i prezentacji; na publicznym wdrożeniu zmień ich hasła
+albo je usuń.
+
+| Rola | E-mail | Hasło | Co pokazać |
+| --- | --- | --- | --- |
+| Użytkownik | `user@demo.anivibe.test` | `AniVibe-User-2026` | Watchlista z EXP, oceny, kolekcja, komentarze, powiadomienie o odpowiedzi, rozmowy |
+| Moderator | `moderator@demo.anivibe.test` | `AniVibe-Mod-2026` | Panel `/moderation` z otwartym zgłoszeniem komentarza |
+| Administrator | `admin@demo.anivibe.test` | `AniVibe-Admin-2026` | Panel `/admin`: diagnostyka, role, zgłoszenie wiadomości |
+| Spamer (zwykły użytkownik) | `spammer@demo.anivibe.test` | `AniVibe-Spam-2026` | Autor zgłoszonego spoilera i spamu |
+
+Na bazie utworzonej przed tą migracją dodasz konta i przykładowe dane
+poleceniem poniżej. Skrypt można wykonać ponownie: nie tworzy duplikatów
+i nie zmienia istniejących kont.
+
+```cmd
+docker compose exec -T db sh -c "psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $POSTGRES_DB -f /docker-entrypoint-initdb.d/33-demo-data.sql"
+```
+
+## Eksport i import bazy
+
+[database/export/anivibe.sql](database/export/anivibe.sql) to zrzut
+`pg_dump` schematu, 6 początkowych anime i kont demonstracyjnych. Powstaje
+z tymczasowej bazy zbudowanej wyłącznie z plików `database/*.sql`, więc nie
+zawiera lokalnych kont ani zaimportowanego katalogu. Nowa instalacja w Dockerze
+go nie potrzebuje, bo wykonuje migracje sama.
+
+Import do nowej, pustej bazy (nazwę `anivibe_import` możesz zmienić):
+
+```cmd
+docker compose exec -T db sh -c "createdb -U $POSTGRES_USER anivibe_import"
+docker compose exec -T db sh -c "psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d anivibe_import" < database\export\anivibe.sql
+```
+
+Po zmianie plików w `database/` wygeneruj eksport ponownie i sprawdź,
+czy jest zgodny z migracjami:
+
+```cmd
+docker compose exec -T db sh /docker-entrypoint-initdb.d/tools/export-demo.sh > database\export\anivibe.sql
+docker compose exec -T php php tests/database-export.test.php
+docker compose exec -T php php tests/demo-data.test.php
+```
 
 ## Kolejne uruchomienia i zatrzymanie
 
@@ -250,7 +305,7 @@ pustego `pg-data` nie przenosi kont, watchlist ani katalogu. Szczegóły są w
 | --- | --- |
 | Nie znaleziono `docker` lub `node` | Dokończ instalację narzędzia i otwórz nowe okno CMD. |
 | Docker nie może połączyć się z silnikiem | Uruchom Docker Desktop i zaczekaj na jego gotowość; projekt wymaga kontenerów Linux. |
-| Brak `vendor/autoload.php` | Wykonaj polecenie `composer install` z kroku 4. |
+| Brak `vendor/autoload.php` | Kontener `php` instaluje go przy starcie; sprawdź `docker compose logs php` i uruchom go ponownie poleceniem `docker compose restart php`. |
 | Katalog pokazuje tylko 6 anime | Na nowej instalacji wykonaj import z kroku 5. Jeśli katalog był już zaimportowany, najpierw sprawdź podłączenie właściwego wolumenu i odzyskaj poprzednią bazę; sam import nie przywróci kont ani watchlist. |
 | Brak `manifest.json` | Najpierw zakończ pobieranie poleceniem Node.js; sprawdź dostęp do GitHuba i Hugging Face. |
 | Port jest zajęty | Zmień odpowiedni port w `.env`: `APP_PORT`, `POSTGRES_PORT`, `PGADMIN_PORT` lub `MAILPIT_PORT`, a potem ponów polecenie `up` z kroku 4. Adres w przeglądarce musi używać nowego portu. |
