@@ -271,6 +271,47 @@ docker compose exec -T php php tests/database-export.test.php
 docker compose exec -T php php tests/demo-data.test.php
 ```
 
+## Testy
+
+Wszystkie testy uruchamia jedno polecenie (CMD, w katalogu projektu, przy
+działających kontenerach):
+
+```cmd
+node tests/run-all.cjs
+```
+
+Najpierw wykonują się testy PHP w kontenerze `php`, potem testy Node, plik po
+pliku. Polecenie samo wskazuje Node lokalny urząd certyfikacji z
+`docker/nginx/certs`. Wynik kończy się linią „Wszystkie testy przeszły.” albo
+listą plików z błędami; kod wyjścia jest różny od zera przy błędzie.
+
+| Opcja | Co uruchamia |
+| --- | --- |
+| `--php` | Tylko testy PHP |
+| `--node` | Tylko testy Node |
+| `--no-browser` | Bez testów `*-responsive`, które potrzebują Chrome lub Edge |
+
+Rodzaje testów:
+
+- Jednostkowe, bez bazy, np. `shared-helpers`, `transaction`, `mal-parser`,
+  `recommendation-ranker`, `avatar-storage` oraz `password-form` dla JavaScriptu.
+  Każdy plik sprawdza przypadki poprawne i błędne.
+- Repozytoriów i zadań, np. `cleanup` i `admin-repository`: działają na
+  tabelach tymczasowych w transakcji wycofywanej na końcu, więc nie zmieniają
+  danych.
+- HTTP (`*-http.test.cjs`): przechodzą przez Nginx i PHP tak jak przeglądarka,
+  tworzą własne konta testowe i w większości je usuwają.
+- Przeglądarkowe (`*-responsive.test.cjs`): układ na telefonie, tablecie
+  i komputerze, obsługa klawiaturą oraz działanie bez JavaScriptu.
+
+Pojedynczy plik uruchomisz bezpośrednio:
+
+```cmd
+docker compose exec -T php php tests/cleanup.test.php
+set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
+node --test tests/auth-http.test.cjs
+```
+
 ## Kolejne uruchomienia i zatrzymanie
 
 Uruchom Docker Desktop, otwórz CMD w katalogu projektu i włącz istniejące
