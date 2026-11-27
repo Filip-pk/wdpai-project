@@ -65,6 +65,28 @@ Zmiana katalogu inicjalizacji ani restart nie wykonują skryptów na już
 zainicjalizowanej bazie. Brakujące migracje zastosuj powyższymi poleceniami,
 zachowując obecny wolumen danych.
 
+## HTTPS
+
+Nginx przyjmuje logowanie i rejestrację wyłącznie przez HTTPS. Port HTTP
+(`APP_PORT`, domyślnie `8080`) odpowiada `301` na ten sam adres pod
+`https://` i portem `APP_HTTPS_PORT` (domyślnie `8443`). Przy pierwszym
+starcie kontener tworzy w `docker/nginx/certs` lokalny urząd certyfikacji
+`anivibe-ca.crt` (10 lat, ograniczony `nameConstraints` do `localhost`
+i `127.0.0.0/8`) oraz podpisany nim `localhost.crt` dla `localhost`
+i `127.0.0.1` (397 dni, odnawiany przy starcie przed wygaśnięciem). Klucze nie
+trafiają do repozytorium. Przeglądarka ufa stronie po jednorazowym dodaniu
+urzędu do zaufanych w Windows:
+`certutil -user -addstore Root docker\nginx\certs\anivibe-ca.crt`.
+`fastcgi_params` przekazuje PHP `HTTPS=on`, dlatego ciasteczko sesji
+dostaje flagę `Secure`. HSTS nie jest ustawiany, bo na `localhost`
+wymusiłby HTTPS również w Mailpit i pgAdmin.
+
+Po zmianie konfiguracji przebuduj serwer:
+
+```cmd
+docker compose up -d --build server
+```
+
 ## Przepływ
 
 | Żądanie | Zachowanie |
@@ -98,7 +120,12 @@ nie podłącza AI.
 
 ## Weryfikacja
 
+Testy HTTP łączą się z `https://127.0.0.1:8443` (zmiana przez
+`ANIVIBE_TEST_URL`), więc Node musi ufać lokalnemu urzędowi certyfikacji. Ustaw
+zmienną raz w danym oknie CMD:
+
 ```cmd
+set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
 docker compose exec php php tests/user-repository.test.php
 docker compose exec php php tests/projects-application.test.php
 node --test tests/auth-http.test.cjs tests/projects-http.test.cjs tests/assets.test.cjs tests/theme.test.cjs tests/mail-http.test.cjs

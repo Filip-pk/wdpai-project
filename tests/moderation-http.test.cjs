@@ -5,7 +5,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { createAnimeCommunityFixtures, cleanupAnimeCommunityFixtures } = require('./helpers/anime-community-fixtures.cjs');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const projectRoot = path.join(__dirname, '..');
 const password = 'Moderation-Fixture-2026!';
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');

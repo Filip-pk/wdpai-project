@@ -9,7 +9,7 @@ const test = require('node:test');
 const { createAnimeCommunityFixtures, cleanupAnimeCommunityFixtures } = require('./helpers/anime-community-fixtures.cjs');
 
 const projectRoot = path.join(__dirname, '..');
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const password = 'Moderation-Browser-Fixture-2026!';
 const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
@@ -149,7 +149,7 @@ async function launchBrowser() {
     const executable = candidates.find(candidate => candidate && fs.existsSync(candidate));
     assert.ok(executable, 'Set ANIVIBE_BROWSER to an installed Chrome or Edge executable');
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'anivibe-moderation-browser-'));
-    const child = spawn(executable, ['--headless=new', '--remote-debugging-port=0', '--no-first-run',
+    const child = spawn(executable, ['--headless=new', '--ignore-certificate-errors', '--remote-debugging-port=0', '--no-first-run',
         '--no-default-browser-check', '--disable-background-networking', '--disable-component-update',
         '--disable-default-apps', '--disable-sync', '--user-data-dir=' + profile, 'about:blank'], {
         windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'],

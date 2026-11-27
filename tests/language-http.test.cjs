@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
-const base = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const base = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 function browser(initial = {}) {
     const cookies = new Map(Object.entries(initial));
     return { cookies, async request(route, fields) {

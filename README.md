@@ -174,10 +174,28 @@ katalog są przechowywane w PostgreSQL.
 
 | Usługa | Domyślny adres | Zastosowanie |
 | --- | --- | --- |
-| AniVibe | [localhost:8080](http://localhost:8080) | Strona aplikacji |
-| Katalog | [localhost:8080/anime](http://localhost:8080/anime) | Wyszukiwanie anime i liczba pozycji po imporcie |
+| AniVibe | [localhost:8443](https://localhost:8443) | Strona aplikacji (HTTP z portu 8080 przekierowuje na HTTPS) |
+| Katalog | [localhost:8443/anime](https://localhost:8443/anime) | Wyszukiwanie anime i liczba pozycji po imporcie |
 | Mailpit | [localhost:8025](http://localhost:8025) | Podgląd lokalnych wiadomości powitalnych |
 | pgAdmin | [localhost:5050](http://localhost:5050) | Opcjonalny podgląd bazy danych |
+
+Aplikacja działa tylko przez HTTPS. Przy pierwszym starcie kontener `server`
+tworzy w `docker/nginx/certs` (katalog ignorowany przez Git) lokalny urząd
+certyfikacji `anivibe-ca.crt` i podpisany nim certyfikat dla `localhost`.
+Aby przeglądarka nie pokazywała ostrzeżenia „Połączenie nie jest prywatne”,
+raz dodaj ten urząd do zaufanych na swoim koncie Windows i uruchom
+przeglądarkę ponownie:
+
+```cmd
+certutil -user -addstore Root docker\nginx\certs\anivibe-ca.crt
+```
+
+Windows poprosi o potwierdzenie. Urząd może poświadczać wyłącznie
+`localhost` i adresy `127.x.x.x`, więc nie wpływa na inne strony. Nie
+udostępniaj pliku `anivibe-ca.key`. Usunięcie zaufania:
+`certutil -user -delstore Root "AniVibe local development CA"`.
+Własny certyfikat (np. z `mkcert`) zapisz jako `localhost.crt` i
+`localhost.key` w tym katalogu, a następnie wykonaj `docker compose restart server`.
 
 Wejdź w **Zarejestruj się**, utwórz konto i zaloguj się. Następnie otwórz
 **Odkrywaj**, wybierz anime i dodaj je do watchlisty. W **Ulubionych** możesz

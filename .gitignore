@@ -7,4 +7,5 @@ node_modules/
 storage/imports/
 storage/logs/
 docker/data/
+docker/nginx/certs/
 /vendor/

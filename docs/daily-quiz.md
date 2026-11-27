@@ -129,4 +129,4 @@ Test widoków wymaga zainstalowanego Chrome lub Edge; opcjonalnie ustaw
 oba motywy, etykiety i fokus, a także obsługę formularza bez JavaScript.
 Sprawdza też obie zakładki rankingu i zachowanie wyborów po zmianie języka.
 Adres testowanej aplikacji można zmienić przez `ANIVIBE_TEST_URL`
-(domyślnie `http://127.0.0.1:8080`).
+(domyślnie `https://127.0.0.1:8443`).

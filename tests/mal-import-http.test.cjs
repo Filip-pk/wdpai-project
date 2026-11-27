@@ -3,7 +3,7 @@ const { randomUUID } = require('node:crypto');
 const { gzipSync } = require('node:zlib');
 const test = require('node:test');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const password = 'Import-MAL-Testowy-2026!';
 const importRoute = '/profile/import';
 const missingMalId = 2147483647;

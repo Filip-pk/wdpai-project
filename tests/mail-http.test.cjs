@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const mailpitUrl = process.env.ANIVIBE_MAILPIT_URL ?? 'http://127.0.0.1:8025';
 const expectMailFailure = process.env.ANIVIBE_EXPECT_MAIL_FAILURE === '1';
 const password = 'Powitanie-Testowe-2026!';

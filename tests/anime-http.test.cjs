@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
 
-const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.ANIVIBE_TEST_URL ?? 'https://127.0.0.1:8443';
 const expectedCatalogCount = process.env.ANIVIBE_EXPECTED_CATALOG_COUNT === undefined
     ? null : Number(process.env.ANIVIBE_EXPECTED_CATALOG_COUNT);
 const unknownId = Number.MAX_SAFE_INTEGER;

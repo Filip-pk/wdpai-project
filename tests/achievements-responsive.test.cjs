@@ -58,7 +58,7 @@ async function launchBrowser() {
     ].find(candidate => candidate && fs.existsSync(candidate));
     assert.ok(executable, 'Set ANIVIBE_BROWSER to an installed Chrome or Edge executable');
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'anivibe-achievements-browser-'));
-    const child = spawn(executable, ['--headless=new', '--remote-debugging-port=0', '--no-first-run',
+    const child = spawn(executable, ['--headless=new', '--ignore-certificate-errors', '--remote-debugging-port=0', '--no-first-run',
         '--no-default-browser-check', '--disable-background-networking', '--disable-component-update',
         '--disable-default-apps', '--disable-sync', '--user-data-dir=' + profile, 'about:blank'], {
         windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'],
