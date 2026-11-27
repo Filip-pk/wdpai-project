@@ -24,6 +24,8 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Rola konta to część adresu przed znakiem @, np. „user” albo „moderator”.
+-- Przy pierwszym uruchomieniu tabeli tymczasowej nie ma; pomijamy ten komunikat.
+SET LOCAL client_min_messages = warning;
 DROP TABLE IF EXISTS pg_temp.demo_account;
 CREATE TEMP TABLE demo_account ON COMMIT DROP AS
 SELECT id, split_part(LOWER(email), '@', 1) AS role
