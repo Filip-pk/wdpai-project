@@ -6,7 +6,9 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { baseUrl, csrf, login } = require('./helpers/quiz-fixtures.cjs');
-const { createAdminFixture, cleanupAdminFixture, fixtureState } = require('./helpers/admin-fixtures.cjs');
+const {
+    createAdminFixture, cleanupAdminFixture, fixtureState, createMessageReports, messageReportState,
+} = require('./helpers/admin-fixtures.cjs');
 
 const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
@@ -124,7 +126,15 @@ test('administrator views fit phone, tablet and desktop, support keyboard focus 
     const fixture = createAdminFixture();
     let browser;
     try {
+        const reports = createMessageReports(fixture);
         const admin = await login(fixture.admin, fixture.password);
+        let reportsRoute = null;
+        for (let page = 1; page <= 50 && reportsRoute === null; page++) {
+            const response = await admin.request('/admin?tab=reports&page=' + page);
+            if (response.html.includes('data-report-id="' + reports.member.reportId + '"')) reportsRoute = '/admin?tab=reports&page=' + page;
+            else if (!response.html.includes('rel="next"')) break;
+        }
+        assert.ok(reportsRoute, 'The fixture message report is listed');
         const initial = await admin.request('/admin?tab=diagnostics');
         assert.equal(initial.status, 200);
         assert.equal((await admin.request('/admin/diagnostics', { csrfToken: csrf(initial) })).status, 303);
@@ -137,6 +147,7 @@ test('administrator views fit phone, tablet and desktop, support keyboard focus 
             '/admin?tab=diagnostics',
             '/admin?tab=errors',
             '/admin?tab=users&query=' + encodeURIComponent(fixture.target.email),
+            reportsRoute,
             '/admin?tab=catalog&query=' + fixture.anime.id,
             '/admin?tab=history',
         ];
@@ -212,6 +223,17 @@ test('administrator views fit phone, tablet and desktop, support keyboard focus 
             })()`);
             await waitFor(cdp, `performance.timeOrigin !== ${before} && document.readyState === 'complete' && Boolean(document.querySelector('[data-admin-panel="users"]'))`);
             assert.equal(fixtureState(fixture).isModerator, true);
+
+            // The hide button uses formaction, which needs no script.
+            await navigate(cdp, reportsRoute);
+            before = await cdp.evaluate('performance.timeOrigin');
+            await cdp.evaluate(`(() => {
+                const card = document.querySelector('[data-report-id="${reports.member.reportId}"]');
+                card.querySelector('textarea[name="reason"]').value = 'Administrator responsive browser fixture';
+                card.querySelector('form').requestSubmit(card.querySelector('button[formaction$="/hide"]'));
+            })()`);
+            await waitFor(cdp, `performance.timeOrigin !== ${before} && document.readyState === 'complete' && Boolean(document.querySelector('[data-admin-panel="reports"]'))`);
+            assert.deepEqual(messageReportState(reports).member, { status: 'removed', hidden: true });
             assert.deepEqual(cdp.errors, []);
         });
     } finally {

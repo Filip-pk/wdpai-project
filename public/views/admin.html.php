@@ -4,7 +4,7 @@ use App\Service\ModerationNoticeFormatter;
 
 require __DIR__ . '/partials/header.html.php';
 
-$adminTabs = ['overview', 'diagnostics', 'errors', 'users', 'catalog', 'history'];
+$adminTabs = ['overview', 'diagnostics', 'errors', 'users', 'reports', 'catalog', 'history'];
 $pageUrl = static function (int $page) use ($tab, $filters): string {
     $query = ['tab' => $tab, 'page' => $page];
     foreach (['query', 'missing', 'level', 'module'] as $filter) {
@@ -17,6 +17,7 @@ $pageUrl = static function (int $page) use ($tab, $filters): string {
 $pagination = match ($tab) {
     'errors' => $logEntries['pagination'],
     'users' => $userList['pagination'],
+    'reports' => $messageReports['pagination'],
     'catalog' => $catalog['pagination'],
     'history' => $history['pagination'],
     default => null,
@@ -53,7 +54,7 @@ $formatDate = static fn (string $date): string => ModerationNoticeFormatter::dat
         <section aria-labelledby="admin-overview-heading">
             <h2 id="admin-overview-heading"><?= $escape($t('admin.overview.title')) ?></h2>
             <dl class="admin-stats">
-                <?php foreach (['users', 'anime', 'openCommentReports'] as $metric): ?>
+                <?php foreach (['users', 'anime', 'openCommentReports', 'openMessageReports'] as $metric): ?>
                     <div class="admin-stat">
                         <dt><?= $escape($t('admin.metric.' . $metric)) ?></dt>
                         <dd><?= $escape($overview[$metric]) ?></dd>
@@ -73,6 +74,12 @@ $formatDate = static fn (string $date): string => ModerationNoticeFormatter::dat
                 <h2><?= $escape($t('admin.errors')) ?></h2>
                 <p><?= $escape($t('admin.overview.errors')) ?></p>
                 <a href="/admin?tab=errors"><?= $escape($t('admin.open_errors')) ?> <span aria-hidden="true">→</span></a>
+            </article>
+            <article class="admin-card admin-shortcut">
+                <span class="admin-card-symbol" aria-hidden="true">✉</span>
+                <h2><?= $escape($t('admin.reports')) ?></h2>
+                <p><?= $escape($t('admin.overview.reports')) ?></p>
+                <a href="/admin?tab=reports"><?= $escape($t('admin.open_reports')) ?> <span aria-hidden="true">→</span></a>
             </article>
             <?php if ($isModerator): ?>
                 <article class="admin-card admin-shortcut">
@@ -129,6 +136,49 @@ $formatDate = static fn (string $date): string => ModerationNoticeFormatter::dat
                 <button type="submit" class="admin-button-secondary"><?= $escape($t('admin.mail.send')) ?></button>
             </form>
         </section>
+    <?php elseif ($tab === 'reports'): ?>
+        <p class="admin-muted"><?= $escape($t('admin.reports.help')) ?></p>
+        <?php if ($messageReports['items'] === []): ?><p class="admin-card admin-empty"><?= $escape($t('admin.reports.empty')) ?></p><?php endif; ?>
+        <ol class="admin-list" aria-label="<?= $escape($t('admin.reports')) ?>">
+            <?php foreach ($messageReports['items'] as $report): ?>
+                <li><article class="admin-card admin-report" data-report-id="<?= $escape($report['id']) ?>" aria-labelledby="report-<?= $escape($report['id']) ?>">
+                    <div class="admin-card-top">
+                        <h2 id="report-<?= $escape($report['id']) ?>"><?= $escape($t('admin.reports.item', ['id' => $report['id']])) ?></h2>
+                        <time class="admin-muted" datetime="<?= $escape($report['createdAt']) ?>"><?= $escape($formatDate($report['createdAt'])) ?></time>
+                    </div>
+                    <dl class="admin-meta">
+                        <div><dt><?= $escape($t('admin.reports.reporter')) ?></dt><dd><?= $escape($report['reporterName']) ?></dd></div>
+                        <div><dt><?= $escape($t('admin.reports.sender')) ?></dt><dd><?= $escape($report['reportedName'] ?? $t('admin.reports.deleted_account')) ?></dd></div>
+                    </dl>
+                    <div class="admin-report-section">
+                        <h3><?= $escape($t('admin.reports.snapshot')) ?></h3>
+                        <blockquote class="admin-report-snapshot"><?= $escape($report['snapshot']) ?></blockquote>
+                    </div>
+                    <div class="admin-report-section">
+                        <h3><?= $escape($t('admin.reports.reason')) ?></h3>
+                        <p class="admin-history-reason"><?= $escape($report['reason']) ?></p>
+                    </div>
+                    <?php if ($report['reportedIsAdmin']): ?>
+                        <p class="admin-muted"><?= $escape($t('admin.reports.admin_protected')) ?></p>
+                    <?php elseif (!$report['canHide']): ?>
+                        <p class="admin-muted"><?= $escape($t('admin.reports.unavailable')) ?></p>
+                    <?php endif; ?>
+                    <form class="admin-role-form" method="post" action="/admin/reports/<?= $escape($report['id']) ?>/dismiss">
+                        <input type="hidden" name="csrfToken" value="<?= $escape($csrfToken) ?>">
+                        <div class="admin-field">
+                            <label for="report-reason-<?= $escape($report['id']) ?>"><?= $escape($t('admin.reports.decision_reason')) ?></label>
+                            <textarea id="report-reason-<?= $escape($report['id']) ?>" name="reason" rows="2" minlength="1" maxlength="1000" required></textarea>
+                        </div>
+                        <div class="admin-report-actions">
+                            <button class="admin-button-secondary" type="submit"><?= $escape($t('admin.reports.dismiss')) ?></button>
+                            <?php if ($report['canHide']): ?>
+                                <button type="submit" formaction="/admin/reports/<?= $escape($report['id']) ?>/hide"><?= $escape($t('admin.reports.hide')) ?></button>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </article></li>
+            <?php endforeach; ?>
+        </ol>
     <?php elseif (in_array($tab, ['errors', 'users', 'catalog'], true)): ?>
         <form class="admin-card admin-filters" method="get" action="/admin" aria-label="<?= $escape($t('admin.filters')) ?>">
             <input type="hidden" name="tab" value="<?= $escape($tab) ?>">

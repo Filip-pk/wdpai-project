@@ -32,7 +32,7 @@ final class AdminController extends AppController
             return;
         }
         $tab = $this->queryString('tab');
-        $tab = in_array($tab, ['overview', 'diagnostics', 'errors', 'users', 'catalog', 'history'], true)
+        $tab = in_array($tab, ['overview', 'diagnostics', 'errors', 'users', 'reports', 'catalog', 'history'], true)
             ? $tab : 'overview';
         $query = $this->queryString('query');
         if (preg_match('//u', $query) !== 1 || preg_match('/[\x00-\x1F\x7F]/', $query) === 1) {
@@ -64,6 +64,7 @@ final class AdminController extends AppController
             'logEntries' => $tab === 'errors' ? $this->logger->recent($filters['level'], $filters['module'], $page) : [],
             'logModules' => ApplicationLogger::MODULES,
             'userList' => $tab === 'users' ? $this->admins()->users($filters['query'], $page) : [],
+            'messageReports' => $tab === 'reports' ? $this->admins()->messageReports($page) : [],
             'catalog' => $tab === 'catalog' ? $this->admins()->catalog($filters['query'], $filters['missing'], $page) : [],
             'history' => $tab === 'history' ? $this->admins()->history($page) : [],
         ]);
@@ -137,6 +138,39 @@ final class AdminController extends AppController
         }
         $_SESSION['admin_notice'] = 'admin.notice.roles_saved';
         $this->redirect('/admin?tab=users');
+    }
+
+    public function dismissMessageReport(int $id): void
+    {
+        $this->decideMessageReport($id, false);
+    }
+
+    public function hideReportedMessage(int $id): void
+    {
+        $this->decideMessageReport($id, true);
+    }
+
+    /** Message reports are decided only here: moderators never see private messages. */
+    private function decideMessageReport(int $reportId, bool $hide): void
+    {
+        $user = $this->authorizedUser();
+        if ($user === null || !$this->validCsrf()) {
+            return;
+        }
+        $reason = CommunityService::normalizeReason($this->postString('reason'));
+        if (CommunityService::validateReason($reason) !== []) {
+            $this->fail(422, 'admin.error.reason');
+            return;
+        }
+        $decided = $hide
+            ? $this->admins()->hideReportedMessage($user['id'], $reportId, $reason)
+            : $this->admins()->dismissMessageReport($user['id'], $reportId, $reason);
+        if (!$decided) {
+            $this->fail(409, 'admin.error.report');
+            return;
+        }
+        $_SESSION['admin_notice'] = $hide ? 'admin.notice.message_hidden' : 'admin.notice.report_dismissed';
+        $this->redirect('/admin?tab=reports');
     }
 
     private function authorizedUser(): ?array

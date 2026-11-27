@@ -5,7 +5,7 @@
         <div class="community-heading-copy">
             <p class="social-kicker"><?= $escape($t('view.interface.a_safe_community')) ?></p>
             <h1 id="report-heading" class="social-title"><?= $escape($t($target['targetType'] === 'comment' ? 'view.social.report_comment' : 'view.interface.report_message')) ?></h1>
-            <p class="social-description"><?= $escape($t('view.interface.a_moderator_will_receive_the_reported_content_and_your_reason')) ?></p>
+            <p class="social-description"><?= $escape($target['targetType'] === 'comment' ? $t('view.interface.a_moderator_will_receive_the_reported_content_and_your_reason') : $t('view.interface.an_administrator_will_receive_the_reported_message_and_your_reason')) ?></p>
         </div>
         <span class="social-pill"><?= $escape($target['targetType'] === 'comment' ? $t('view.interface.comment') : $t('view.interface.private_message')) ?></span>
     </header>

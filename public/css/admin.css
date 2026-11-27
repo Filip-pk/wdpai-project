@@ -339,6 +339,33 @@
     white-space: pre-wrap;
 }
 
+.admin-report-section {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.admin-report-section h3 {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.admin-report-snapshot {
+    margin: 0;
+    padding: var(--space-3);
+    border-inline-start: 4px solid var(--color-brand);
+    border-radius: var(--radius-small);
+    background-color: var(--color-surface-raised);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
 .admin-check-details summary {
     min-height: 2.75rem;
     padding-block: var(--space-2);
@@ -368,8 +395,9 @@
 }
 
 @media (min-width: 72rem) {
+    /* Three catalogue metrics or four overview metrics each fill one row. */
     .admin-stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     }
 
     .admin-toolbar {

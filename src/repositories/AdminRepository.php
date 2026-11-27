@@ -13,7 +13,7 @@ use Throwable;
 final class AdminRepository
 {
     private const PAGE_SIZE = 20;
-    private const DETAIL_KEYS = ['reason', 'service', 'result', 'errorId', 'source', 'durationMs'];
+    private const DETAIL_KEYS = ['reason', 'service', 'result', 'errorId', 'source', 'durationMs', 'reportId'];
 
     public function __construct(private readonly PDO $database)
     {
@@ -37,10 +37,55 @@ final class AdminRepository
     {
         $row = $this->database->query("SELECT (SELECT COUNT(*) FROM users) AS users,
             (SELECT COUNT(*) FROM anime) AS anime,
-            (SELECT COUNT(*) FROM community_reports WHERE target_type = 'comment' AND status = 'open') AS open_reports")
+            (SELECT COUNT(*) FROM community_reports WHERE target_type = 'comment' AND status = 'open') AS open_reports,
+            (SELECT COUNT(*) FROM community_reports WHERE target_type = 'message' AND status = 'open') AS open_message_reports")
             ->fetch(PDO::FETCH_ASSOC);
 
-        return ['users' => (int) $row['users'], 'anime' => (int) $row['anime'], 'openCommentReports' => (int) $row['open_reports']];
+        return ['users' => (int) $row['users'], 'anime' => (int) $row['anime'], 'openCommentReports' => (int) $row['open_reports'],
+            'openMessageReports' => (int) $row['open_message_reports']];
+    }
+
+    /**
+     * Open reports of private messages, oldest first. Only the copy saved with the report is
+     * returned: the conversation and the sender's other messages stay private.
+     */
+    public function messageReports(int $page = 1): array
+    {
+        $total = (int) $this->database->query("SELECT COUNT(*) FROM community_reports
+            WHERE target_type = 'message' AND status = 'open'")->fetchColumn();
+        $pagination = $this->pagination($total, $page);
+        $statement = $this->database->prepare("SELECT r.id, r.snapshot, r.reason, r.created_at,
+                reporter.name AS reporter_name, reported.id AS reported_id, reported.name AS reported_name,
+                COALESCE(reported.is_admin, false) AS reported_is_admin,
+                m.id IS NOT NULL AND m.moderated_at IS NULL AS message_visible
+            FROM community_reports r
+            JOIN users reporter ON reporter.id = r.reporter_id
+            LEFT JOIN users reported ON reported.id = r.reported_user_id
+            LEFT JOIN private_messages m ON m.id = r.target_id AND m.sender_id = r.reported_user_id
+            WHERE r.target_type = 'message' AND r.status = 'open'
+            ORDER BY r.created_at ASC, r.id ASC LIMIT :limit OFFSET :offset");
+        $this->executePage($statement, [], $pagination);
+
+        return ['items' => array_map(fn (array $row): array => [
+            'id' => (int) $row['id'], 'snapshot' => $row['snapshot'], 'reason' => $row['reason'],
+            'createdAt' => $row['created_at'], 'reporterName' => $row['reporter_name'],
+            'reportedId' => $row['reported_id'] === null ? null : (int) $row['reported_id'],
+            'reportedName' => $row['reported_name'],
+            'reportedIsAdmin' => $this->boolean($row['reported_is_admin']),
+            'canHide' => !$this->boolean($row['reported_is_admin']) && $this->boolean($row['message_visible']),
+        ], $statement->fetchAll(PDO::FETCH_ASSOC)), 'pagination' => $pagination];
+    }
+
+    /** Closes a message report without touching the message; the report stays in the history. */
+    public function dismissMessageReport(int $actorId, int $reportId, string $reason): bool
+    {
+        return $this->decideMessageReport($actorId, $reportId, $reason, false);
+    }
+
+    /** Hides the reported message for both participants and closes its open reports. */
+    public function hideReportedMessage(int $actorId, int $reportId, string $reason): bool
+    {
+        return $this->decideMessageReport($actorId, $reportId, $reason, true);
     }
 
     public function users(string $query = '', int $page = 1): array
@@ -213,6 +258,64 @@ final class AdminRepository
             'total' => (int) $summary['total'], 'missingDescription' => (int) $summary['missing_description'],
             'missingImage' => (int) $summary['missing_image'], 'lastUpdatedAt' => $summary['last_updated_at'],
         ]];
+    }
+
+    private function decideMessageReport(int $actorId, int $reportId, string $reason, bool $hide): bool
+    {
+        if ($actorId <= 0 || $reportId <= 0) {
+            return false;
+        }
+        $reason = CommunityService::normalizeReason($reason);
+        $this->validateReason($reason);
+        $lookup = $this->database->prepare("SELECT reported_user_id FROM community_reports
+            WHERE id = :id AND target_type = 'message' AND status = 'open'");
+        $lookup->execute(['id' => $reportId]);
+        $reported = $lookup->fetchColumn();
+        if ($reported === false || !$this->isAdmin($actorId)) {
+            return false;
+        }
+        $reportedId = $reported === null ? null : (int) $reported;
+
+        return $this->transaction(function () use ($actorId, $reportId, $reason, $hide, $reportedId): bool {
+            $this->accountLock($actorId, true);
+            // Lock both accounts first, as report creation does, then re-check every condition.
+            $users = $this->lockUsers($reportedId === null ? [$actorId] : [$actorId, $reportedId]);
+            if (!$this->isAdmin($actorId)) {
+                return false;
+            }
+            $report = $this->database->prepare("SELECT target_id, reported_user_id, status FROM community_reports
+                WHERE id = :id AND target_type = 'message' FOR UPDATE");
+            $report->execute(['id' => $reportId]);
+            $row = $report->fetch(PDO::FETCH_ASSOC);
+            if ($row === false || $row['status'] !== 'open'
+                || ($row['reported_user_id'] === null ? null : (int) $row['reported_user_id']) !== $reportedId) {
+                return false;
+            }
+            $sender = $reportedId === null ? null : ($users[$reportedId] ?? null);
+            if ($hide) {
+                // An administrator's messages are never moderated; such an old report can only be dismissed.
+                if ($sender === null || $this->boolean($sender['is_admin'])) {
+                    return false;
+                }
+                $message = $this->database->prepare('UPDATE private_messages SET moderated_at = clock_timestamp()
+                    WHERE id = :id AND sender_id = :sender AND moderated_at IS NULL');
+                $message->execute(['id' => (int) $row['target_id'], 'sender' => $reportedId]);
+                if ($message->rowCount() !== 1) {
+                    return false;
+                }
+                $close = $this->database->prepare("UPDATE community_reports SET status = 'removed', resolved_by = :actor,
+                    resolved_at = clock_timestamp() WHERE target_type = 'message' AND target_id = :target AND status = 'open'");
+                $close->execute(['actor' => $actorId, 'target' => (int) $row['target_id']]);
+            } else {
+                $close = $this->database->prepare("UPDATE community_reports SET status = 'dismissed', resolved_by = :actor,
+                    resolved_at = clock_timestamp() WHERE id = :id");
+                $close->execute(['actor' => $actorId, 'id' => $reportId]);
+            }
+            $this->insertAudit($actorId, $users[$actorId]['name'], $hide ? 'message_hidden' : 'message_report_dismissed',
+                $sender === null ? null : $reportedId, $sender['name'] ?? null, ['reason' => $reason, 'reportId' => $reportId]);
+
+            return true;
+        });
     }
 
     private function insertAudit(?int $actorId, string $actorName, string $action, ?int $targetId, ?string $targetName, array $details): void

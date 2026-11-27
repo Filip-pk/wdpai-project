@@ -1,8 +1,9 @@
 # Panel administratora
 
 Panel `/admin` obejmuje przegląd aplikacji, ręczną diagnostykę usług,
-ostatnie błędy, użytkowników i uprawnienia moderatorów, braki danych
-w katalogu oraz historię operacji administracyjnych.
+ostatnie błędy, użytkowników i uprawnienia moderatorów, zgłoszenia
+prywatnych wiadomości, braki danych w katalogu oraz historię operacji
+administracyjnych.
 
 ## Przygotowanie
 
@@ -66,7 +67,31 @@ pomijana w liście blokad i przy wysyłaniu wiadomości; po odebraniu roli
 znów obowiązuje. Blokady nałożone przez administratora na zwykłe konta
 działają nadal. Administrator zachowuje możliwość edycji i usuwania
 własnych komentarzy, a zwykłe reakcje i odpowiedzi na jego wpisy pozostają
-dostępne. Rola admina nadal nie daje wglądu w cudze prywatne rozmowy.
+dostępne. Rola admina nadal nie daje wglądu w cudze prywatne rozmowy;
+widzi wyłącznie kopie wiadomości, które odbiorca sam zgłosił (niżej).
+
+## Zgłoszenia prywatnych wiadomości
+
+Odbiorca może zgłosić otrzymaną wiadomość. Moderatorzy nie mają dostępu
+do prywatnych wiadomości, dlatego takie zgłoszenia rozpatruje wyłącznie
+administrator w zakładce „Zgłoszenia wiadomości” (`/admin?tab=reports`).
+Formularz zgłoszenia informuje o tym zgłaszającego.
+
+Karta zgłoszenia pokazuje zgłaszającego, autora, datę, powód oraz kopię
+wiadomości zapisaną w chwili zgłoszenia. Panel nie pokazuje rozmowy ani
+innych wiadomości jej uczestników. Decyzja wymaga uzasadnienia od 1 do 1000
+znaków:
+
+- „Oddal zgłoszenie” zamyka zgłoszenie i zostawia wiadomość bez zmian.
+- „Ukryj wiadomość” ukrywa ją w rozmowie obu uczestników (jak dotąd:
+  „Wiadomość ukryta przez moderację”) i zamyka jej otwarte zgłoszenia.
+
+Wiadomości administratora nie są moderowane: dawne zgłoszenie z czasu
+przed nadaniem roli można tylko oddalić, a rola autora jest sprawdzana
+ponownie pod blokadą konta w transakcji. Zamknięte zgłoszenia pozostają
+w bazie. Decyzja trafia do historii działań z uzasadnieniem i numerem
+zgłoszenia, bez treści wiadomości. Autor ukrytej wiadomości nie dostaje
+osobnego powiadomienia. Przegląd pokazuje liczbę otwartych zgłoszeń wiadomości.
 
 ## Diagnostyka
 
@@ -134,10 +159,11 @@ chwilowo zajęta blokada nie zastępuje pierwotnej odpowiedzi aplikacji
 innym błędem; w takiej sytuacji wpis może nie powstać.
 
 Historia administracyjna w bazie jest oddzielna od technicznych logów.
-Zawiera zmiany ról, wykonanie diagnostyki i wynik testu poczty, z autorem,
-czasem i uzasadnieniem zmiany. CLI jest oznaczone jako osobny wykonawca.
-Awaria audytu po przyjęciu wiadomości przez SMTP nie zmienia wyniku
-wysyłki; panel pokazuje dodatkowy komunikat, a aplikacja próbuje zapisać log.
+Zawiera zmiany ról, wykonanie diagnostyki, wynik testu poczty i decyzje
+w sprawie zgłoszeń wiadomości, z autorem, czasem i uzasadnieniem.
+CLI jest oznaczone jako osobny wykonawca. Awaria zapisu historii po teście
+poczty lub po sprawdzeniu usług nie zmienia ich wyniku; panel pokazuje
+dodatkowy komunikat, a aplikacja próbuje zapisać log.
 
 ## Katalog
 
@@ -149,7 +175,11 @@ bez zmian.
 
 ## Weryfikacja
 
+Testy HTTP łączą się przez HTTPS, więc najpierw wskaż Node lokalne CA
+(zob. [authentication.md](authentication.md)):
+
 ```cmd
+set NODE_EXTRA_CA_CERTS=%cd%\docker\nginx\certs\anivibe-ca.crt
 docker compose exec -T php php tests/admin-repository.test.php
 docker compose exec -T php php tests/admin-diagnostics.test.php
 docker compose exec -T php php tests/application-logger.test.php
@@ -162,7 +192,7 @@ node --test tests/admin-responsive.test.cjs
 
 Test repozytorium używa tabel tymczasowych; testy usług tworzą własne
 lokalne serwery i tymczasowe pliki. Testy HTTP i przeglądarkowe tworzą
-własne konta i anime oraz usuwają je wraz z własnymi wpisami audytu
-w sekcji kończącej. Test HTTP wysyła jedną wiadomość do lokalnego Mailpit;
+własne konta, anime, rozmowy i zgłoszenia wiadomości oraz usuwają je wraz
+z własnymi wpisami audytu w sekcji kończącej. Test HTTP wysyła jedną wiadomość do lokalnego Mailpit;
 wiadomość pozostaje w jego skrzynce. Nie nadają uprawnień istniejącym kontom.
 Testy wymagające bazy uruchamiaj po migracji `29`.

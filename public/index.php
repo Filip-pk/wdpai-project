@@ -436,6 +436,8 @@ $routing->get('/admin', AdminController::class, 'index');
 $routing->post('/admin/diagnostics', AdminController::class, 'checkDiagnostics');
 $routing->post('/admin/mail-test', AdminController::class, 'testMail');
 $routing->post('/admin/users/{id}/moderator', AdminController::class, 'changeModerator');
+$routing->post('/admin/reports/{id}/dismiss', AdminController::class, 'dismissMessageReport');
+$routing->post('/admin/reports/{id}/hide', AdminController::class, 'hideReportedMessage');
 
 // Projekty zapisane w PostgreSQL.
 $routing->get('/projects', ProjectController::class, 'index');

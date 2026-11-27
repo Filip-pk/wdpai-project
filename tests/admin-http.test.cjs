@@ -1,10 +1,29 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { browser, csrf, login } = require('./helpers/quiz-fixtures.cjs');
-const { createAdminFixture, cleanupAdminFixture, setFixtureAdmin, fixtureState } = require('./helpers/admin-fixtures.cjs');
+const {
+    createAdminFixture, cleanupAdminFixture, setFixtureAdmin, fixtureState, createMessageReports, messageReportState,
+} = require('./helpers/admin-fixtures.cjs');
 
 const mailpitUrl = process.env.ANIVIBE_MAILPIT_URL ?? 'http://127.0.0.1:8025';
-const tabs = ['overview', 'diagnostics', 'errors', 'users', 'catalog', 'history'];
+const tabs = ['overview', 'diagnostics', 'errors', 'users', 'reports', 'catalog', 'history'];
+
+// Open reports are listed oldest first, so the fixture reports may be on a later page.
+async function reportsPageWith(client, reportId) {
+    for (let page = 1; page <= 50; page++) {
+        const response = await client.request('/admin?tab=reports&page=' + page);
+        assert.equal(response.status, 200);
+        if (response.html.includes('data-report-id="' + reportId + '"')) return response;
+        if (!response.html.includes('rel="next"')) return null;
+    }
+    return null;
+}
+
+function reportCard(html, reportId) {
+    const start = html.indexOf('data-report-id="' + reportId + '"');
+    assert.ok(start >= 0, 'Report ' + reportId + ' is listed');
+    return html.slice(start, html.indexOf('</article>', start));
+}
 
 async function messagesTo(email) {
     const response = await fetch(new URL('/api/v1/search?' + new URLSearchParams({ query: 'to:' + email }), mailpitUrl),
@@ -16,6 +35,8 @@ async function messagesTo(email) {
 test('administrator access, diagnostics, mail and role changes are protected and audited', { timeout: 180000 }, async t => {
     const fixture = createAdminFixture();
     try {
+        const reports = createMessageReports(fixture);
+        const reportRoutes = ['/admin/reports/' + reports.member.reportId + '/dismiss', '/admin/reports/' + reports.member.reportId + '/hide'];
         const guest = browser();
         const member = await login(fixture.member, fixture.password);
         const moderator = await login(fixture.moderator, fixture.password);
@@ -28,7 +49,7 @@ test('administrator access, diagnostics, mail and role changes are protected and
                 assert.equal(response.status, 303);
                 assert.equal(response.headers.get('location'), '/login');
             }
-            for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator']) {
+            for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator', ...reportRoutes]) {
                 assert.equal((await guest.request(route, { csrfToken: '' })).status, 303);
             }
             assert.doesNotMatch((await guest.request('/')).html, /href="\/admin"/);
@@ -41,10 +62,11 @@ test('administrator access, diagnostics, mail and role changes are protected and
                 assert.match(denied.html, /<a href="\/" class="error-button error-button-primary">/, 'Denied users are sent home');
                 assert.doesNotMatch(denied.html, /href="\/admin"|error-button-secondary/, 'No link back to the page that was denied');
                 assert.doesNotMatch((await client.request('/profile')).html, /href="\/admin"/);
-                for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator']) {
-                    assert.equal((await client.request(route, { csrfToken: csrf(await client.request('/profile')) })).status, 403);
+                for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator', ...reportRoutes]) {
+                    assert.equal((await client.request(route, { csrfToken: csrf(await client.request('/profile')), reason: 'QA' })).status, 403);
                 }
             }
+            assert.equal(messageReportState(reports).member.status, 'open', 'Moderators cannot decide message reports');
             assert.equal((await admin.request('/moderation')).status, 403, 'Admin role does not silently grant moderator privileges');
             assert.equal(fixtureState(fixture).actions.length, 0);
         });
@@ -64,12 +86,14 @@ test('administrator access, diagnostics, mail and role changes are protected and
 
         await t.test('CSRF rejection produces no audit entries, role changes or email', async () => {
             const before = fixtureState(fixture);
+            const reportsBefore = messageReportState(reports);
             for (const csrfToken of ['', 'f'.repeat(64)]) {
-                for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator']) {
+                for (const route of ['/admin/diagnostics', '/admin/mail-test', '/admin/users/' + fixture.target.id + '/moderator', ...reportRoutes]) {
                     assert.equal((await admin.request(route, { csrfToken, enabled: '1', reason: 'QA' })).status, 403);
                 }
             }
             assert.deepEqual(fixtureState(fixture), before);
+            assert.deepEqual(messageReportState(reports), reportsBefore);
             assert.equal((await messagesTo(fixture.admin.email)).messages_count, 0);
             const rejected = await admin.request('/admin/diagnostics', { csrfToken: '' });
             assert.match(rejected.html, /<a href="\/admin" class="error-button error-button-primary">/, 'Admin errors lead back to the panel');
@@ -129,6 +153,47 @@ test('administrator access, diagnostics, mail and role changes are protected and
             assert.match(history.html, /&lt;script&gt;/);
         });
 
+        await t.test('message reports show only the reported copy and are decided with a reason', async () => {
+            const memberCard = reportCard((await reportsPageWith(admin, reports.member.reportId)).html, reports.member.reportId);
+            const adminCard = reportCard((await reportsPageWith(admin, reports.admin.reportId)).html, reports.admin.reportId);
+            assert.ok(memberCard.includes('Admin QA message from member ' + fixture.marker + ' &lt;svg onload=alert(1)&gt;'));
+            assert.ok(memberCard.includes('Admin QA report member'));
+            assert.ok(memberCard.includes('formaction="/admin/reports/' + reports.member.reportId + '/hide"'));
+            assert.ok(adminCard.includes('action="/admin/reports/' + reports.admin.reportId + '/dismiss"'));
+            assert.ok(!adminCard.includes('/hide"'), 'Messages from an administrator cannot be hidden');
+
+            const memberRoute = '/admin/reports/' + reports.member.reportId;
+            const adminRoute = '/admin/reports/' + reports.admin.reportId;
+            for (const reason of ['', ' ', 'x'.repeat(1001)]) {
+                assert.equal((await admin.request(memberRoute + '/hide', { csrfToken: token, reason })).status, 422);
+            }
+            assert.equal((await admin.request(adminRoute + '/hide', { csrfToken: token, reason: 'QA' })).status, 409);
+            assert.equal((await admin.request('/admin/reports/999999999/dismiss', { csrfToken: token, reason: 'QA' })).status, 409);
+            assert.deepEqual(messageReportState(reports), { member: { status: 'open', hidden: false }, admin: { status: 'open', hidden: false } });
+
+            const hidden = await admin.request(memberRoute + '/hide', { csrfToken: token, reason: 'QA <script>alert(1)</script>' });
+            assert.equal(hidden.status, 303);
+            assert.equal(hidden.headers.get('location'), '/admin?tab=reports');
+            assert.equal((await admin.request(memberRoute + '/hide', { csrfToken: token, reason: 'QA' })).status, 409);
+            assert.equal((await admin.request(adminRoute + '/dismiss', { csrfToken: token, reason: 'Zgłoszenie sprzed nadania roli' })).status, 303);
+            assert.deepEqual(messageReportState(reports), { member: { status: 'removed', hidden: true }, admin: { status: 'dismissed', hidden: false } });
+            assert.equal(await reportsPageWith(admin, reports.member.reportId), null, 'Decided reports leave the list');
+
+            const audit = fixtureState(fixture).actions.filter(row => row.action.startsWith('message_'));
+            assert.deepEqual(audit.map(row => [row.action, JSON.parse(row.details).reportId]),
+                [['message_hidden', reports.member.reportId], ['message_report_dismissed', reports.admin.reportId]]);
+            assert.ok(audit.every(row => !row.details.includes('Admin QA message')), 'The audit does not copy the message');
+            const history = await admin.request('/admin?tab=history');
+            assert.doesNotMatch(history.html, /<script>alert\(1\)<\/script>/);
+
+            const target = await login(fixture.target, fixture.password);
+            const hiddenConversation = await target.request('/messages/' + reports.member.conversationId);
+            assert.equal(hiddenConversation.status, 200);
+            assert.ok(!hiddenConversation.html.includes('Admin QA message from member'), 'The hidden message is no longer shown');
+            assert.ok((await target.request('/messages/' + reports.admin.conversationId)).html.includes('Admin QA message from admin'),
+                'A dismissed report leaves the message visible');
+        });
+
         await t.test('filters and pagination handle literal SQL metacharacters and malformed input', async () => {
             for (const tab of ['users', 'catalog']) {
                 for (const query of [fixture.marker + '%', 'Ż'.repeat(200), "' OR 1=1 --"]) {
@@ -178,6 +243,7 @@ test('administrator access, diagnostics, mail and role changes are protected and
             assert.equal((await admin.request('/admin')).status, 403);
             assert.equal((await admin.request('/admin/mail-test', { csrfToken: token })).status, 403);
             assert.equal((await admin.request('/admin/users/' + fixture.target.id + '/moderator', { csrfToken: token, enabled: '1', reason: 'QA' })).status, 403);
+            assert.equal((await admin.request('/admin/reports/' + reports.admin.reportId + '/dismiss', { csrfToken: token, reason: 'QA' })).status, 403);
             assert.doesNotMatch((await admin.request('/profile')).html, /href="\/admin"/);
             assert.deepEqual(fixtureState(fixture), before);
         });

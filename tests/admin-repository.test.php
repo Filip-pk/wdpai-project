@@ -38,14 +38,15 @@ try {
         user_id BIGINT NOT NULL REFERENCES pg_temp.users (id), moderator_id BIGINT NULL, reason TEXT NOT NULL DEFAULT \'\', starts_at TIMESTAMPTZ NOT NULL,
         ends_at TIMESTAMPTZ NOT NULL, revoked_at TIMESTAMPTZ NULL
     ) ON COMMIT DROP');
-    $connection->exec('CREATE TEMP TABLE community_reports (target_type TEXT NOT NULL, status TEXT NOT NULL) ON COMMIT DROP');
+    $connection->exec('CREATE TEMP TABLE community_reports (LIKE public.community_reports INCLUDING ALL) ON COMMIT DROP');
+    $connection->exec('CREATE TEMP TABLE private_messages (LIKE public.private_messages INCLUDING ALL) ON COMMIT DROP');
     $connection->exec('CREATE TEMP TABLE anime (LIKE public.anime INCLUDING ALL) ON COMMIT DROP');
     $migration = file_get_contents(dirname(__DIR__) . '/database/29-admin-diagnostics.sql');
     $assert(is_string($migration));
     $migration = str_replace(['BEGIN;', 'COMMIT;', 'CREATE TABLE IF NOT EXISTS'], ['', '', 'CREATE TEMP TABLE IF NOT EXISTS'], $migration);
     $connection->exec($migration);
     $connection->exec($migration);
-    foreach (['users', 'user_bans', 'community_reports', 'anime', 'admin_actions'] as $table) {
+    foreach (['users', 'user_bans', 'community_reports', 'private_messages', 'anime', 'admin_actions'] as $table) {
         $verify = $connection->prepare("SELECT relnamespace = pg_my_temp_schema() AND relpersistence = 't'
             FROM pg_class WHERE oid = to_regclass(:table)");
         $verify->execute(['table' => $table]);
@@ -66,7 +67,16 @@ try {
         (5,clock_timestamp()-INTERVAL '1 hour',clock_timestamp()+INTERVAL '1 hour'),
         (6,clock_timestamp()-INTERVAL '1 hour',clock_timestamp()+INTERVAL '1 hour'),
         (7,clock_timestamp()-INTERVAL '2 hours',clock_timestamp()-INTERVAL '1 hour')");
-    $connection->exec("INSERT INTO pg_temp.community_reports VALUES ('comment','open'),('comment','removed'),('message','open')");
+    $connection->exec("INSERT INTO pg_temp.private_messages (id, conversation_id, sender_id, body) VALUES
+        (101, 1, 3, 'Treść użytkownika'), (102, 1, 1, 'Treść administratora'), (103, 1, 3, 'Treść już ukryta')");
+    $connection->exec('UPDATE pg_temp.private_messages SET moderated_at = clock_timestamp() WHERE id = 103');
+    $connection->exec("INSERT INTO pg_temp.community_reports (id, reporter_id, reported_user_id, target_type, target_id, snapshot, reason, status) VALUES
+        (1, 3, 4, 'comment', 50, 'Komentarz', 'Spam', 'open'),
+        (2, 3, 4, 'comment', 51, 'Komentarz', 'Spam', 'removed'),
+        (3, 4, 3, 'message', 101, 'Kopia <b>wiadomości</b> użytkownika', 'Obraźliwa wiadomość', 'open'),
+        (4, 3, 1, 'message', 102, 'Kopia wiadomości administratora', 'Zgłoszenie sprzed nadania roli', 'open'),
+        (5, 4, 3, 'message', 103, 'Kopia ukrytej wiadomości', 'Powtórzone zgłoszenie', 'open'),
+        (6, 8, 3, 'message', 101, 'Kopia', 'Zamknięte wcześniej', 'dismissed')");
     $connection->exec("INSERT INTO pg_temp.anime (id,title,description,cover_url) VALUES
         (1,'Anime %_ A','','https://example.test/a.jpg'),
         (2,'Anime B','Opis',NULL), (3,'Anime C','Opis','  '),
@@ -98,8 +108,61 @@ try {
         $assert(!$repository->isAdmin(1), 'Odebranie roli obowiązuje przy następnym sprawdzeniu.');
     });
 
-    $run('Przegląd liczy wyłącznie zgłoszenia publicznych komentarzy', static function () use ($repository, $assert): void {
-        $assert($repository->overview() === ['users' => 35, 'anime' => 4, 'openCommentReports' => 1]);
+    $run('Przegląd liczy osobno otwarte zgłoszenia komentarzy i wiadomości', static function () use ($repository, $assert): void {
+        $assert($repository->overview() === ['users' => 35, 'anime' => 4, 'openCommentReports' => 1, 'openMessageReports' => 3]);
+    });
+
+    $run('Zgłoszenia wiadomości pokazują tylko zapisaną kopię i chronią administratora', static function () use ($repository, $assert): void {
+        $reports = $repository->messageReports();
+        $assert($reports['pagination']['total'] === 3);
+        $assert(array_column($reports['items'], 'id') === [3, 4, 5], 'Otwarte zgłoszenia wiadomości, od najstarszego.');
+        [$ordinary, $administrator, $hidden] = $reports['items'];
+        $assert(array_keys($ordinary) === ['id', 'snapshot', 'reason', 'createdAt', 'reporterName', 'reportedId', 'reportedName', 'reportedIsAdmin', 'canHide'],
+            'Widok dostaje kopię zgłoszenia, a nie treść z rozmowy.');
+        $assert($ordinary['snapshot'] === 'Kopia <b>wiadomości</b> użytkownika' && $ordinary['reporterName'] === 'Moderator'
+            && $ordinary['reportedName'] === 'Użytkownik' && $ordinary['canHide'] && !$ordinary['reportedIsAdmin']);
+        $assert($administrator['reportedIsAdmin'] && !$administrator['canHide']);
+        $assert(!$hidden['reportedIsAdmin'] && !$hidden['canHide'], 'Ukrytej wiadomości nie można ukryć ponownie.');
+        $assert($repository->messageReports(999)['pagination']['page'] === 1);
+    });
+
+    $run('Ukrycie wiadomości zamyka zgłoszenie, zapisuje audyt i pomija treści administratora', static function () use ($repository, $connection, $throws, $assert): void {
+        $hiddenAt = static function (int $id) use ($connection): mixed {
+            $statement = $connection->prepare('SELECT moderated_at FROM pg_temp.private_messages WHERE id = :id');
+            $statement->execute(['id' => $id]);
+            return $statement->fetchColumn();
+        };
+        $status = static function (int $id) use ($connection): array {
+            $statement = $connection->prepare('SELECT status, resolved_by FROM pg_temp.community_reports WHERE id = :id');
+            $statement->execute(['id' => $id]);
+            return $statement->fetch(PDO::FETCH_ASSOC);
+        };
+        foreach ([[3, 3], [4, 3], [5, 3], [1, 4], [1, 5], [1, 1], [1, 2], [1, 6], [1, 999]] as [$actor, $report]) {
+            $assert(!$repository->hideReportedMessage($actor, $report, 'Kontrola'), "Odmowa: admin {$actor}, zgłoszenie {$report}.");
+        }
+        $throws(static fn () => $repository->hideReportedMessage(1, 3, '  '), InvalidArgumentException::class);
+        $assert($hiddenAt(101) === null && $hiddenAt(102) === null && $repository->history()['pagination']['total'] === 0);
+        $assert($repository->hideReportedMessage(1, 3, "  Groźby w wiadomości\r\n"));
+        $assert($hiddenAt(101) !== null && $status(3) === ['status' => 'removed', 'resolved_by' => 1]);
+        $assert($status(6)['status'] === 'dismissed', 'Wcześniej zamknięte zgłoszenie zachowuje swój wynik.');
+        $entry = $repository->history()['items'][0];
+        $assert($entry['action'] === 'message_hidden' && $entry['actorId'] === 1 && $entry['targetId'] === 3);
+        $assert($entry['details'] === ['reason' => 'Groźby w wiadomości', 'reportId' => 3], 'Audyt nie zawiera treści wiadomości.');
+        $assert(!$repository->hideReportedMessage(1, 3, 'Ponowienie') && !$repository->dismissMessageReport(1, 3, 'Ponowienie'));
+        $assert($repository->history()['pagination']['total'] === 1);
+    });
+
+    $run('Oddalenie zachowuje wiadomość i historię, także dla dawnego zgłoszenia administratora', static function () use ($repository, $connection, $assert): void {
+        $assert(!$repository->dismissMessageReport(3, 4, 'Bez uprawnień') && !$repository->dismissMessageReport(1, 1, 'Komentarz'));
+        $assert($repository->dismissMessageReport(1, 4, 'Wiadomość nie narusza zasad'));
+        $assert($repository->dismissMessageReport(1, 5, 'Wiadomość jest już ukryta'));
+        $rows = $connection->query("SELECT id, status, resolved_by FROM pg_temp.community_reports WHERE id IN (4, 5) ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+        $assert($rows === [['id' => 4, 'status' => 'dismissed', 'resolved_by' => 1], ['id' => 5, 'status' => 'dismissed', 'resolved_by' => 1]]);
+        $assert($connection->query('SELECT moderated_at FROM pg_temp.private_messages WHERE id = 102')->fetchColumn() === null);
+        $history = $repository->history();
+        $assert(array_column($history['items'], 'action') === ['message_report_dismissed', 'message_report_dismissed']);
+        $assert($history['items'][1]['targetId'] === 1 && $history['items'][1]['details']['reportId'] === 4);
+        $assert($repository->messageReports()['pagination']['total'] === 1 && $repository->overview()['openMessageReports'] === 1);
     });
 
     $run('Moderator nie może zbanować administratora bez roli moderatora', static function () use ($connection, $assert): void {
